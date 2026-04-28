@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "Fixi.ge",
+    "slug": "fixi-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f0f13"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "ge.fixi.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f0f13"
+      },
+      "package": "ge.fixi.app",
+      "googleServicesFile": "./google-services.json"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        { "photosPermission": "პროფილის ფოტოს ასარჩევად" }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ff6b2b",
+          "sounds": []
+        }
+      ]
+    ],
+    "extra": {
+      "apiBase": "https://myworker-production.up.railway.app/api",
+      "eas": {
+        "projectId": "შენი-EAS-PROJECT-ID-აქ"
+      }
+    }
+  }
+}

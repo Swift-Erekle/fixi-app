@@ -1,0 +1,70 @@
+// src/utils/theme.js
+export const C = {
+  bg:       '#0f0f13',
+  surface:  '#1a1a24',
+  surface2: '#22222f',
+  border:   '#2e2e3f',
+  accent:   '#ff6b2b',
+  text:     '#f0eff5',
+  text2:    '#9998b0',
+  ok:       '#2ecc71',
+  err:      '#e74c3c',
+  warn:     '#f39c12',
+  vip:      '#f1c40f',
+  vipp:     '#9b59b6',
+  pro:      '#3498db',
+};
+
+export const S = {
+  card: {
+    backgroundColor: C.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 16,
+    marginBottom: 12,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: C.text2,
+    marginBottom: 6,
+  },
+  input: {
+    backgroundColor: C.surface2,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    padding: 14,
+    color: C.text,
+    fontSize: 15,
+    marginBottom: 14,
+  },
+  btn: {
+    backgroundColor: C.accent,
+    borderRadius: 10,
+    padding: 14,
+    alignItems: 'center',
+  },
+  btnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  btnOutline: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    padding: 12,
+    alignItems: 'center',
+  },
+  h1: { fontSize: 24, fontWeight: '800', color: C.text },
+  h2: { fontSize: 18, fontWeight: '700', color: C.text },
+  h3: { fontSize: 15, fontWeight: '700', color: C.text },
+  body: { fontSize: 14, color: C.text2, lineHeight: 20 },
+};
