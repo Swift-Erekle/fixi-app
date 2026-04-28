@@ -12,7 +12,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#0f0f13"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "ge.fixi.app",
@@ -57,7 +59,7 @@
     "extra": {
       "apiBase": "https://myworker-production.up.railway.app/api",
       "eas": {
-        "projectId": "შენი-EAS-PROJECT-ID-აქ"
+        "projectId": "e6518c21-7d4e-464b-abe5-4a0cb6cf1f5f"
       }
     }
   }
