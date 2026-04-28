@@ -7,7 +7,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/context/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { addNotificationListeners, getInitialNotification } from './src/utils/notifications';
-
+import Constants from 'expo-constants';
+console.log('[CONFIG] apiBase:', Constants.expoConfig?.extra?.apiBase);
 // navigationRef is used to navigate from outside React components
 // (e.g. when user taps a push notification that opens the app cold)
 export const navigationRef = React.createRef();

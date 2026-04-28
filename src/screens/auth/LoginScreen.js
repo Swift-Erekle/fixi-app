@@ -21,11 +21,16 @@ export default function LoginScreen({ navigation }) {
       const data = await api('/auth/login', { method: 'POST', body: { email: email.trim().toLowerCase(), password } });
       await login(data.token, data.user);
     } catch (e) {
+      console.error('LOGIN ERROR', JSON.stringify(e, null, 2));  // ← Metro-ს კონსოლში ნახავ
       if (e.emailNotVerified) {
         navigation.navigate('Verify', { email: e.email || email.trim().toLowerCase(), devCode: e.devCode });
         Alert.alert('📧 ვერიფიკაცია', 'კოდი გაიგზავნა ელ-ფოსტაზე');
       } else {
-        Alert.alert('შეცდომა', e.error || 'შესვლა ვერ მოხდა');
+        // ყველა შესაძლო error-ის გადმოცემა
+        const msg = (typeof e === 'object' && e !== null)
+          ? (e.error || e.message || 'შესვლა ვერ მოხდა')
+          : 'შესვლა ვერ მოხდა';
+        Alert.alert('შეცდომა', msg);
       }
     } finally { setLoading(false); }
   }
