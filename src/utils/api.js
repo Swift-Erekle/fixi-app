@@ -2,7 +2,7 @@
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 
-const BASE = Constants.expoConfig?.extra?.apiBase || 'https://myworker-production.up.railway.app/api';
+const BASE = 'https://myworker-production.up.railway.app/api';
 
 // Debug logging — set to false in production after fixing
 const DEBUG = __DEV__;

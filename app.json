@@ -57,7 +57,7 @@
       ]
     ],
     "extra": {
-      "apiBase": "https://myworker-production.up.railway.app",
+      "apiBase": "https://myworker-production.up.railway.app/",
       "eas": {
         "projectId": "e6518c21-7d4e-464b-abe5-4a0cb6cf1f5f"
       }
