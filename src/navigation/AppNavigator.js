@@ -36,27 +36,27 @@ import AdminSupportChatScreen from '../screens/AdminSupportChatScreen'; // ✅ N
 import NotificationsScreen from '../screens/NotificationsScreen'; // ✅ NEW
 
 const Stack = createStackNavigator();
-const Tab   = createBottomTabNavigator();
+const Tab = createBottomTabNavigator();
 
 const NAV_THEME = {
   dark: true,
-  colors: { background:C.bg, card:C.surface, text:C.text, border:C.border, primary:C.accent, notification:C.accent },
+  colors: { background: C.bg, card: C.surface, text: C.text, border: C.border, primary: C.accent, notification: C.accent },
 };
 
 const SCREEN_OPT = {
-  headerStyle: { backgroundColor:C.surface, shadowColor:'transparent', elevation:0, borderBottomWidth:1, borderBottomColor:C.border },
+  headerStyle: { backgroundColor: C.surface, shadowColor: 'transparent', elevation: 0, borderBottomWidth: 1, borderBottomColor: C.border },
   headerTintColor: C.text,
-  headerTitleStyle: { fontWeight:'800', fontSize:16 },
-  cardStyle: { backgroundColor:C.bg },
+  headerTitleStyle: { fontWeight: '800', fontSize: 16 },
+  cardStyle: { backgroundColor: C.bg },
 };
 
 function AuthStack() {
   return (
-    <Stack.Navigator screenOptions={{ ...SCREEN_OPT, headerShown:false }}>
-      <Stack.Screen name="Login"    component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown:true, title:'რეგისტრაცია' }} />
-      <Stack.Screen name="Verify"   component={VerifyScreen}   options={{ headerShown:true, title:'ვერიფიკაცია' }} />
-      <Stack.Screen name="Forgot"   component={ForgotScreen}   options={{ headerShown:true, title:'პაროლის აღდგენა' }} />
+    <Stack.Navigator screenOptions={{ ...SCREEN_OPT, headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: true, title: 'რეგისტრაცია' }} />
+      <Stack.Screen name="Verify" component={VerifyScreen} options={{ headerShown: true, title: 'ვერიფიკაცია' }} />
+      <Stack.Screen name="Forgot" component={ForgotScreen} options={{ headerShown: true, title: 'პაროლის აღდგენა' }} />
     </Stack.Navigator>
   );
 }
@@ -68,44 +68,53 @@ function HomeTabs() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        tabBarStyle: { backgroundColor:C.surface, borderTopColor:C.border, borderTopWidth:1, height:62, paddingBottom:10, paddingTop:8 },
-        tabBarActiveTintColor: route.name==='ARIA' ? '#a78bfa' : route.name==='Admin' ? '#10b981' : C.accent,
+        tabBarStyle: { backgroundColor: C.surface, borderTopColor: C.border, borderTopWidth: 1, height: 62, paddingBottom: 10, paddingTop: 8 },
+        tabBarActiveTintColor: route.name === 'ARIA' ? '#a78bfa' : route.name === 'Admin' ? '#10b981' : C.accent,
         tabBarInactiveTintColor: C.text2,
-        tabBarLabelStyle: { fontSize:10, fontWeight:'700' },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '700' },
         headerShown: false,
+
+        // 👇 მნიშვნელოვანი – ის Tab-ი, რომელიც არ არის staff-ის, **არ** ჩანს
+        tabBarItemStyle: {
+          display: ((route.name === 'Admin' && !isStaff) || (route.name === 'ARIA' && isStaff))
+            ? 'none'
+            : 'flex',
+        },
+
         tabBarIcon: ({ color, focused }) => {
-          if (route.name==='ARIA') return (
-            <View style={{ width:30, height:30, borderRadius:15, backgroundColor:focused?'#a78bfa22':'transparent', borderWidth:focused?1:0, borderColor:'#a78bfa66', alignItems:'center', justifyContent:'center' }}>
-              <Text style={{ fontSize:16 }}>✨</Text>
+          if (route.name === 'ARIA') return (
+            <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: focused ? '#a78bfa22' : 'transparent', borderWidth: focused ? 1 : 0, borderColor: '#a78bfa66', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 16 }}>✨</Text>
             </View>
           );
-          if (route.name==='Admin') return (
-            <View style={{ width:30, height:30, borderRadius:15, backgroundColor:focused?'#10b98122':'transparent', borderWidth:focused?1:0, borderColor:'#10b98166', alignItems:'center', justifyContent:'center' }}>
-              <Text style={{ fontSize:16 }}>🛡️</Text>
+          if (route.name === 'Admin') return (
+            <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: focused ? '#10b98122' : 'transparent', borderWidth: focused ? 1 : 0, borderColor: '#10b98166', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 16 }}>🛡️</Text>
             </View>
           );
           const icons = {
-            Home:     ['people',        'people-outline'],
+            Home: ['people', 'people-outline'],
             Requests: ['document-text', 'document-text-outline'],
-            Chats:    ['chatbubbles',   'chatbubbles-outline'],
-            Profile:  ['person',        'person-outline'],
+            Chats: ['chatbubbles', 'chatbubbles-outline'],
+            Profile: ['person', 'person-outline'],
           };
-          const [a, i] = icons[route.name] || ['ellipse','ellipse-outline'];
-          return <Ionicons name={focused?a:i} size={22} color={color} />;
+          const [a, i] = icons[route.name] || ['ellipse', 'ellipse-outline'];
+          return <Ionicons name={focused ? a : i} size={22} color={color} />;
         },
+
         tabBarLabel: {
-          Home:'ხელოსნები', Requests:'მოთხოვნები',
-          Chats:'ჩათები', ARIA:'ARIA', Admin:'ადმინი', Profile:'პროფილი',
+          Home: 'ხელოსნები', Requests: 'მოთხოვნები',
+          Chats: 'ჩათები', ARIA: 'ARIA', Admin: 'ადმინი', Profile: 'პროფილი',
         }[route.name],
       })}
     >
-      <Tab.Screen name="Home"     component={HomeScreen} />
+      {/* ✅ ყოველთვის render-დი, conditional **არ** გამოიყენება */}
+      <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Requests" component={RequestsScreen} />
-      <Tab.Screen name="Chats"    component={ChatListScreen} />
-      {isStaff
-        ? <Tab.Screen name="Admin" component={AdminScreen} />
-        : <Tab.Screen name="ARIA"  component={ARIAScreen} />}
-      <Tab.Screen name="Profile"  component={ProfileScreen} />
+      <Tab.Screen name="Chats" component={ChatListScreen} />
+      <Tab.Screen name="Admin" component={AdminScreen} />
+      <Tab.Screen name="ARIA" component={ARIAScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
@@ -113,26 +122,26 @@ function HomeTabs() {
 function MainStack() {
   return (
     <Stack.Navigator screenOptions={SCREEN_OPT}>
-      <Stack.Screen name="Tabs"           component={HomeTabs}            options={{ headerShown:false }} />
-      <Stack.Screen name="HandymanDetail" component={HandymanDetailScreen} options={{ title:'ხელოსანი' }} />
-      <Stack.Screen name="RequestDetail"  component={RequestDetailScreen}  options={{ title:'მოთხოვნა' }} />
-      <Stack.Screen name="CreateRequest"  component={CreateRequestScreen}  options={{ title:'ახალი მოთხოვნა' }} />
-      <Stack.Screen name="SendOffer"      component={SendOfferScreen}      options={{ title:'შეთავაზება' }} />
-      <Stack.Screen name="Chat"           component={ChatScreen}           options={{ title:'ჩათი' }} />
-      <Stack.Screen name="EditProfile"    component={EditProfileScreen}    options={{ title:'პროფილი' }} />
-      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ title:'პაროლი' }} />
-      <Stack.Screen name="MyOffers"       component={MyOffersScreen}       options={{ title:'ჩემი შეთავაზებები' }} />
-      <Stack.Screen name="MyRequests"     component={MyRequestsScreen}     options={{ title:'ჩემი მოთხოვნები' }} />
-      <Stack.Screen name="Proposals"      component={ProposalsScreen}      options={{ title:'📋 Proposals' }} />  {/* ✅ NEW */}
-      <Stack.Screen name="Vip"            component={VipScreen}            options={{ title:'⭐ VIP' }} />
-      <Stack.Screen name="Cards"          component={CardScreen}           options={{ title:'💳 ბარათები' }} />
-      <Stack.Screen name="Favorites"      component={FavoritesScreen}      options={{ title:'🔖 შენახული' }} />
-      <Stack.Screen name="Support"        component={SupportScreen}        options={{ title:'🎧 სუპორტი' }} />
-      <Stack.Screen name="AdminSupportChat" component={AdminSupportChatScreen} options={{ title:'🎧 სუპორტი' }} />
-      <Stack.Screen name="Notifications"  component={NotificationsScreen}  options={{ title:'🔔 შეტყობინებები' }} />
-      <Stack.Screen name="Login"          component={LoginScreen}          options={{ headerShown:false }} />
-      <Stack.Screen name="Register"       component={RegisterScreen}       options={{ title:'რეგისტრაცია' }} />
-      <Stack.Screen name="Verify"         component={VerifyScreen}         options={{ title:'ვერიფიკაცია' }} />
+      <Stack.Screen name="Tabs" component={HomeTabs} options={{ headerShown: false }} />
+      <Stack.Screen name="HandymanDetail" component={HandymanDetailScreen} options={{ title: 'ხელოსანი' }} />
+      <Stack.Screen name="RequestDetail" component={RequestDetailScreen} options={{ title: 'მოთხოვნა' }} />
+      <Stack.Screen name="CreateRequest" component={CreateRequestScreen} options={{ title: 'ახალი მოთხოვნა' }} />
+      <Stack.Screen name="SendOffer" component={SendOfferScreen} options={{ title: 'შეთავაზება' }} />
+      <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'ჩათი' }} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'პროფილი' }} />
+      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ title: 'პაროლი' }} />
+      <Stack.Screen name="MyOffers" component={MyOffersScreen} options={{ title: 'ჩემი შეთავაზებები' }} />
+      <Stack.Screen name="MyRequests" component={MyRequestsScreen} options={{ title: 'ჩემი მოთხოვნები' }} />
+      <Stack.Screen name="Proposals" component={ProposalsScreen} options={{ title: '📋 Proposals' }} />  {/* ✅ NEW */}
+      <Stack.Screen name="Vip" component={VipScreen} options={{ title: '⭐ VIP' }} />
+      <Stack.Screen name="Cards" component={CardScreen} options={{ title: '💳 ბარათები' }} />
+      <Stack.Screen name="Favorites" component={FavoritesScreen} options={{ title: '🔖 შენახული' }} />
+      <Stack.Screen name="Support" component={SupportScreen} options={{ title: '🎧 სუპორტი' }} />
+      <Stack.Screen name="AdminSupportChat" component={AdminSupportChatScreen} options={{ title: '🎧 სუპორტი' }} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: '🔔 შეტყობინებები' }} />
+      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'რეგისტრაცია' }} />
+      <Stack.Screen name="Verify" component={VerifyScreen} options={{ title: 'ვერიფიკაცია' }} />
     </Stack.Navigator>
   );
 }
@@ -140,9 +149,9 @@ function MainStack() {
 export default function AppNavigator({ navigationRef }) {
   const { user, loading } = useAuth();
   if (loading) return (
-    <View style={{ flex:1, backgroundColor:C.bg, justifyContent:'center', alignItems:'center' }}>
-      <Text style={{ fontSize:30, fontWeight:'900', color:C.text, marginBottom:20 }}>
-        Fixi<Text style={{ color:C.accent }}>.ge</Text>
+    <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}>
+      <Text style={{ fontSize: 30, fontWeight: '900', color: C.text, marginBottom: 20 }}>
+        Fixi<Text style={{ color: C.accent }}>.ge</Text>
       </Text>
       <ActivityIndicator color={C.accent} size="large" />
     </View>
