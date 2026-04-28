@@ -2,7 +2,7 @@
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 
-const BASE = Constants.expoConfig?.extra?.apiBase || 'https://fixi.ge/api';
+const BASE = Constants.expoConfig?.extra?.apiBase || 'https://myworker-production.up.railway.app/api';
 
 // Module-level callback so AuthContext can hook in for 401 auto-logout
 let onUnauthorized = null;

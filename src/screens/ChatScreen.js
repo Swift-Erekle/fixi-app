@@ -62,6 +62,10 @@ export default function ChatScreen({ route, navigation }) {
     sock.on('newMessage', msg => {
       setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
       setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 80);
+      // ✅ NEW: auto-mark as read since user is in this chat right now
+      if (msg.fromId && msg.fromId !== user?.id) {
+        api(`/chat/${chatId}/read`, { method: 'POST' }).catch(() => {});
+      }
     });
     sock.on('userTyping', ({ userId, isTyping }) => {
       if (userId !== user?.id) setOtherTyping(isTyping);

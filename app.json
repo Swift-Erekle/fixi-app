@@ -6,14 +6,17 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
+    "primaryColor": "#ff6b2b",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#0f0f13"
     },
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "ge.fixi.app"
+      "bundleIdentifier": "ge.fixi.app",
+      "buildNumber": "1.0.0"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,13 +24,26 @@
         "backgroundColor": "#0f0f13"
       },
       "package": "ge.fixi.app",
-      "googleServicesFile": "./google-services.json"
+      "versionCode": 1,
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
     },
     "plugins": [
       "expo-secure-store",
       [
         "expo-image-picker",
-        { "photosPermission": "პროფილის ფოტოს ასარჩევად" }
+        {
+          "photosPermission": "Fixi-ს სჭირდება ფოტოს ასარჩევად პროფილისა და მუშაობის სანახავად",
+          "cameraPermission": "Fixi-ს სჭირდება კამერა ფოტოების გადასაღებად"
+        }
       ],
       [
         "expo-notifications",
