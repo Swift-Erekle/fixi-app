@@ -1,6 +1,47 @@
 // src/screens/RequestDetailScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Alert, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Alert, Image, ActivityIndicator, TouchableOpacity, Modal, FlatList, Dimensions } from 'react-native';
+
+const { width: SW, height: SH } = Dimensions.get('window');
+
+function PhotoViewer({ photos, startIndex, onClose }) {
+  const [idx, setIdx] = useState(startIndex);
+  return (
+    <Modal visible animationType="fade" statusBarTranslucent onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: '#000' }}>
+        <View style={{ position: 'absolute', top: 50, left: 0, right: 0, zIndex: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20 }}>
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>{idx + 1} / {photos.length}</Text>
+          <TouchableOpacity onPress={onClose} style={{ backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20, padding: 8 }}>
+            <Text style={{ color: '#fff', fontSize: 18 }}>✕</Text>
+          </TouchableOpacity>
+        </View>
+        <FlatList
+          data={photos}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          initialScrollIndex={startIndex}
+          getItemLayout={(_, i) => ({ length: SW, offset: SW * i, index: i })}
+          keyExtractor={(_, i) => String(i)}
+          onMomentumScrollEnd={e => setIdx(Math.round(e.nativeEvent.contentOffset.x / SW))}
+          renderItem={({ item }) => (
+            <ScrollView
+              style={{ width: SW, height: SH }}
+              contentContainerStyle={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+              maximumZoomScale={4}
+              minimumZoomScale={1}
+              centerContent
+              showsHorizontalScrollIndicator={false}
+              showsVerticalScrollIndicator={false}
+            >
+              <Image source={{ uri: item.url }} style={{ width: SW, height: SW }} resizeMode="contain" />
+            </ScrollView>
+          )}
+        />
+      </View>
+    </Modal>
+  );
+}
 import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
@@ -21,10 +62,12 @@ function getColor(s) {
 export default function RequestDetailScreen({ route, navigation }) {
   const { id } = route.params;
   const { user } = useAuth();
-  const [req, setReq]         = useState(null);
-  const [loading, setLoading]         = useState(true);
-  const [accepting, setAccepting]     = useState(null);
-  const [ownerReqs, setOwnerReqs]     = useState([]); // ✅ owner's other requests
+  const [req, setReq]             = useState(null);
+  const [loading, setLoading]     = useState(true);
+  const [accepting, setAccepting] = useState(null);
+  const [ownerReqs, setOwnerReqs] = useState([]);
+  const [photoIdx, setPhotoIdx]   = useState(0);
+  const [showPhotos, setShowPhotos] = useState(false);
 
   useEffect(() => { load(); }, [id]);
 
@@ -78,6 +121,7 @@ export default function RequestDetailScreen({ route, navigation }) {
   const statusLabel = req.status === 'open' ? 'ღია' : req.status === 'in_progress' ? 'მიმდინარე' : 'დასრულებული';
 
   return (
+    <>
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 30 }}>
       {/* Main card */}
       <Card>
@@ -105,8 +149,12 @@ export default function RequestDetailScreen({ route, navigation }) {
 
         {/* Tags */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-          {req.city   && <Tag label={'📍 ' + req.city} />}
-          {req.budget && <Tag label={'💰 ' + req.budget + '₾'} color={C.ok} />}
+          {req.city && <Tag label={'📍 ' + req.city} />}
+          {req.budget === 0
+            ? <Tag label="💬 შეთანხმებით" color={C.accent} />
+            : req.budget > 0
+              ? <Tag label={'💰 ' + req.budget + '₾'} color={C.ok} />
+              : null}
           {req.urgency === 'urgent' && <Tag label="🚨 გადაუდებელი" color={C.err} />}
         </View>
 
@@ -115,12 +163,12 @@ export default function RequestDetailScreen({ route, navigation }) {
         ) : null}
 
         <Divider />
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Text style={{ color: C.text2, fontSize: 12 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          <Text style={{ color: C.text2, fontSize: 12, flexShrink: 1 }}>
             👤 {req.user?.name} {req.user?.surname || ''}
           </Text>
           <Text style={{ color: C.text2, fontSize: 12 }}>
-            💬 {req.offers?.length || 0} შეთავაზება
+            💬 {req.offers?.length || 0} შეთ.
           </Text>
           <Text style={{ color: C.text2, fontSize: 12 }}>
             🗓 {new Date(req.createdAt).toLocaleDateString('ka-GE')}
@@ -135,10 +183,12 @@ export default function RequestDetailScreen({ route, navigation }) {
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               {req.media.filter(m => m.type === 'image').map((m, i) => (
-                <Image key={i} source={{ uri: m.url }}
-                  style={{ width: 130, height: 100, borderRadius: 12, backgroundColor: C.surface2 }}
-                  resizeMode="cover"
-                />
+                <TouchableOpacity key={i} activeOpacity={0.85} onPress={() => { setPhotoIdx(i); setShowPhotos(true); }}>
+                  <Image source={{ uri: m.url }}
+                    style={{ width: 130, height: 100, borderRadius: 12, backgroundColor: C.surface2 }}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
               ))}
             </View>
           </ScrollView>
@@ -246,5 +296,13 @@ export default function RequestDetailScreen({ route, navigation }) {
         </View>
       )}
     </ScrollView>
+    {showPhotos && req.media && (
+      <PhotoViewer
+        photos={req.media.filter(m => m.type === 'image')}
+        startIndex={photoIdx}
+        onClose={() => setShowPhotos(false)}
+      />
+    )}
+    </>
   );
 }

@@ -1,6 +1,47 @@
 // src/screens/HandymanDetailScreen.js
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, Alert, TextInput, ActivityIndicator, Modal, Linking } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, ScrollView, Image, TouchableOpacity, Alert, TextInput, ActivityIndicator, Modal, Linking, FlatList, Dimensions } from 'react-native';
+
+const { width: SW, height: SH } = Dimensions.get('window');
+
+function PhotoViewer({ photos, startIndex, onClose }) {
+  const [idx, setIdx] = useState(startIndex);
+  return (
+    <Modal visible animationType="fade" statusBarTranslucent onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: '#000' }}>
+        <View style={{ position: 'absolute', top: 50, left: 0, right: 0, zIndex: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20 }}>
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>{idx + 1} / {photos.length}</Text>
+          <TouchableOpacity onPress={onClose} style={{ backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20, padding: 8 }}>
+            <Text style={{ color: '#fff', fontSize: 18 }}>✕</Text>
+          </TouchableOpacity>
+        </View>
+        <FlatList
+          data={photos}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          initialScrollIndex={startIndex}
+          getItemLayout={(_, i) => ({ length: SW, offset: SW * i, index: i })}
+          keyExtractor={(_, i) => String(i)}
+          onMomentumScrollEnd={e => setIdx(Math.round(e.nativeEvent.contentOffset.x / SW))}
+          renderItem={({ item }) => (
+            <ScrollView
+              style={{ width: SW, height: SH }}
+              contentContainerStyle={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+              maximumZoomScale={4}
+              minimumZoomScale={1}
+              centerContent
+              showsHorizontalScrollIndicator={false}
+              showsVerticalScrollIndicator={false}
+            >
+              <Image source={{ uri: item.url }} style={{ width: SW, height: SW }} resizeMode="contain" />
+            </ScrollView>
+          )}
+        />
+      </View>
+    </Modal>
+  );
+}
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../utils/theme';
 import { api } from '../utils/api';
@@ -81,7 +122,7 @@ function ProposalModal({handyman,visible,onClose}){
         durationMinutes: dMins,
         duration: dLabel,
       }});
-      Alert.alert('✅','Proposal გაიგზავნა!');onClose();
+      Alert.alert('✅','შეთავაზება გაიგზავნა!');onClose();
     } catch(e){
       Alert.alert('შეცდომა',e.error||'გაგზავნა ვერ მოხდა');
     } finally { setLoading(false); }
@@ -92,7 +133,7 @@ function ProposalModal({handyman,visible,onClose}){
         <View style={{flexDirection:'row',alignItems:'center',gap:12,padding:16,backgroundColor:C.surface,borderBottomWidth:1,borderBottomColor:C.border}}>
           <TouchableOpacity onPress={onClose}><Ionicons name="close" size={26} color={C.text}/></TouchableOpacity>
           <View style={{flex:1}}>
-            <Text style={{color:C.text,fontWeight:'900',fontSize:17}}>📋 Proposal</Text>
+            <Text style={{color:C.text,fontWeight:'900',fontSize:17}}>📋 შეთავაზება</Text>
             <Text style={{color:C.accent,fontSize:12}}>→ {handyman?.name} {handyman?.surname||''}</Text>
           </View>
         </View>
@@ -127,7 +168,7 @@ function ProposalModal({handyman,visible,onClose}){
             </View>
             {dLabel?<Text style={{color:C.accent,fontSize:13,fontWeight:'700',marginTop:10}}>⏱ {dLabel}</Text>:null}
           </Card>
-          <Btn title="📋 გაგზავნა" onPress={send} loading={loading}/>
+          <Btn title="📋 შეთავაზების გაგზავნა" onPress={send} loading={loading}/>
         </ScrollView>
       </View>
     </Modal>
@@ -140,6 +181,7 @@ export default function HandymanDetailScreen({route,navigation}){
   const[showReview,setShowReview]=useState(false);const[showProposal,setShowProposal]=useState(false);
   const[showCallModal,setShowCallModal]=useState(false);
   const[stars,setStars]=useState(5);const[comment,setComment]=useState('');const[sending,setSending]=useState(false);
+  const[photoIdx,setPhotoIdx]=useState(0);const[showPhotos,setShowPhotos]=useState(false);
   useEffect(()=>{load();},[id]);
   async function load(){try{setHm(await api('/users/'+id));}catch(e){console.warn(e);}finally{setLoading(false);}}
   async function submitReview(){
@@ -184,7 +226,7 @@ export default function HandymanDetailScreen({route,navigation}){
         </View>
         <View style={{padding:16,gap:12}}>
           {hm.services?.length>0&&(<Card><Text style={{color:C.text,fontWeight:'800',fontSize:15,marginBottom:12}}>🔧 სერვისები</Text><View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>{hm.services.map((s,i)=><Tag key={i} label={s} color={color}/>)}</View></Card>)}
-          {hm.portfolio?.filter(p=>p.type==='image').length>0&&(<Card><Text style={{color:C.text,fontWeight:'800',fontSize:15,marginBottom:12}}>🖼️ პორტფოლიო</Text><ScrollView horizontal showsHorizontalScrollIndicator={false}><View style={{flexDirection:'row',gap:8}}>{hm.portfolio.filter(p=>p.type==='image').map((p,i)=><Image key={i} source={{uri:p.url}} style={{width:130,height:100,borderRadius:12,backgroundColor:C.surface2}} resizeMode="cover"/>)}</View></ScrollView></Card>)}
+          {hm.portfolio?.filter(p=>p.type==='image').length>0&&(<Card><Text style={{color:C.text,fontWeight:'800',fontSize:15,marginBottom:12}}>🖼️ პორტფოლიო</Text><ScrollView horizontal showsHorizontalScrollIndicator={false}><View style={{flexDirection:'row',gap:8}}>{hm.portfolio.filter(p=>p.type==='image').map((p,i)=><TouchableOpacity key={i} activeOpacity={0.85} onPress={()=>{setPhotoIdx(i);setShowPhotos(true);}}><Image source={{uri:p.url}} style={{width:130,height:100,borderRadius:12,backgroundColor:C.surface2}} resizeMode="cover"/></TouchableOpacity>)}</View></ScrollView></Card>)}
           {reviews.length>0&&(<Card><Text style={{color:C.text,fontWeight:'800',fontSize:15,marginBottom:14}}>⭐ შეფასებები ({reviews.length})</Text>{reviews.slice(0,5).map((r,i)=>(<View key={i}><View style={{flexDirection:'row',justifyContent:'space-between',marginBottom:4}}><Text style={{color:C.text,fontWeight:'700',fontSize:13}}>{r.reviewer?.name} {r.reviewer?.surname||''}</Text><Text style={{color:'#f1c40f',fontSize:13}}>{'★'.repeat(r.stars)}{'☆'.repeat(5-r.stars)}</Text></View>{r.comment?<Text style={{color:C.text2,fontSize:13,lineHeight:18}}>{r.comment}</Text>:null}{i<reviews.slice(0,5).length-1&&<Divider/>}</View>))}</Card>)}
           {user&&user.type==='user'&&user.id!==hm.id&&(<Card><TouchableOpacity onPress={()=>setShowReview(!showReview)} style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{color:C.text,fontWeight:'700',fontSize:14}}>✍️ შეფასების დატოვება</Text><Ionicons name={showReview?'chevron-up':'chevron-down'} size={18} color={C.text2}/></TouchableOpacity>{showReview&&(<View style={{marginTop:16}}><StarPicker value={stars} onChange={setStars}/><TextInput style={{marginTop:12,backgroundColor:C.surface2,borderRadius:12,borderWidth:1,borderColor:C.border,padding:13,color:C.text,fontSize:14,height:90,textAlignVertical:'top'}} placeholder="კომენტარი..." placeholderTextColor={C.text2} value={comment} onChangeText={setComment} multiline/><Btn title="გაგზავნა" onPress={submitReview} loading={sending} style={{marginTop:12}}/></View>)}</Card>)}
 
@@ -203,14 +245,12 @@ export default function HandymanDetailScreen({route,navigation}){
           )}
 
           {user?.type==='user'&&user.id!==hm.id&&(
-            <View style={{gap:10}}>
-              <Btn title="📋 Proposal გაგზავნა" onPress={()=>setShowProposal(true)} style={{borderColor:color,borderWidth:1.5,backgroundColor:color+'18'}} textStyle={{color}}/>
-              <Btn title="📝 მოთხოვნის შექმნა" onPress={()=>navigation.navigate('CreateRequest')} outline/>
-            </View>
+            <Btn title="📋 შეთავაზების გაგზავნა" onPress={()=>setShowProposal(true)} style={{borderColor:color,borderWidth:1.5,backgroundColor:color+'18'}} textStyle={{color}}/>
           )}
         </View>
       </ScrollView>
       {hm&&<ProposalModal handyman={hm} visible={showProposal} onClose={()=>setShowProposal(false)}/>}
+      {showPhotos&&hm?.portfolio&&<PhotoViewer photos={hm.portfolio.filter(p=>p.type==='image')} startIndex={photoIdx} onClose={()=>setShowPhotos(false)}/>}
       {links && (
         <CallChoiceModal
           visible={showCallModal}

@@ -2,6 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, RefreshControl, ScrollView, TextInput } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
@@ -45,8 +46,8 @@ export default function RequestsScreen({ navigation }) {
     <View>
       {/* Title */}
       <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View style={{ flex: 1 }}>
             <Text style={{ color: C.text, fontSize: 24, fontWeight: '900' }}>📋 მოთხოვნები</Text>
             <Text style={{ color: C.text2, fontSize: 13, marginTop: 2 }}>
               {user?.type === 'user'
@@ -54,6 +55,10 @@ export default function RequestsScreen({ navigation }) {
                 : 'იპოვე შეკვეთა და გახდი პირველი შემდეგ მომხმარებელთან!'}
             </Text>
           </View>
+          <TouchableOpacity onPress={() => navigation.navigate('Notifications')}
+            style={{ backgroundColor: C.surface, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 10, marginLeft: 12 }}>
+            <Ionicons name="notifications-outline" size={20} color={C.text2} />
+          </TouchableOpacity>
         </View>
 
         {/* User add button */}
@@ -106,13 +111,6 @@ export default function RequestsScreen({ navigation }) {
               onChangeText={setSearch}
             />
           </View>
-          <TouchableOpacity style={{
-            backgroundColor: C.surface, borderRadius: 12,
-            borderWidth: 1, borderColor: C.border,
-            width: 44, alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Text style={{ fontSize: 16 }}>↕</Text>
-          </TouchableOpacity>
         </View>
       </View>
 

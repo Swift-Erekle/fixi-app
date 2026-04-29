@@ -101,12 +101,6 @@ export default function CardScreen() {
 
       <Btn title="+ ახალი ბარათის მიბმა" onPress={bindNewCard} style={{ marginBottom: 14 }} />
 
-      <View style={{ backgroundColor: C.surface2, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: C.border }}>
-        <Text style={{ color: C.text2, fontSize: 12, lineHeight: 18, textAlign: 'center' }}>
-          🔒 ბარათის მიბმისას ჩამოიჭრება 0.10₾{'\n'}რომელიც ავტომატურად დაბრუნდება
-        </Text>
-      </View>
-
       <Modal visible={!!bindUrl} animationType="slide" onRequestClose={() => setBindUrl(null)}>
         <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: Platform.OS === 'ios' ? 44 : 0 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: C.surface }}>

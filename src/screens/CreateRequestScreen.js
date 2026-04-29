@@ -18,6 +18,7 @@ export default function CreateRequestScreen({ navigation }) {
   const [title,setTitle]=useState(''); const [category,setCategory]=useState('');
   const [desc,setDesc]=useState('');   const [city,setCity]=useState('თბილისი');
   const [budget,setBudget]=useState(''); const [urgent,setUrgent]=useState(false);
+  const [negotiable,setNegotiable]=useState(false);
   const [media,setMedia]=useState([]); const [loading,setLoading]=useState(false);
   const [showCities,setShowCities]=useState(false);
 
@@ -37,7 +38,8 @@ export default function CreateRequestScreen({ navigation }) {
       const form = new FormData();
       form.append('title',title.trim()); form.append('category',category);
       form.append('desc',desc); form.append('city',city);
-      if (budget) form.append('budget',budget);
+      if (negotiable) form.append('budget','0');
+      else if (budget) form.append('budget',budget);
       form.append('urgency',urgent?'urgent':'normal');
       media.forEach((m,i)=>form.append('media',{uri:m.uri,name:`img_${i}.jpg`,type:'image/jpeg'}));
       await api('/requests',{method:'POST',body:form});
@@ -95,8 +97,19 @@ export default function CreateRequestScreen({ navigation }) {
         </Card>
         <Card>
           <Label t="ბიუჯეტი (₾)" />
-          <TextInput style={{backgroundColor:C.surface2,borderRadius:12,borderWidth:1,borderColor:C.border,padding:13,color:C.text,fontSize:15,marginBottom:14}}
-            placeholder="სავარაუდო თანხა" placeholderTextColor={C.text2} value={budget} onChangeText={setBudget} keyboardType="numeric" />
+          <TextInput
+            style={{backgroundColor:C.surface2,borderRadius:12,borderWidth:1,borderColor:negotiable?C.border+'60':C.border,padding:13,color:negotiable?C.text2:C.text,fontSize:15,marginBottom:10,opacity:negotiable?0.5:1}}
+            placeholder="სავარაუდო თანხა" placeholderTextColor={C.text2}
+            value={negotiable?'':budget} onChangeText={setBudget}
+            keyboardType="numeric" editable={!negotiable}
+          />
+          <TouchableOpacity onPress={()=>{setNegotiable(!negotiable);if(!negotiable)setBudget('');}}
+            style={{flexDirection:'row',alignItems:'center',gap:12,padding:13,borderRadius:12,borderWidth:1.5,borderColor:negotiable?C.accent:C.border,backgroundColor:negotiable?C.accent+'12':C.surface2,marginBottom:14}}>
+            <View style={{width:22,height:22,borderRadius:6,borderWidth:2,borderColor:negotiable?C.accent:C.border,backgroundColor:negotiable?C.accent:'transparent',alignItems:'center',justifyContent:'center'}}>
+              {negotiable&&<Ionicons name="checkmark" size={14} color="#fff" />}
+            </View>
+            <Text style={{color:negotiable?C.accent:C.text,fontWeight:'700',fontSize:14}}>💬 ფასი შეთანხმებით</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={()=>setUrgent(!urgent)}
             style={{flexDirection:'row',alignItems:'center',gap:12,padding:14,borderRadius:12,borderWidth:1.5,borderColor:urgent?C.err:C.border,backgroundColor:urgent?C.err+'12':C.surface2}}>
             <View style={{width:22,height:22,borderRadius:6,borderWidth:2,borderColor:urgent?C.err:C.border,backgroundColor:urgent?C.err:'transparent',alignItems:'center',justifyContent:'center'}}>
