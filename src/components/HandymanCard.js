@@ -59,23 +59,24 @@ export default function HandymanCard({ user, onPress }) {
         </View>
 
         {/* Stats */}
-        <View style={{ flexDirection:'row', alignItems:'center', flexWrap:'wrap', gap:10, marginTop:12, marginBottom:user.services?.length?10:0 }}>
+        <View style={{ flexDirection:'row', alignItems:'center', flexWrap:'wrap', gap:8, marginTop:12, marginBottom:user.services?.length?10:0 }}>
           {(user.jobs||0) >= 2 ? (
             <>
               {user.reviewsReceived?.length ? <Stars reviews={user.reviewsReceived} /> : null}
               <Text style={{ color:C.text2, fontSize:12 }}>💼 {user.jobs} პროექტი</Text>
             </>
-          ) : (user.jobs||0) === 1 ? (
-            <>
-              <View style={{ backgroundColor:C.err+'22', borderRadius:20, borderWidth:1, borderColor:C.err+'55', paddingHorizontal:8, paddingVertical:3 }}>
-                <Text style={{ color:C.err, fontSize:11, fontWeight:'700' }}>⚡ მალე</Text>
-              </View>
-              <Text style={{ color:C.text2, fontSize:12 }}>💼 1 პროექტი</Text>
-            </>
           ) : (
-            <View style={{ backgroundColor:'#10b98122', borderRadius:20, borderWidth:1, borderColor:'#10b98155', paddingHorizontal:8, paddingVertical:3 }}>
-              <Text style={{ color:'#10b981', fontSize:11, fontWeight:'700' }}>🆕 ახალი ხელოსანი</Text>
-            </View>
+            <>
+              <View style={{ backgroundColor:'#fbbf2422', borderRadius:20, borderWidth:1, borderColor:'#fbbf2455', paddingHorizontal:8, paddingVertical:3 }}>
+                <Text style={{ color:'#fbbf24', fontSize:11, fontWeight:'700' }}>⭐ ახალი</Text>
+              </View>
+              <View style={{ backgroundColor:'#a855f722', borderRadius:20, borderWidth:1, borderColor:'#a855f755', paddingHorizontal:8, paddingVertical:3 }}>
+                <Text style={{ color:'#a855f7', fontSize:11, fontWeight:'700' }}>📝 მალე</Text>
+              </View>
+              <View style={{ backgroundColor:'#10b98122', borderRadius:20, borderWidth:1, borderColor:'#10b98155', paddingHorizontal:8, paddingVertical:3 }}>
+                <Text style={{ color:'#10b981', fontSize:11, fontWeight:'700' }}>🚀 მოლოდინში</Text>
+              </View>
+            </>
           )}
         </View>
 

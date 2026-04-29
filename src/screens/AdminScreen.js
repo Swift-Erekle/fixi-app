@@ -1,6 +1,5 @@
 // src/screens/AdminScreen.js
-// Admin / Staff dashboard for mobile — analytics, accounts, requests, support, staff
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, ActivityIndicator,
   RefreshControl, Alert, FlatList, TextInput, Modal,
@@ -14,11 +13,11 @@ import { useAuth } from '../context/AuthContext';
 import { Avatar, Card, Btn, Tag, Empty } from '../components/UI';
 
 const TABS = [
-  { key:'analytics', label:'📊',     adminOnly:true  },
-  { key:'accounts',  label:'👥',     adminOnly:false },
-  { key:'requests',  label:'📋',     adminOnly:false },
-  { key:'support',   label:'🎧',     adminOnly:false },
-  { key:'staff',     label:'👨‍💼',  adminOnly:false },
+  { key:'analytics', label:'📊', adminOnly:true  },
+  { key:'accounts',  label:'👥', adminOnly:false },
+  { key:'requests',  label:'📋', adminOnly:false },
+  { key:'support',   label:'🎧', adminOnly:false },
+  { key:'staff',     label:'👨‍💼', adminOnly:false },
 ];
 
 // ────────── Analytics tab ──────────
@@ -67,12 +66,177 @@ function AnalyticsTab() {
   );
 }
 
+// ────────── User detail modal ──────────
+function UserDetailModal({ userId, visible, onClose, onBlockToggle, navigation }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!userId) return;
+    setLoading(true);
+    setUser(null);
+    try { setUser(await api('/admin/users/' + userId)); }
+    catch (e) { Alert.alert('შეცდომა', e.error || 'ვერ ჩაიტვირთა'); onClose(); }
+    finally { setLoading(false); }
+  }, [userId]);
+
+  useEffect(() => { if (visible) load(); }, [visible, userId]);
+
+  if (!visible) return null;
+
+  const now = new Date();
+  const fdate = d => d ? new Date(d).toLocaleDateString('ka-GE', { day:'numeric', month:'short', year:'numeric' }) : '—';
+  const planOk = user && user.plan && user.plan !== 'start' && user.planExpiresAt && new Date(user.planExpiresAt) > now;
+  const trialOk = user && user.plan === 'start' && user.trialExpiresAt && new Date(user.trialExpiresAt) > now;
+  const vipOk = user && user.vipType && user.vipType !== 'none' && user.vipExpiresAt && new Date(user.vipExpiresAt) > now;
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={{ flex:1, justifyContent:'flex-end', backgroundColor:'rgba(0,0,0,0.6)' }}>
+        <View style={{ backgroundColor:C.surface, borderTopLeftRadius:24, borderTopRightRadius:24, maxHeight:'90%' }}>
+          {/* Header */}
+          <View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', padding:18, borderBottomWidth:1, borderBottomColor:C.border }}>
+            <Text style={{ color:C.text, fontWeight:'900', fontSize:16 }}>👤 ანგარიშის დეტალები</Text>
+            <TouchableOpacity onPress={onClose}>
+              <Ionicons name="close" size={22} color={C.text2} />
+            </TouchableOpacity>
+          </View>
+
+          {loading ? (
+            <View style={{ padding:40, alignItems:'center' }}><ActivityIndicator color={C.accent}/></View>
+          ) : user ? (
+            <ScrollView contentContainerStyle={{ padding:18, paddingBottom:30 }} showsVerticalScrollIndicator={false}>
+              {/* Avatar + name */}
+              <View style={{ flexDirection:'row', gap:14, alignItems:'flex-start', marginBottom:16 }}>
+                <Avatar user={user} size={60} />
+                <View style={{ flex:1 }}>
+                  <Text style={{ color:C.text, fontSize:19, fontWeight:'900' }}>{user.name} {user.surname || ''}</Text>
+                  <Text style={{ color:C.accent, fontSize:13, fontWeight:'600', marginTop:2 }}>
+                    {user.type}{user.specialty ? ' · ' + user.specialty : ''}
+                  </Text>
+                  <Text style={{ color:C.text2, fontSize:12, marginTop:3 }}>📧 {user.email}</Text>
+                  {user.phone ? <Text style={{ color:C.text2, fontSize:12 }}>📞 {user.phone}</Text> : null}
+                  {user.city ? <Text style={{ color:C.text2, fontSize:12 }}>📍 {user.city}</Text> : null}
+                  <Text style={{ color:C.text2, fontSize:11, marginTop:4 }}>
+                    🗓️ {fdate(user.createdAt)} · {user.emailVerified ? '✅ ვერიფ.' : '⚠️ დაუდასტ.'}
+                  </Text>
+                  {user.blocked ? <Text style={{ color:C.err, fontSize:12, marginTop:4 }}>🚫 დაბლოკილია</Text> : null}
+                </View>
+              </View>
+
+              {/* Stats */}
+              <View style={{ flexDirection:'row', gap:8, marginBottom:14, flexWrap:'wrap' }}>
+                {[
+                  { label:'მოთხოვნები', val:user._count?.requests || 0 },
+                  { label:'შეთავაზ.', val:user._count?.offers || 0 },
+                  { label:'სამუშაო', val:user.jobs || 0 },
+                  { label:'შეფასება', val:user._count?.reviewsReceived || 0 },
+                ].map(s => (
+                  <View key={s.label} style={{ flex:1, minWidth:70, backgroundColor:C.surface2, borderRadius:12, borderWidth:1, borderColor:C.border, padding:10, alignItems:'center' }}>
+                    <Text style={{ color:C.accent, fontSize:18, fontWeight:'900' }}>{s.val}</Text>
+                    <Text style={{ color:C.text2, fontSize:10, marginTop:2 }}>{s.label}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* Plan/VIP info (workers only) */}
+              {(user.type === 'handyman' || user.type === 'company') && (
+                <View style={{ backgroundColor:C.surface2, borderRadius:12, borderWidth:1, borderColor:C.border, padding:14, marginBottom:14 }}>
+                  <Text style={{ color:C.text2, fontSize:11, fontWeight:'700', textTransform:'uppercase', letterSpacing:0.5, marginBottom:10 }}>📋 ტარიფი</Text>
+                  <View style={{ flexDirection:'row', flexWrap:'wrap', gap:8 }}>
+                    <View style={{ flex:1, minWidth:120 }}>
+                      <Text style={{ color:C.text2, fontSize:12 }}>ტარიფი:</Text>
+                      <Text style={{ color:user.plan==='top'?'#f1c40f':user.plan==='pro'?'#3498db':C.text2, fontWeight:'700', fontSize:13 }}>
+                        {user.plan==='top'?'🔝 TOP':user.plan==='pro'?'⚡ Pro':'🆓 Start'}
+                      </Text>
+                    </View>
+                    <View style={{ flex:1, minWidth:120 }}>
+                      <Text style={{ color:C.text2, fontSize:12 }}>სტატუსი:</Text>
+                      <Text style={{ color:planOk?C.ok:trialOk?'#2ecc71':C.text2, fontWeight:'700', fontSize:13 }}>
+                        {planOk?'✅ აქტიური':trialOk?'🆓 Trial':'—'}
+                      </Text>
+                    </View>
+                    {user.planExpiresAt ? (
+                      <View style={{ flex:1, minWidth:120 }}>
+                        <Text style={{ color:C.text2, fontSize:12 }}>ვადა:</Text>
+                        <Text style={{ color:C.text, fontWeight:'600', fontSize:13 }}>{fdate(user.planExpiresAt)}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  {vipOk ? (
+                    <View style={{ marginTop:10, paddingTop:10, borderTopWidth:1, borderTopColor:C.border, flexDirection:'row', gap:8 }}>
+                      <View style={{ flex:1 }}>
+                        <Text style={{ color:C.text2, fontSize:12 }}>VIP:</Text>
+                        <Text style={{ color:user.vipType==='vipp'?'#9b59b6':'#f39c12', fontWeight:'700', fontSize:13 }}>
+                          {user.vipType==='vipp'?'💜 VIP+':'⭐ VIP'}
+                        </Text>
+                      </View>
+                      <View style={{ flex:1 }}>
+                        <Text style={{ color:C.text2, fontSize:12 }}>VIP ვადა:</Text>
+                        <Text style={{ color:C.text, fontWeight:'600', fontSize:13 }}>{fdate(user.vipExpiresAt)}</Text>
+                      </View>
+                    </View>
+                  ) : null}
+                </View>
+              )}
+
+              {/* Payments history */}
+              {user.vipPayments?.length ? (
+                <View style={{ backgroundColor:C.surface2, borderRadius:12, borderWidth:1, borderColor:C.border, padding:14, marginBottom:14 }}>
+                  <View style={{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+                    <Text style={{ color:C.text2, fontSize:11, fontWeight:'700', textTransform:'uppercase', letterSpacing:0.5 }}>💳 გადახდები</Text>
+                    <Text style={{ color:C.accent, fontWeight:'700', fontSize:13 }}>
+                      სულ: ₾{(user.vipPayments.filter(p=>p.status==='paid').reduce((s,p)=>s+(p.amount||0),0)/100).toFixed(2)}
+                    </Text>
+                  </View>
+                  {user.vipPayments.slice(0,5).map((p,i) => (
+                    <View key={i} style={{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', backgroundColor:C.surface, borderRadius:8, padding:10, marginBottom:6 }}>
+                      <View>
+                        <Text style={{ color:C.text, fontWeight:'600', fontSize:12 }}>
+                          {p.type==='subscription_pro'?'⚡ Pro':p.type==='subscription_top'?'🔝 TOP':p.type==='vip'?'⭐ VIP':p.type==='vipp'?'💜 VIP+':p.type||'—'}
+                        </Text>
+                        <Text style={{ color:C.text2, fontSize:11 }}>{fdate(p.createdAt)}</Text>
+                      </View>
+                      <View style={{ alignItems:'flex-end' }}>
+                        <Text style={{ color:C.accent, fontWeight:'800', fontSize:14 }}>₾{((p.amount||0)/100).toFixed(2)}</Text>
+                        <Text style={{ color:p.status==='paid'?C.ok:p.status==='pending'?C.warn:C.err, fontSize:11 }}>
+                          {p.status==='paid'?'✅':p.status==='pending'?'⏳':'❌'} {p.status}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+
+              {/* Actions */}
+              <View style={{ gap:10 }}>
+                <TouchableOpacity onPress={() => { onClose(); onBlockToggle(user); }}
+                  style={{ backgroundColor:(user.blocked?C.ok:C.err)+'18', borderRadius:12, borderWidth:1, borderColor:(user.blocked?C.ok:C.err)+'66', padding:14, alignItems:'center' }}>
+                  <Text style={{ color:user.blocked?C.ok:C.err, fontWeight:'700', fontSize:14 }}>{user.blocked?'🔓 განბლოკვა':'🚫 დაბლოკვა'}</Text>
+                </TouchableOpacity>
+                {(user.type==='handyman'||user.type==='company') && (
+                  <TouchableOpacity onPress={() => { onClose(); navigation.navigate('HandymanDetail', { id:user.id }); }}
+                    style={{ backgroundColor:C.accent+'18', borderRadius:12, borderWidth:1, borderColor:C.accent+'66', padding:14, alignItems:'center' }}>
+                    <Text style={{ color:C.accent, fontWeight:'700', fontSize:14 }}>👁 პროფილის ნახვა</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </ScrollView>
+          ) : null}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 // ────────── Accounts tab ──────────
 function AccountsTab({ navigation }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // all | user | handyman | company | blocked
+  const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [detailVisible, setDetailVisible] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,42 +262,51 @@ function AccountsTab({ navigation }) {
     ]);
   }
 
+  const FILTERS = [
+    {k:'all',l:'ყველა'},{k:'user',l:'მომხ.'},{k:'handyman',l:'ხელოსანი'},
+    {k:'company',l:'კომ.'},{k:'blocked',l:'🚫 დაბლ.'},
+  ];
+
   return (
-    <View style={{ flex:1, padding:14 }}>
+    <View style={{ flex:1 }}>
       {/* Search */}
-      <View style={{ flexDirection:'row', alignItems:'center', backgroundColor:C.surface, borderRadius:12, borderWidth:1, borderColor:C.border, paddingHorizontal:12, marginBottom:10 }}>
-        <Text style={{ fontSize:14, marginRight:6 }}>🔍</Text>
-        <TextInput style={{ flex:1, color:C.text, fontSize:13, paddingVertical:9 }}
-          placeholder="ძიება..." placeholderTextColor={C.text2} value={search} onChangeText={setSearch} />
-      </View>
-      {/* Filter chips */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom:10, maxHeight:40 }}>
-        <View style={{ flexDirection:'row', gap:8 }}>
-          {[
-            {k:'all',l:'ყველა'},{k:'user',l:'მომხ.'},{k:'handyman',l:'ხელოსანი'},
-            {k:'company',l:'კომპანია'},{k:'blocked',l:'🚫 დაბლოკ.'},
-          ].map(f => (
-            <TouchableOpacity key={f.k} onPress={() => setFilter(f.k)}
-              style={{ paddingHorizontal:13, paddingVertical:7, borderRadius:18, borderWidth:1, borderColor:filter===f.k?C.accent:C.border, backgroundColor:filter===f.k?C.accent+'22':C.surface }}>
-              <Text style={{ color:filter===f.k?C.accent:C.text2, fontSize:12, fontWeight:'600' }}>{f.l}</Text>
+      <View style={{ paddingHorizontal:14, paddingTop:12, paddingBottom:8 }}>
+        <View style={{ flexDirection:'row', alignItems:'center', backgroundColor:C.surface, borderRadius:12, borderWidth:1, borderColor:C.border, paddingHorizontal:12, marginBottom:10 }}>
+          <Text style={{ fontSize:14, marginRight:6 }}>🔍</Text>
+          <TextInput style={{ flex:1, color:C.text, fontSize:13, paddingVertical:9 }}
+            placeholder="ძიება..." placeholderTextColor={C.text2} value={search} onChangeText={setSearch} />
+          {search ? (
+            <TouchableOpacity onPress={() => setSearch('')}>
+              <Ionicons name="close-circle" size={16} color={C.text2} />
             </TouchableOpacity>
-          ))}
+          ) : null}
         </View>
-      </ScrollView>
+        {/* Filter chips */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={{ flexDirection:'row', gap:8, paddingBottom:2 }}>
+            {FILTERS.map(f => (
+              <TouchableOpacity key={f.k} onPress={() => setFilter(f.k)}
+                style={{ paddingHorizontal:14, paddingVertical:8, borderRadius:20, borderWidth:1.5, borderColor:filter===f.k?C.accent:C.border, backgroundColor:filter===f.k?C.accent+'22':C.surface }}>
+                <Text style={{ color:filter===f.k?C.accent:C.text2, fontSize:12, fontWeight:'700' }}>{f.l}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      </View>
 
       {loading ? <ActivityIndicator color={C.accent} style={{ marginTop:20 }}/> : (
         <FlatList
           data={users}
           keyExtractor={u => u.id}
-          contentContainerStyle={{ paddingBottom:20 }}
+          contentContainerStyle={{ paddingHorizontal:14, paddingBottom:20 }}
           refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={C.accent}/>}
           renderItem={({ item:u }) => (
             <TouchableOpacity
-              onPress={() => (u.type === 'handyman' || u.type === 'company') && navigation.navigate('HandymanDetail', { id: u.id })}
-              activeOpacity={u.type === 'handyman' || u.type === 'company' ? 0.7 : 1}
-              style={{ backgroundColor:C.surface, borderRadius:12, borderWidth:1, borderColor:u.blocked?C.err+'66':C.border, padding:12, marginBottom:8, flexDirection:'row', gap:12 }}
+              onPress={() => { setSelectedUserId(u.id); setDetailVisible(true); }}
+              activeOpacity={0.75}
+              style={{ backgroundColor:C.surface, borderRadius:12, borderWidth:1, borderColor:u.blocked?C.err+'55':C.border, padding:12, marginBottom:8, flexDirection:'row', gap:12, alignItems:'center' }}
             >
-              <Avatar user={u} size={42}/>
+              <Avatar user={u} size={44}/>
               <View style={{ flex:1 }}>
                 <Text style={{ color:C.text, fontWeight:'700', fontSize:14 }}>{u.name} {u.surname || ''}</Text>
                 <Text style={{ color:C.text2, fontSize:11 }}>{u.email}</Text>
@@ -143,15 +316,23 @@ function AccountsTab({ navigation }) {
                   {u.verified && <Tag label="✓" color={C.ok}/>}
                 </View>
               </View>
-              <TouchableOpacity onPress={() => toggleBlock(u)}
-                style={{ backgroundColor:(u.blocked?C.ok:C.err)+'18', borderRadius:10, borderWidth:1, borderColor:(u.blocked?C.ok:C.err)+'66', paddingHorizontal:10, paddingVertical:6, alignSelf:'center' }}>
-                <Text style={{ color:u.blocked?C.ok:C.err, fontSize:11, fontWeight:'700' }}>{u.blocked?'განბლოკვა':'დაბლოკვა'}</Text>
-              </TouchableOpacity>
+              <Ionicons name="chevron-forward" size={16} color={C.text2} />
             </TouchableOpacity>
           )}
+          ListHeaderComponent={
+            <Text style={{ color:C.text2, fontSize:12, marginBottom:8 }}>{users.length} ანგარიში</Text>
+          }
           ListEmptyComponent={<Empty icon="👥" title="მომხმარებელი ვერ მოიძებნა"/>}
         />
       )}
+
+      <UserDetailModal
+        userId={selectedUserId}
+        visible={detailVisible}
+        onClose={() => { setDetailVisible(false); setSelectedUserId(null); }}
+        onBlockToggle={toggleBlock}
+        navigation={navigation}
+      />
     </View>
   );
 }
@@ -233,14 +414,12 @@ function SupportTab({ navigation }) {
               <Tag label={s.status==='pending'?'⏳ მოლოდ.':s.status==='active'?'🔴 ცოცხ.':'✓ დახურ.'} color={stCol}/>
             </View>
             {s.lastMsg && <Text style={{ color:C.text2, fontSize:12, marginBottom:6 }} numberOfLines={2}>{s.lastMsg}</Text>}
-            <View style={{ flexDirection:'row', gap:8 }}>
-              {s.status !== 'closed' && (
-                <TouchableOpacity onPress={(e) => { e.stopPropagation?.(); setStatus(s.id, 'closed'); }}
-                  style={{ backgroundColor:C.err+'15', borderRadius:8, borderWidth:1, borderColor:C.err+'66', paddingHorizontal:10, paddingVertical:5 }}>
-                  <Text style={{ color:C.err, fontSize:11, fontWeight:'700' }}>✓ დახურვა</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            {s.status !== 'closed' && (
+              <TouchableOpacity onPress={(e) => { e.stopPropagation?.(); setStatus(s.id, 'closed'); }}
+                style={{ backgroundColor:C.err+'15', borderRadius:8, borderWidth:1, borderColor:C.err+'66', paddingHorizontal:10, paddingVertical:5, alignSelf:'flex-start' }}>
+                <Text style={{ color:C.err, fontSize:11, fontWeight:'700' }}>✓ დახურვა</Text>
+              </TouchableOpacity>
+            )}
           </TouchableOpacity>
         );
       }}
@@ -249,7 +428,7 @@ function SupportTab({ navigation }) {
   );
 }
 
-// ────────── Staff tab (admin only) ──────────
+// ────────── Staff tab ──────────
 function StaffTab({ isAdmin }) {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);

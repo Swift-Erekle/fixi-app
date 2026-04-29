@@ -16,7 +16,7 @@ export function AuthProvider({ children }) {
       try {
         const token = await SecureStore.getItemAsync('token');
         if (token) {
-          const me = await api('/auth/me');
+          const me = await api('/auth/me', { noAutoLogout: true });
           setUser(me);
           connectSocket();
           registerForPushNotifications().catch(() => {});
@@ -56,7 +56,7 @@ export function AuthProvider({ children }) {
   // Reload user from server — used after VIP purchase etc.
   async function refreshUser() {
     try {
-      const fresh = await api('/auth/me');
+      const fresh = await api('/auth/me', { noAutoLogout: true });
       if (fresh && fresh.id) setUser(fresh);
     } catch (_) {}
   }
