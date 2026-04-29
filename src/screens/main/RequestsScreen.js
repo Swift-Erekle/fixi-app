@@ -1,17 +1,117 @@
 // src/screens/main/RequestsScreen.js
-import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, RefreshControl, ScrollView, TextInput } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, ScrollView, TextInput, Modal } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import RequestCard from '../../components/RequestCard';
 
-const CATS = ['ყველა', 'სანტექნიკი', 'ელექტრიკოსი', 'მხატვარი', 'დურგალი', 'კონდიციონერი', 'სხვა'];
-const CITIES = ['', 'თბილისი', 'ბათუმი', 'ქუთაისი', 'რუსთავი'];
+const CATEGORIES = [
+  { name: 'სანტექნიკი',   icon: '🔧', subs: ['მილების შეკეთება', 'ვანა/შხაპი', 'გათბობა', 'ბოილერი'] },
+  { name: 'ელექტრიკოსი', icon: '⚡', subs: ['სახლის გაყვანილობა', 'ელექტრო პანელი', 'განათება', 'სამრეწველო'] },
+  { name: 'მხატვარი',     icon: '🎨', subs: ['ინტერიერი', 'ექსტერიერი', 'დეკორატიული'] },
+  { name: 'დურგალი',      icon: '🪚', subs: ['კარ-ფანჯარა', 'ავეჯი', 'პარკეტი', 'ჭერი'] },
+  { name: 'კონდიციონერი', icon: '❄️', subs: ['დამონტაჟება', 'შეკეთება', 'მომსახურება'] },
+  { name: 'ინტერნეტი',   icon: '📡', subs: ['ინტერნეტი', 'კამერები', 'TV'] },
+  { name: 'კარ-ფანჯარა', icon: '🚪', subs: ['კარი', 'ფანჯარა', 'ვიტრაჟი'] },
+  { name: 'სახურავი',     icon: '🏠', subs: ['შეკეთება', 'მოწყობა', 'იზოლაცია'] },
+  { name: 'ქვამჭრელი',    icon: '🪨', subs: ['ბუნებრივი ქვა', 'ხელოვნური ქვა'] },
+  { name: 'სხვა',         icon: '🛠', subs: [] },
+];
+const CITIES = ['', 'თბილისი', 'ბათუმი', 'ქუთაისი', 'რუსთავი', 'გორი', 'ზუგდიდი', 'პოტი'];
+
+function FilterModal({ visible, initialCat, initialCity, onClose, onApply }) {
+  const [cat, setCat] = useState(initialCat || '');
+  const [city, setCity] = useState(initialCity || '');
+
+  useEffect(() => {
+    if (visible) { setCat(initialCat || ''); setCity(initialCity || ''); }
+  }, [visible]);
+
+  const selCat = CATEGORIES.find(c => c.name === cat);
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' }}>
+        <View style={{ backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '90%' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: C.border }}>
+            <TouchableOpacity onPress={() => { setCat(''); setCity(''); }}>
+              <Text style={{ color: C.text2, fontWeight: '700', fontSize: 14 }}>გასუფთავება</Text>
+            </TouchableOpacity>
+            <Text style={{ color: C.text, fontWeight: '900', fontSize: 17 }}>ფილტრები</Text>
+            <TouchableOpacity onPress={onClose}>
+              <Ionicons name="close" size={22} color={C.text2} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 10 }} showsVerticalScrollIndicator={false}>
+            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>კატეგორია</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+              {CATEGORIES.map(c => (
+                <TouchableOpacity
+                  key={c.name}
+                  onPress={() => { setCat(cat === c.name ? '' : c.name); }}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center', gap: 8,
+                    paddingHorizontal: 14, paddingVertical: 11, borderRadius: 14,
+                    borderWidth: 1.5, borderColor: cat === c.name ? C.accent : C.border,
+                    backgroundColor: cat === c.name ? C.accent + '18' : C.surface2,
+                    minWidth: '45%', flex: 1,
+                  }}
+                >
+                  <Text style={{ fontSize: 18 }}>{c.icon}</Text>
+                  <Text style={{ color: cat === c.name ? C.accent : C.text, fontWeight: '700', fontSize: 13, flex: 1 }}>{c.name}</Text>
+                  {cat === c.name && <Ionicons name="checkmark-circle" size={16} color={C.accent} />}
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {selCat && selCat.subs.length > 0 && (
+              <>
+                <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>ქვეკატეგორია</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+                  {selCat.subs.map(s => (
+                    <TouchableOpacity key={s}
+                      style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1.5, borderColor: C.border, backgroundColor: C.surface2 }}>
+                      <Text style={{ color: C.text2, fontWeight: '600', fontSize: 13 }}>{s}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
+
+            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>ქალაქი</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+              {CITIES.map(c => (
+                <TouchableOpacity key={c || 'all'} onPress={() => setCity(c)}
+                  style={{ paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, borderWidth: 1.5, borderColor: city === c ? '#3b82f6' : C.border, backgroundColor: city === c ? '#3b82f622' : C.surface2 }}>
+                  <Text style={{ color: city === c ? '#3b82f6' : C.text2, fontWeight: '600', fontSize: 13 }}>
+                    {c || '📍 ყველა'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+
+          <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: C.border }}>
+            <TouchableOpacity
+              onPress={() => { onApply({ cat, city }); onClose(); }}
+              style={{ backgroundColor: C.accent, borderRadius: 14, padding: 16, alignItems: 'center' }}
+            >
+              <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>გამოყენება</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
 
 export default function RequestsScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +119,7 @@ export default function RequestsScreen({ navigation }) {
   const [cat, setCat] = useState('');
   const [city, setCity] = useState('');
   const [search, setSearch] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
 
   async function load(refresh = false) {
     if (refresh) setRefreshing(true);
@@ -42,10 +142,12 @@ export default function RequestsScreen({ navigation }) {
       )
     : requests;
 
+  const hasActiveFilters = !!(cat || city);
+
   const ListHeader = () => (
     <View>
       {/* Title */}
-      <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 }}>
+      <View style={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: 12 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <View style={{ flex: 1 }}>
             <Text style={{ color: C.text, fontSize: 24, fontWeight: '900' }}>📋 მოთხოვნები</Text>
@@ -65,16 +167,7 @@ export default function RequestsScreen({ navigation }) {
         {user?.type === 'user' && (
           <TouchableOpacity
             onPress={() => navigation.navigate('CreateRequest')}
-            style={{
-              marginTop: 14,
-              backgroundColor: C.accent,
-              borderRadius: 14,
-              padding: 13,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-            }}
+            style={{ marginTop: 14, backgroundColor: C.accent, borderRadius: 14, padding: 13, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
           >
             <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>+ ახალი მოთხოვნა</Text>
           </TouchableOpacity>
@@ -85,17 +178,24 @@ export default function RequestsScreen({ navigation }) {
       <View style={{ paddingHorizontal: 20, marginBottom: 12 }}>
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <TouchableOpacity
-            onPress={() => setShowFilters(!showFilters)}
+            onPress={() => setShowFilter(true)}
             style={{
               flexDirection: 'row', alignItems: 'center', gap: 6,
-              backgroundColor: showFilters ? C.accent + '22' : C.surface,
+              backgroundColor: hasActiveFilters ? C.accent + '22' : C.surface,
               borderRadius: 12, borderWidth: 1,
-              borderColor: showFilters ? C.accent : C.border,
+              borderColor: hasActiveFilters ? C.accent : C.border,
               paddingHorizontal: 14, paddingVertical: 10,
             }}
           >
-            <Text style={{ fontSize: 14 }}>⚙</Text>
-            <Text style={{ color: showFilters ? C.accent : C.text, fontWeight: '600', fontSize: 13 }}>ფილტრები</Text>
+            <Ionicons name="options-outline" size={16} color={hasActiveFilters ? C.accent : C.text2} />
+            <Text style={{ color: hasActiveFilters ? C.accent : C.text, fontWeight: '600', fontSize: 13 }}>ფილტრები</Text>
+            {hasActiveFilters && (
+              <View style={{ backgroundColor: C.accent, borderRadius: 10, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '900' }}>
+                  {[cat, city].filter(Boolean).length}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
           <View style={{
             flex: 1, flexDirection: 'row', alignItems: 'center',
@@ -110,48 +210,34 @@ export default function RequestsScreen({ navigation }) {
               value={search}
               onChangeText={setSearch}
             />
+            {search ? (
+              <TouchableOpacity onPress={() => setSearch('')}>
+                <Ionicons name="close-circle" size={18} color={C.text2} />
+              </TouchableOpacity>
+            ) : null}
           </View>
         </View>
-      </View>
 
-      {/* Filter panel */}
-      {showFilters && (
-        <View style={{ paddingHorizontal: 20, marginBottom: 12 }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+        {/* Active filter chips */}
+        {hasActiveFilters && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              {CATS.map(c => {
-                const active = (c === 'ყველა' && !cat) || c === cat;
-                return (
-                  <TouchableOpacity key={c} onPress={() => setCat(c === 'ყველა' ? '' : c)}
-                    style={{
-                      paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1,
-                      borderColor: active ? C.accent : C.border,
-                      backgroundColor: active ? C.accent + '22' : C.surface,
-                    }}>
-                    <Text style={{ color: active ? C.accent : C.text2, fontSize: 12, fontWeight: '600' }}>{c}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </ScrollView>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              {CITIES.map(c => (
-                <TouchableOpacity key={c || 'all'} onPress={() => setCity(c)}
-                  style={{
-                    paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1,
-                    borderColor: city === c ? '#3b82f6' : C.border,
-                    backgroundColor: city === c ? '#3b82f622' : C.surface,
-                  }}>
-                  <Text style={{ color: city === c ? '#3b82f6' : C.text2, fontSize: 12 }}>
-                    {c || '📍 ყველა'}
-                  </Text>
+              {cat && (
+                <TouchableOpacity onPress={() => setCat('')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: C.accent + '22', borderWidth: 1, borderColor: C.accent + '66' }}>
+                  <Text style={{ color: C.accent, fontSize: 12, fontWeight: '700' }}>{cat}</Text>
+                  <Ionicons name="close" size={14} color={C.accent} />
                 </TouchableOpacity>
-              ))}
+              )}
+              {city && (
+                <TouchableOpacity onPress={() => setCity('')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: '#3b82f622', borderWidth: 1, borderColor: '#3b82f666' }}>
+                  <Text style={{ color: '#3b82f6', fontSize: 12, fontWeight: '700' }}>📍 {city}</Text>
+                  <Ionicons name="close" size={14} color="#3b82f6" />
+                </TouchableOpacity>
+              )}
             </View>
           </ScrollView>
-        </View>
-      )}
+        )}
+      </View>
 
       <Text style={{ color: C.text2, fontSize: 12, paddingHorizontal: 20, marginBottom: 8 }}>
         {filtered.length} მოთხოვნა
@@ -182,6 +268,13 @@ export default function RequestsScreen({ navigation }) {
             </View>
           ) : null
         }
+      />
+      <FilterModal
+        visible={showFilter}
+        initialCat={cat}
+        initialCity={city}
+        onClose={() => setShowFilter(false)}
+        onApply={({ cat: c, city: ci }) => { setCat(c); setCity(ci); }}
       />
     </View>
   );

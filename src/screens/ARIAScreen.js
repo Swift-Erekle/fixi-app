@@ -2,9 +2,9 @@
 import React, { useState, useRef, useCallback } from 'react';
 import {
   View, Text, TextInput, FlatList, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ActivityIndicator,
-  SafeAreaView, ScrollView,
+  KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../utils/theme';
 import { api } from '../utils/api';
@@ -73,6 +73,7 @@ function Message({ msg }) {
 }
 
 export default function ARIAScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [messages, setMessages] = useState([
     { id: '0', role: 'model', time: Date.now(), static: true, text: 'გამარჯობა! 👋 მე ვარ ARIA — Fixi.ge-ის AI ასისტენტი.\nარჩიე თემა ან მომწერე პირდაპირ:' },
@@ -127,8 +128,8 @@ export default function ARIAScreen({ navigation }) {
   function goToSupport() { setOpReq(false); navigation.navigate('Support'); }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 14, backgroundColor: C.surface, borderBottomWidth: 1, borderBottomColor: C.border }}>
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: insets.top + 14, paddingBottom: 14, backgroundColor: C.surface, borderBottomWidth: 1, borderBottomColor: C.border }}>
         <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: C.accent + '20', borderWidth: 1, borderColor: C.accent + '50', alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 22 }}>✨</Text>
         </View>
@@ -195,6 +196,6 @@ export default function ARIAScreen({ navigation }) {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }

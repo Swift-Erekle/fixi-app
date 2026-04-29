@@ -6,6 +6,7 @@ import {
   RefreshControl, Alert, FlatList, TextInput, Modal,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../utils/theme';
 import { api } from '../utils/api';
@@ -67,7 +68,7 @@ function AnalyticsTab() {
 }
 
 // ────────── Accounts tab ──────────
-function AccountsTab() {
+function AccountsTab({ navigation }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all | user | handyman | company | blocked
@@ -127,7 +128,11 @@ function AccountsTab() {
           contentContainerStyle={{ paddingBottom:20 }}
           refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={C.accent}/>}
           renderItem={({ item:u }) => (
-            <View style={{ backgroundColor:C.surface, borderRadius:12, borderWidth:1, borderColor:u.blocked?C.err+'66':C.border, padding:12, marginBottom:8, flexDirection:'row', gap:12 }}>
+            <TouchableOpacity
+              onPress={() => (u.type === 'handyman' || u.type === 'company') && navigation.navigate('HandymanDetail', { id: u.id })}
+              activeOpacity={u.type === 'handyman' || u.type === 'company' ? 0.7 : 1}
+              style={{ backgroundColor:C.surface, borderRadius:12, borderWidth:1, borderColor:u.blocked?C.err+'66':C.border, padding:12, marginBottom:8, flexDirection:'row', gap:12 }}
+            >
               <Avatar user={u} size={42}/>
               <View style={{ flex:1 }}>
                 <Text style={{ color:C.text, fontWeight:'700', fontSize:14 }}>{u.name} {u.surname || ''}</Text>
@@ -142,7 +147,7 @@ function AccountsTab() {
                 style={{ backgroundColor:(u.blocked?C.ok:C.err)+'18', borderRadius:10, borderWidth:1, borderColor:(u.blocked?C.ok:C.err)+'66', paddingHorizontal:10, paddingVertical:6, alignSelf:'center' }}>
                 <Text style={{ color:u.blocked?C.ok:C.err, fontSize:11, fontWeight:'700' }}>{u.blocked?'განბლოკვა':'დაბლოკვა'}</Text>
               </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
           )}
           ListEmptyComponent={<Empty icon="👥" title="მომხმარებელი ვერ მოიძებნა"/>}
         />
@@ -342,6 +347,7 @@ function StaffTab({ isAdmin }) {
 
 // ────────── Main ──────────
 export default function AdminScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [tab, setTab] = useState('accounts');
 
@@ -361,7 +367,7 @@ export default function AdminScreen({ navigation }) {
   return (
     <View style={{ flex:1, backgroundColor:C.bg }}>
       {/* Header */}
-      <View style={{ paddingHorizontal:16, paddingTop:16, paddingBottom:10, borderBottomWidth:1, borderBottomColor:C.border }}>
+      <View style={{ paddingHorizontal:16, paddingTop:insets.top + 16, paddingBottom:10, borderBottomWidth:1, borderBottomColor:C.border }}>
         <Text style={{ color:C.text, fontSize:22, fontWeight:'900' }}>🛡️ ადმინ პანელი</Text>
         <Text style={{ color:C.text2, fontSize:12, marginTop:2 }}>{isAdmin ? 'ადმინი' : 'სტაფი'}</Text>
       </View>
@@ -379,7 +385,7 @@ export default function AdminScreen({ navigation }) {
       {/* Content */}
       <View style={{ flex:1 }}>
         {tab === 'analytics' && isAdmin && <AnalyticsTab/>}
-        {tab === 'accounts'  && <AccountsTab/>}
+        {tab === 'accounts'  && <AccountsTab navigation={navigation}/>}
         {tab === 'requests'  && <RequestsTab navigation={navigation}/>}
         {tab === 'support'   && <SupportTab  navigation={navigation}/>}
         {tab === 'staff'     && <StaffTab    isAdmin={isAdmin}/>}

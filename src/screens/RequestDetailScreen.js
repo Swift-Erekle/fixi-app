@@ -163,10 +163,10 @@ export default function RequestDetailScreen({ route, navigation }) {
         ) : null}
 
         <Divider />
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          <Text style={{ color: C.text2, fontSize: 12, flexShrink: 1 }}>
-            👤 {req.user?.name} {req.user?.surname || ''}
-          </Text>
+        <Text style={{ color: C.text2, fontSize: 12, marginBottom: 6 }} numberOfLines={1}>
+          👤 {req.user?.name} {req.user?.surname || ''}
+        </Text>
+        <View style={{ flexDirection: 'row', gap: 14 }}>
           <Text style={{ color: C.text2, fontSize: 12 }}>
             💬 {req.offers?.length || 0} შეთ.
           </Text>

@@ -2,6 +2,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
@@ -9,6 +10,7 @@ import { Avatar, Empty } from '../../components/UI';
 import { getSocket } from '../../utils/socket';
 
 export default function ChatListScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [chats, setChats] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -45,7 +47,7 @@ export default function ChatListScreen({ navigation }) {
 
   return (
     <View style={{ flex:1, backgroundColor:C.bg }}>
-      <View style={{ paddingHorizontal:20, paddingTop:16, paddingBottom:14, borderBottomWidth:1, borderBottomColor:C.border }}>
+      <View style={{ paddingHorizontal:20, paddingTop: insets.top + 16, paddingBottom:14, borderBottomWidth:1, borderBottomColor:C.border }}>
         <Text style={{ color:C.text, fontSize:22, fontWeight:'900' }}>💬 ჩათები</Text>
         <Text style={{ color:C.text2, fontSize:13, marginTop:2 }}>შეტყობინებები მომხმარებლებთან</Text>
       </View>

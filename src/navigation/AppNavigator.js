@@ -178,7 +178,7 @@ export default function AppNavigator({ navigationRef }) {
 
   return (
     <NavigationContainer theme={NAV_THEME} ref={navigationRef}>
-      {user ? <MainStack /> : <AuthStack />}
+      {user ? <MainStack key="main" /> : <AuthStack key="auth" />}
     </NavigationContainer>
   );
 }

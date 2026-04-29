@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, S } from '../../utils/theme';
 import { api } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
@@ -45,6 +46,7 @@ function Section({ title, children }) {
 }
 
 export default function ProfileScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { user, logout, updateUser } = useAuth();
   const [uploading, setUploading] = useState(false);
 
@@ -105,7 +107,7 @@ export default function ProfileScreen({ navigation }) {
       {/* Hero section */}
       <View style={{
         backgroundColor: C.surface, borderBottomWidth: 1, borderBottomColor: C.border,
-        padding: 24, alignItems: 'center', marginBottom: 20,
+        padding: 24, paddingTop: insets.top + 24, alignItems: 'center', marginBottom: 20,
       }}>
         <TouchableOpacity onPress={pickAvatar} disabled={uploading} style={{ marginBottom: 12 }}>
           <View>

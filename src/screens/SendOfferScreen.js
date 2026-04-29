@@ -20,28 +20,28 @@ const PRESETS = [
 
 export default function SendOfferScreen({ route, navigation }) {
   const { requestId, requestTitle } = route.params;
-  const [price,   setPrice]   = useState('');
-  const [days,    setDays]    = useState('');
-  const [hours,   setHours]   = useState('');
-  const [comment, setComment] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [price,      setPrice]      = useState('');
+  const [negotiable, setNegotiable] = useState(false);
+  const [days,       setDays]       = useState('');
+  const [hours,      setHours]      = useState('');
+  const [comment,    setComment]    = useState('');
+  const [loading,    setLoading]    = useState(false);
 
-  // ✅ FIXED: compute durationMinutes
   const dMins = (parseInt(days||0)*24*60) + (parseInt(hours||0)*60);
   const dLabel = [parseInt(days||0)>0 ? `${days} დღე` : '', parseInt(hours||0)>0 ? `${hours} საათი` : ''].filter(Boolean).join(' ');
 
   function applyPreset(p) { setDays(p.d>0?String(p.d):''); setHours(p.h>0?String(p.h):''); }
 
   async function handleSend() {
-    if (!price)    return Alert.alert('შეცდომა','ფასი სავალდებულოა');
+    if (!negotiable && !price) return Alert.alert('შეცდომა','ფასი სავალდებულოა');
     if (dMins <= 0) return Alert.alert('შეცდომა','სამუშაოს ვადა სავალდებულოა');
     setLoading(true);
     try {
       await api('/offers', { method:'POST', body:{
         requestId,
-        price: parseInt(price),
-        durationMinutes: dMins,   // ✅ required by backend
-        duration: dLabel,          // human-readable display
+        price: negotiable ? 0 : parseInt(price),
+        durationMinutes: dMins,
+        duration: dLabel,
         comment,
       }});
       Alert.alert('✅ გაიგზავნა','შეთავაზება წარმატებით გაიგზავნა!',[{ text:'კარგი', onPress:()=>navigation.goBack() }]);
@@ -63,8 +63,23 @@ export default function SendOfferScreen({ route, navigation }) {
 
         <Card>
           <Label t="ფასი (₾) *" />
-          <TextInput style={{ backgroundColor:C.surface2, borderRadius:12, borderWidth:1, borderColor:C.border, padding:13, color:C.text, fontSize:22, fontWeight:'900' }}
-            placeholder="0" placeholderTextColor={C.text2} value={price} onChangeText={setPrice} keyboardType="numeric" />
+          <TextInput
+            style={{ backgroundColor: negotiable ? C.surface2 + '80' : C.surface2, borderRadius:12, borderWidth:1, borderColor: negotiable ? C.border + '80' : C.border, padding:13, color: negotiable ? C.text2 : C.text, fontSize:22, fontWeight:'900', opacity: negotiable ? 0.4 : 1 }}
+            placeholder="0" placeholderTextColor={C.text2}
+            value={negotiable ? '' : price}
+            onChangeText={setPrice}
+            keyboardType="numeric"
+            editable={!negotiable}
+          />
+          <TouchableOpacity
+            onPress={() => { setNegotiable(v => !v); if (!negotiable) setPrice(''); }}
+            style={{ flexDirection:'row', alignItems:'center', gap:10, marginTop:12, padding:13, borderRadius:12, borderWidth:1.5, borderColor: negotiable ? C.accent : C.border, backgroundColor: negotiable ? C.accent + '18' : C.surface2 }}
+          >
+            <View style={{ width:20, height:20, borderRadius:10, borderWidth:2, borderColor: negotiable ? C.accent : C.border, backgroundColor: negotiable ? C.accent : 'transparent', alignItems:'center', justifyContent:'center' }}>
+              {negotiable && <Text style={{ color:'#fff', fontSize:12, fontWeight:'900' }}>✓</Text>}
+            </View>
+            <Text style={{ color: negotiable ? C.accent : C.text2, fontWeight:'700', fontSize:14 }}>💬 ფასი შეთანხმებით</Text>
+          </TouchableOpacity>
         </Card>
 
         <Card>
@@ -103,11 +118,14 @@ export default function SendOfferScreen({ route, navigation }) {
             placeholder="გამოცდილება, სპეციფიკა, გარანტია..." placeholderTextColor={C.text2} value={comment} onChangeText={setComment} multiline />
         </Card>
 
-        {price && dMins > 0 && (
+        {(negotiable || price) && dMins > 0 && (
           <View style={{ backgroundColor:C.accent+'15', borderRadius:14, borderWidth:1, borderColor:C.accent+'40', padding:16, marginBottom:16 }}>
             <View style={{ flexDirection:'row', justifyContent:'space-between', marginBottom:6 }}>
               <Text style={{ color:C.text2, fontSize:13 }}>ფასი:</Text>
-              <Text style={{ color:C.accent, fontSize:20, fontWeight:'900' }}>₾{price}</Text>
+              {negotiable
+                ? <Text style={{ color:C.accent, fontSize:16, fontWeight:'900' }}>💬 შეთანხმებით</Text>
+                : <Text style={{ color:C.accent, fontSize:20, fontWeight:'900' }}>₾{price}</Text>
+              }
             </View>
             <View style={{ flexDirection:'row', justifyContent:'space-between' }}>
               <Text style={{ color:C.text2, fontSize:13 }}>ვადა:</Text>
