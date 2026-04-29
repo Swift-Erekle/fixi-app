@@ -1,5 +1,4 @@
 // src/navigation/AppNavigator.js
-import React from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -103,11 +102,16 @@ function HomeTabs() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Requests" component={RequestsScreen} />
       <Tab.Screen name="Chats" component={ChatListScreen} />
-      {isStaff ? (
-        <Tab.Screen name="Admin" component={AdminScreen} />
-      ) : (
-        <Tab.Screen name="ARIA" component={ARIAScreen} />
-      )}
+      <Tab.Screen
+        name="ARIA"
+        component={ARIAScreen}
+        options={isStaff ? { tabBarButton: () => null, tabBarItemStyle: { display: 'none' } } : {}}
+      />
+      <Tab.Screen
+        name="Admin"
+        component={AdminScreen}
+        options={!isStaff ? { tabBarButton: () => null, tabBarItemStyle: { display: 'none' } } : {}}
+      />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
