@@ -4,6 +4,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingVi
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
+import { CATEGORIES } from '../../utils/categories';
 import { Btn, Card } from '../../components/UI';
 
 const TYPES = [
@@ -11,7 +12,6 @@ const TYPES = [
   { key:'handyman', emoji:'🔧', label:'ხელოსანი',     desc:'გთავაზობ სერვისს' },
   { key:'company',  emoji:'🏢', label:'კომპანია',     desc:'გუნდი / ბრიგადა' },
 ];
-const SPECS = ['ელექტრიკოსი','სანტექნიკი','მხატვარი','დურგალი','ქვამჭრელი','ინტერნეტი','კონდიციონერი','კარ-ფანჯარა','სახურავი','სხვა'];
 
 function Label({ t }) {
   return <Text style={{ color:C.text2, fontSize:12, fontWeight:'700', marginBottom:8, textTransform:'uppercase', letterSpacing:0.5 }}>{t}</Text>;
@@ -153,16 +153,22 @@ export default function RegisterScreen({ navigation }) {
         {isWorker && (
           <Card>
             <Text style={{ color:C.text2, fontSize:12, fontWeight:'700', marginBottom:12, textTransform:'uppercase', letterSpacing:0.5 }}>სპეციალობა *</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom:14 }}>
-              <View style={{ flexDirection:'row', gap:8 }}>
-                {SPECS.map(s => (
-                  <TouchableOpacity key={s} onPress={() => setSpec(s)}
-                    style={{ paddingHorizontal:13, paddingVertical:8, borderRadius:20, borderWidth:1.5, borderColor:spec===s ? C.accent : C.border, backgroundColor:spec===s ? C.accent+'22' : C.surface2 }}>
-                    <Text style={{ color:spec===s ? C.accent : C.text2, fontWeight:'600', fontSize:12 }}>{s}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
+            <View style={{ flexDirection:'row', flexWrap:'wrap', gap:10, marginBottom:14 }}>
+              {CATEGORIES.map(c => (
+                <TouchableOpacity key={c.name} onPress={() => setSpec(c.name)}
+                  style={{
+                    flexDirection:'row', alignItems:'center', gap:8,
+                    paddingHorizontal:14, paddingVertical:11, borderRadius:14,
+                    borderWidth:1.5, borderColor:spec===c.name ? C.accent : C.border,
+                    backgroundColor:spec===c.name ? C.accent+'18' : C.surface2,
+                    minWidth:'45%', flex:1,
+                  }}>
+                  <Text style={{ fontSize:18 }}>{c.icon}</Text>
+                  <Text style={{ color:spec===c.name ? C.accent : C.text, fontWeight:'700', fontSize:13, flex:1 }}>{c.name}</Text>
+                  {spec===c.name && <Ionicons name="checkmark-circle" size={16} color={C.accent}/>}
+                </TouchableOpacity>
+              ))}
+            </View>
             <Text style={{ color:C.text2, fontSize:12, fontWeight:'700', marginBottom:8, textTransform:'uppercase', letterSpacing:0.5 }}>აღწერა</Text>
             <TextInput
               style={{ backgroundColor:C.surface2, borderRadius:12, borderWidth:1, borderColor:C.border, padding:13, color:C.text, fontSize:14, height:80, textAlignVertical:'top' }}

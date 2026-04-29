@@ -257,16 +257,17 @@ export default function RequestDetailScreen({ route, navigation }) {
                 onPress={() => navigation.push('RequestDetail', { id: r.id })}
                 style={{ backgroundColor: C.surface, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 14, marginBottom: 10 }}
               >
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <Text style={{ color: C.text, fontWeight: '700', fontSize: 14, flex: 1, marginRight: 8 }} numberOfLines={1}>{r.title}</Text>
-                  {r.budget && <Text style={{ color: C.ok, fontWeight: '700', fontSize: 13 }}>₾{r.budget}</Text>}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <Text style={{ color: C.text, fontWeight: '700', fontSize: 14, flex: 1, marginRight: 8 }} numberOfLines={2}>{r.title}</Text>
+                  {r.budget > 0 && <Text style={{ color: C.ok, fontWeight: '700', fontSize: 13 }}>₾{r.budget}</Text>}
+                  {r.budget === 0 && <Text style={{ color: C.accent, fontWeight: '700', fontSize: 12 }}>💬 შეთ.</Text>}
                 </View>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <View style={{ backgroundColor: col + '20', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: col + '40' }}>
-                    <Text style={{ color: col, fontSize: 11, fontWeight: '700' }}>{r.category}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <View style={{ backgroundColor: col + '20', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: col + '40', maxWidth: '60%' }}>
+                    <Text style={{ color: col, fontSize: 11, fontWeight: '700' }} numberOfLines={1}>{r.category}</Text>
                   </View>
-                  {r.city && <Text style={{ color: C.text2, fontSize: 12, paddingTop: 2 }}>📍 {r.city}</Text>}
-                  <Text style={{ color: C.text2, fontSize: 12, paddingTop: 2 }}>💬 {r._count?.offers || 0}</Text>
+                  {r.city && <Text style={{ color: C.text2, fontSize: 12 }}>📍 {r.city}</Text>}
+                  <Text style={{ color: C.text2, fontSize: 12 }}>💬 {r._count?.offers || 0}</Text>
                 </View>
               </TouchableOpacity>
             );

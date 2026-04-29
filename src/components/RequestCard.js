@@ -15,7 +15,10 @@ export default function RequestCard({ request, onPress }) {
   const [toggling, setToggling] = useState(false);
   const color    = getCatColor(request.category);
   const catIcon  = getCatIcon(request.category);
-  const isNew    = request.createdAt && Date.now() - new Date(request.createdAt).getTime() < 48 * 3600000;
+  const ageMs    = request.createdAt ? Date.now() - new Date(request.createdAt).getTime() : Infinity;
+  const isNew    = ageMs < 24 * 3600000;
+  const isWaiting = ageMs > 48 * 3600000 && !(request._count?.offers > 0) && !(request.offers?.length > 0);
+  const isUrgent  = request.urgency === 'urgent';
   const isWorker = user?.type === 'handyman' || user?.type === 'company';
 
   async function toggleFav(e) {
@@ -54,7 +57,17 @@ export default function RequestCard({ request, onPress }) {
             </View>
             {isNew && (
               <View style={{ backgroundColor: '#10b98122', borderRadius: 20, borderWidth: 1, borderColor: '#10b98155', paddingHorizontal: 8, paddingVertical: 3 }}>
-                <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '700' }}>ახალი</Text>
+                <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '700' }}>🆕 ახალი</Text>
+              </View>
+            )}
+            {!isNew && isUrgent && (
+              <View style={{ backgroundColor: C.err + '22', borderRadius: 20, borderWidth: 1, borderColor: C.err + '55', paddingHorizontal: 8, paddingVertical: 3 }}>
+                <Text style={{ color: C.err, fontSize: 11, fontWeight: '700' }}>⚡ მალე</Text>
+              </View>
+            )}
+            {!isNew && !isUrgent && isWaiting && (
+              <View style={{ backgroundColor: '#f59e0b22', borderRadius: 20, borderWidth: 1, borderColor: '#f59e0b55', paddingHorizontal: 8, paddingVertical: 3 }}>
+                <Text style={{ color: '#f59e0b', fontSize: 11, fontWeight: '700' }}>⏳ მოლოდინში</Text>
               </View>
             )}
           </View>
@@ -73,7 +86,7 @@ export default function RequestCard({ request, onPress }) {
           {request.city && <Text style={{ color: C.text2, fontSize: 13 }}>📍 {request.city}</Text>}
           {budgetDisplay}
           <Text style={{ color: C.text2, fontSize: 13 }}>💬 {request._count?.offers || 0} შეთ.</Text>
-          {request.urgency === 'urgent' && <Text style={{ color: C.err, fontSize: 12, fontWeight: '700' }}>🚨 გადაუდ.</Text>}
+          {isUrgent && isNew && <Text style={{ color: C.err, fontSize: 12, fontWeight: '700' }}>⚡ მალე</Text>}
         </View>
       </View>
 

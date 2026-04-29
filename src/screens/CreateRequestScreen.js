@@ -7,7 +7,7 @@ import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { Btn, Card } from '../components/UI';
 
-const CATS = ['სანტექნიკი','ელექტრიკოსი','მხატვარი','დურგალი','კონდიციონერი','ინტერნეტი','კარ-ფანჯარა','სახურავი','ქვამჭრელი','სხვა'];
+import { CATEGORIES } from '../utils/categories';
 // ✅ FIXED: Full Georgian cities list
 const CITIES = ['თბილისი','ბათუმი','ქუთაისი','რუსთავი','გორი','ზუგდიდი','პოტი','სამტრედია','ხაშური','სენაკი','ზესტაფონი','მარნეული','თელავი','ახალციხე','ოზურგეთი','ქობულეთი','ახალქალაქი','გარდაბანი','საგარეჯო','სიღნაღი','ბოლნისი','დმანისი','ყვარელი','ლაგოდეხი','დედოფლისწყარო','ხობი','ჩხოროწყუ','მარტვილი','ხარაგაული','ბაღდათი','ვანი','საჩხერე','ჭიათურა','ტყიბული','ამბროლაური','ონი','ცაგერი','ლენტეხი','მესტია','ახმეტა','თიანეთი','დუშეთი','მცხეთა','კასპი','ხელვაჩაური','ქედა','შუახევი','ხულო','ადიგენი','ასპინძა','ნინოწმინდა','სხვა'];
 const CAT_COLORS = { 'ელექტრიკოსი':'#8b5cf6','სანტექნიკი':'#3b82f6','კონდიციონერი':'#10b981','მხატვარი':'#f59e0b','დურგალი':'#ef4444','ინტერნეტი':'#06b6d4' };
@@ -60,15 +60,21 @@ export default function CreateRequestScreen({ navigation }) {
         </Card>
         <Card>
           <Label t="კატეგორია *" />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{flexDirection:'row',gap:8}}>
-              {CATS.map(c=>{const col=getColor(c);const act=category===c;return(
-                <TouchableOpacity key={c} onPress={()=>setCategory(c)}
-                  style={{paddingHorizontal:14,paddingVertical:8,borderRadius:20,borderWidth:1.5,borderColor:act?col:C.border,backgroundColor:act?col+'22':C.surface2}}>
-                  <Text style={{color:act?col:C.text2,fontWeight:'600',fontSize:13}}>{c}</Text>
-                </TouchableOpacity>);})}
-            </View>
-          </ScrollView>
+          <View style={{flexDirection:'row',flexWrap:'wrap',gap:10}}>
+            {CATEGORIES.map(c=>{const act=category===c.name;return(
+              <TouchableOpacity key={c.name} onPress={()=>setCategory(c.name)}
+                style={{
+                  flexDirection:'row',alignItems:'center',gap:8,
+                  paddingHorizontal:14,paddingVertical:11,borderRadius:14,
+                  borderWidth:1.5,borderColor:act?C.accent:C.border,
+                  backgroundColor:act?C.accent+'18':C.surface2,
+                  minWidth:'45%',flex:1,
+                }}>
+                <Text style={{fontSize:18}}>{c.icon}</Text>
+                <Text style={{color:act?C.accent:C.text,fontWeight:'700',fontSize:13,flex:1}}>{c.name}</Text>
+                {act&&<Ionicons name="checkmark-circle" size={16} color={C.accent}/>}
+              </TouchableOpacity>);})}
+          </View>
         </Card>
         <Card>
           <Label t="აღწერა" />

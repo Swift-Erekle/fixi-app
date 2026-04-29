@@ -8,18 +8,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
+import { CATEGORIES } from '../../utils/categories';
 import HandymanCard from '../../components/HandymanCard';
 import { Avatar } from '../../components/UI';
 
-const CATEGORIES = [
-  { name: 'ელექტრიკოსი', icon: '⚡', subs: ['სახლის გაყვანილობა', 'ელექტრო პანელი', 'განათება', 'სამრეწველო'] },
-  { name: 'სანტექნიკი',   icon: '🚿', subs: ['მილების შეკეთება', 'ვანა/შხაპი', 'გათბობა', 'ბოილერი'] },
-  { name: 'მხატვარი',     icon: '🎨', subs: ['ინტერიერი', 'ექსტერიერი', 'დეკორატიული'] },
-  { name: 'დურგალი',      icon: '🪚', subs: ['კარ-ფანჯარა', 'ავეჯი', 'პარკეტი', 'ჭერი'] },
-  { name: 'კონდიციონერი', icon: '❄️', subs: ['დამონტაჟება', 'შეკეთება', 'მომსახურება'] },
-  { name: 'ინტერნეტი',   icon: '📡', subs: ['ინტერნეტი', 'კამერები', 'TV'] },
-];
-const CITIES = ['', 'თბილისი', 'ბათუმი', 'ქუთაისი', 'რუსთავი'];
+const CITIES = ['', 'თბილისი', 'ბათუმი', 'ქუთაისი', 'რუსთავი', 'გორი', 'ზუგდიდი', 'პოტი'];
 
 function FilterModal({ visible, initialCat, initialSubcat, initialCity, onClose, onApply }) {
   const [cat, setCat] = useState(initialCat || '');

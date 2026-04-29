@@ -69,10 +69,11 @@ export async function registerForPushNotifications() {
     const tokenData = await Notifications.getExpoPushTokenAsync();
     const pushToken = tokenData.data;
 
-    // Save token to backend
+    // Save token to backend — noAutoLogout prevents a 401 here from kicking the user out
     await api('/push/expo-token', {
       method: 'POST',
       body: { token: pushToken, platform: Platform.OS },
+      noAutoLogout: true,
     });
 
     return pushToken;
@@ -92,6 +93,7 @@ export async function unregisterPushToken() {
       await api('/push/expo-token', {
         method: 'DELETE',
         body: { token: tokenData.data },
+        noAutoLogout: true,
       }).catch(() => {});
     }
   } catch (_) {}

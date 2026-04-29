@@ -1,13 +1,14 @@
 // src/screens/EditProfileScreen.js
 import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, Alert, TouchableOpacity, KeyboardAvoidingView, Platform, Switch, Image, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import { CATEGORIES } from '../utils/categories';
 import { Btn, Card } from '../components/UI';
 
 const CITIES = ['თბილისი','ბათუმი','ქუთაისი','რუსთავი','გორი','ზუგდიდი','პოტი'];
-const SPECS   = ['ელექტრიკოსი','სანტექნიკი','მხატვარი','დურგალი','ქვამჭრელი','ინტერნეტი','კონდიციონერი','კარ-ფანჯარა','სახურავი','სხვა'];
 
 function Label({ children }) {
   return <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>{children}</Text>;
@@ -102,16 +103,22 @@ export default function EditProfileScreen({ navigation }) {
           <>
             <Card>
               <Label>სპეციალობა</Label>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  {SPECS.map(s => (
-                    <TouchableOpacity key={s} onPress={() => setSpec(s)}
-                      style={{ paddingHorizontal: 13, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: spec === s ? C.accent : C.border, backgroundColor: spec === s ? C.accent + '22' : C.surface2 }}>
-                      <Text style={{ color: spec === s ? C.accent : C.text2, fontSize: 12, fontWeight: '600' }}>{s}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                {CATEGORIES.map(c => (
+                  <TouchableOpacity key={c.name} onPress={() => setSpec(c.name)}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', gap: 8,
+                      paddingHorizontal: 14, paddingVertical: 11, borderRadius: 14,
+                      borderWidth: 1.5, borderColor: spec === c.name ? C.accent : C.border,
+                      backgroundColor: spec === c.name ? C.accent + '18' : C.surface2,
+                      minWidth: '45%', flex: 1,
+                    }}>
+                    <Text style={{ fontSize: 18 }}>{c.icon}</Text>
+                    <Text style={{ color: spec === c.name ? C.accent : C.text, fontWeight: '700', fontSize: 13, flex: 1 }}>{c.name}</Text>
+                    {spec === c.name && <Ionicons name="checkmark-circle" size={16} color={C.accent} />}
+                  </TouchableOpacity>
+                ))}
+              </View>
             </Card>
 
             <Card>

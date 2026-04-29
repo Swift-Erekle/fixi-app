@@ -8,19 +8,8 @@ import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import RequestCard from '../../components/RequestCard';
+import { CATEGORIES } from '../../utils/categories';
 
-const CATEGORIES = [
-  { name: 'სანტექნიკი',   icon: '🔧', subs: ['მილების შეკეთება', 'ვანა/შხაპი', 'გათბობა', 'ბოილერი'] },
-  { name: 'ელექტრიკოსი', icon: '⚡', subs: ['სახლის გაყვანილობა', 'ელექტრო პანელი', 'განათება', 'სამრეწველო'] },
-  { name: 'მხატვარი',     icon: '🎨', subs: ['ინტერიერი', 'ექსტერიერი', 'დეკორატიული'] },
-  { name: 'დურგალი',      icon: '🪚', subs: ['კარ-ფანჯარა', 'ავეჯი', 'პარკეტი', 'ჭერი'] },
-  { name: 'კონდიციონერი', icon: '❄️', subs: ['დამონტაჟება', 'შეკეთება', 'მომსახურება'] },
-  { name: 'ინტერნეტი',   icon: '📡', subs: ['ინტერნეტი', 'კამერები', 'TV'] },
-  { name: 'კარ-ფანჯარა', icon: '🚪', subs: ['კარი', 'ფანჯარა', 'ვიტრაჟი'] },
-  { name: 'სახურავი',     icon: '🏠', subs: ['შეკეთება', 'მოწყობა', 'იზოლაცია'] },
-  { name: 'ქვამჭრელი',    icon: '🪨', subs: ['ბუნებრივი ქვა', 'ხელოვნური ქვა'] },
-  { name: 'სხვა',         icon: '🛠', subs: [] },
-];
 const CITIES = ['', 'თბილისი', 'ბათუმი', 'ქუთაისი', 'რუსთავი', 'გორი', 'ზუგდიდი', 'პოტი'];
 
 function FilterModal({ visible, initialCat, initialCity, onClose, onApply }) {
