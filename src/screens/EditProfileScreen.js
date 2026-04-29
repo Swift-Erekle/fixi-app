@@ -5,10 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { CATEGORIES } from '../utils/categories';
+import { CATEGORIES, GEORGIA_CITIES } from '../utils/categories';
 import { Btn, Card } from '../components/UI';
 
-const CITIES = ['თბილისი','ბათუმი','ქუთაისი','რუსთავი','გორი','ზუგდიდი','პოტი'];
+const CITIES = GEORGIA_CITIES;
 
 function Label({ children }) {
   return <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>{children}</Text>;

@@ -8,9 +8,9 @@ import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import RequestCard from '../../components/RequestCard';
-import { CATEGORIES } from '../../utils/categories';
+import { CATEGORIES, GEORGIA_CITIES } from '../../utils/categories';
 
-const CITIES = ['', 'თბილისი', 'ბათუმი', 'ქუთაისი', 'რუსთავი', 'გორი', 'ზუგდიდი', 'პოტი'];
+const CITIES = ['', ...GEORGIA_CITIES];
 
 function FilterModal({ visible, initialCat, initialSubcat, initialCity, onClose, onApply }) {
   const [cat, setCat] = useState(initialCat || '');

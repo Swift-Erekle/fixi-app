@@ -8,11 +8,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
-import { CATEGORIES } from '../../utils/categories';
+import { CATEGORIES, GEORGIA_CITIES } from '../../utils/categories';
 import HandymanCard from '../../components/HandymanCard';
 import { Avatar } from '../../components/UI';
 
-const CITIES = ['', 'თბილისი', 'ბათუმი', 'ქუთაისი', 'რუსთავი', 'გორი', 'ზუგდიდი', 'პოტი'];
+const CITIES = ['', ...GEORGIA_CITIES];
 
 function FilterModal({ visible, initialCat, initialSubcat, initialCity, onClose, onApply }) {
   const [cat, setCat] = useState(initialCat || '');

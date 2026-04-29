@@ -7,9 +7,8 @@ import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { Btn, Card } from '../components/UI';
 
-import { CATEGORIES } from '../utils/categories';
-// ✅ FIXED: Full Georgian cities list
-const CITIES = ['თბილისი','ბათუმი','ქუთაისი','რუსთავი','გორი','ზუგდიდი','პოტი','სამტრედია','ხაშური','სენაკი','ზესტაფონი','მარნეული','თელავი','ახალციხე','ოზურგეთი','ქობულეთი','ახალქალაქი','გარდაბანი','საგარეჯო','სიღნაღი','ბოლნისი','დმანისი','ყვარელი','ლაგოდეხი','დედოფლისწყარო','ხობი','ჩხოროწყუ','მარტვილი','ხარაგაული','ბაღდათი','ვანი','საჩხერე','ჭიათურა','ტყიბული','ამბროლაური','ონი','ცაგერი','ლენტეხი','მესტია','ახმეტა','თიანეთი','დუშეთი','მცხეთა','კასპი','ხელვაჩაური','ქედა','შუახევი','ხულო','ადიგენი','ასპინძა','ნინოწმინდა','სხვა'];
+import { CATEGORIES, GEORGIA_CITIES } from '../utils/categories';
+const CITIES = GEORGIA_CITIES;
 const CAT_COLORS = { 'ელექტრიკოსი':'#8b5cf6','სანტექნიკი':'#3b82f6','კონდიციონერი':'#10b981','მხატვარი':'#f59e0b','დურგალი':'#ef4444','ინტერნეტი':'#06b6d4' };
 function getColor(s) { for (const [k,v] of Object.entries(CAT_COLORS)) if (s?.toLowerCase().includes(k.toLowerCase())) return v; return C.accent; }
 function Label({ t }) { return <Text style={{ color:C.text2, fontSize:12, fontWeight:'700', marginBottom:8, textTransform:'uppercase', letterSpacing:0.5 }}>{t}</Text>; }
