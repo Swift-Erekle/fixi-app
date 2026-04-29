@@ -7,7 +7,6 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { C } from '../utils/theme';
-import { TouchableOpacity, View, Text } from 'react-native';
 
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
@@ -75,14 +74,6 @@ function HomeTabs() {
         tabBarInactiveTintColor: C.text2,
         tabBarLabelStyle: { fontSize: 10, fontWeight: '700' },
         headerShown: false,
-
-        // ✅ conditional-ის მაგივრად – tabBarButton‑ის null‑ი
-        tabBarButton: (props) => {
-          if (route.name === 'Admin' && !isStaff) return null;   // მომხმარებელი – Admin‑ი არ ჩანს
-          if (route.name === 'ARIA' && isStaff) return null;   // staff/admin – ARIA‑ს Tab‑ი ქრება
-          return <TouchableOpacity {...props} />;                 // 🔹 ან <BottomTabBarButton {...props} />
-        },
-
         tabBarIcon: ({ color, focused }) => {
           if (route.name === 'ARIA') return (
             <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: focused ? '#a78bfa22' : 'transparent', borderWidth: focused ? 1 : 0, borderColor: '#a78bfa66', alignItems: 'center', justifyContent: 'center' }}>
@@ -103,19 +94,20 @@ function HomeTabs() {
           const [a, i] = icons[route.name] || ['ellipse', 'ellipse-outline'];
           return <Ionicons name={focused ? a : i} size={22} color={color} />;
         },
-
         tabBarLabel: {
           Home: 'ხელოსნები', Requests: 'მოთხოვნები',
           Chats: 'ჩათები', ARIA: 'ARIA', Admin: 'ადმინი', Profile: 'პროფილი',
         }[route.name],
       })}
     >
-      {/* აღარ არის conditional */}
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Requests" component={RequestsScreen} />
       <Tab.Screen name="Chats" component={ChatListScreen} />
-      <Tab.Screen name="Admin" component={AdminScreen} />
-      <Tab.Screen name="ARIA" component={ARIAScreen} />
+      {isStaff ? (
+        <Tab.Screen name="Admin" component={AdminScreen} />
+      ) : (
+        <Tab.Screen name="ARIA" component={ARIAScreen} />
+      )}
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
