@@ -16,11 +16,14 @@ function Label({ t }) { return <Text style={{ color:C.text2, fontSize:12, fontWe
 
 export default function CreateRequestScreen({ navigation }) {
   const [title,setTitle]=useState(''); const [category,setCategory]=useState('');
+  const [subcat,setSubcat]=useState('');
   const [desc,setDesc]=useState('');   const [city,setCity]=useState('თბილისი');
   const [budget,setBudget]=useState(''); const [urgent,setUrgent]=useState(false);
   const [negotiable,setNegotiable]=useState(false);
   const [media,setMedia]=useState([]); const [loading,setLoading]=useState(false);
   const [showCities,setShowCities]=useState(false);
+
+  const selCat = CATEGORIES.find(c => c.name === category);
 
   async function pickImage() {
     if (media.length>=5) return Alert.alert('','მაქს. 5 ფოტო');
@@ -37,6 +40,7 @@ export default function CreateRequestScreen({ navigation }) {
     try {
       const form = new FormData();
       form.append('title',title.trim()); form.append('category',category);
+      if (subcat) form.append('subcat',subcat);
       form.append('desc',desc); form.append('city',city);
       if (negotiable) form.append('budget','0');
       else if (budget) form.append('budget',budget);
@@ -60,9 +64,9 @@ export default function CreateRequestScreen({ navigation }) {
         </Card>
         <Card>
           <Label t="კატეგორია *" />
-          <View style={{flexDirection:'row',flexWrap:'wrap',gap:10}}>
+          <View style={{flexDirection:'row',flexWrap:'wrap',gap:10,marginBottom:selCat&&selCat.subs.length>0?16:0}}>
             {CATEGORIES.map(c=>{const act=category===c.name;return(
-              <TouchableOpacity key={c.name} onPress={()=>setCategory(c.name)}
+              <TouchableOpacity key={c.name} onPress={()=>{setCategory(c.name);setSubcat('');}}
                 style={{
                   flexDirection:'row',alignItems:'center',gap:8,
                   paddingHorizontal:14,paddingVertical:11,borderRadius:14,
@@ -75,6 +79,19 @@ export default function CreateRequestScreen({ navigation }) {
                 {act&&<Ionicons name="checkmark-circle" size={16} color={C.accent}/>}
               </TouchableOpacity>);})}
           </View>
+          {selCat&&selCat.subs.length>0&&(
+            <>
+              <Label t="ქვეკატეგორია" />
+              <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
+                {selCat.subs.map(s=>(
+                  <TouchableOpacity key={s} onPress={()=>setSubcat(subcat===s?'':s)}
+                    style={{paddingHorizontal:14,paddingVertical:9,borderRadius:20,borderWidth:1.5,borderColor:subcat===s?C.accent:C.border,backgroundColor:subcat===s?C.accent+'22':C.surface2}}>
+                    <Text style={{color:subcat===s?C.accent:C.text2,fontWeight:'600',fontSize:13}}>{s}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
         </Card>
         <Card>
           <Label t="აღწერა" />
