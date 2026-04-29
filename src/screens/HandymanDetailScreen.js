@@ -47,10 +47,10 @@ import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { Avatar, PlanBadge, Tag, Btn, Divider, Card, StarPicker } from '../components/UI';
+import { CATEGORIES } from '../utils/categories';
 
 const CAT_COLORS={'ელექტრიკოსი':'#8b5cf6','სანტექნიკი':'#3b82f6','კონდიციონერი':'#10b981','მხატვარი':'#f59e0b','დურგალი':'#ef4444','ინტერნეტი':'#06b6d4'};
 function getColor(s){for(const[k,v]of Object.entries(CAT_COLORS))if(s?.toLowerCase().includes(k.toLowerCase()))return v;return C.accent;}
-const CATS=['სანტექნიკი','ელექტრიკოსი','მხატვარი','დურგალი','კონდიციონერი','კარ-ფანჯარა','სხვა'];
 
 // ✅ NEW: normalize phone → tel URI + wa.me digits
 function buildContactLinks(rawPhone) {
@@ -101,9 +101,14 @@ function CallChoiceModal({ visible, onClose, telUri, waUri }) {
 }
 
 function ProposalModal({handyman,visible,onClose}){
-  const[title,setTitle]=useState('');const[category,setCategory]=useState(handyman?.specialty||'');
-  const[desc,setDesc]=useState('');const[budget,setBudget]=useState('');
+  const[title,setTitle]=useState('');
+  const[category,setCategory]=useState('');
+  const[subcat,setSubcat]=useState('');
+  const[desc,setDesc]=useState('');
+  const[budget,setBudget]=useState('');
+  const[negotiable,setNegotiable]=useState(false);
   const[days,setDays]=useState('1');const[hours,setHours]=useState('');const[loading,setLoading]=useState(false);
+  const selCat=CATEGORIES.find(c=>c.name===category);
   const dMins=(parseInt(days||0)*24*60)+(parseInt(hours||0)*60);
   const dLabel=[parseInt(days||0)>0?`${days} დღე`:'',parseInt(hours||0)>0?`${hours} საათი`:''].filter(Boolean).join(' ');
   async function send(){
@@ -112,13 +117,13 @@ function ProposalModal({handyman,visible,onClose}){
     if(dMins<=0)return Alert.alert('შეცდომა','ვადა სავალდებულოა');
     setLoading(true);
     try{
-      // ✅ FIXED: backend expects `recipientId`, NOT `handymanId`
       await api('/proposals',{method:'POST',body:{
         recipientId: handyman.id,
         title: title.trim(),
         category,
+        subcat,
         desc,
-        budget: budget ? parseInt(budget) : null,
+        budget: negotiable ? 0 : budget ? parseInt(budget) : null,
         durationMinutes: dMins,
         duration: dLabel,
       }});
@@ -142,24 +147,51 @@ function ProposalModal({handyman,visible,onClose}){
             <Text style={{color:C.text2,fontSize:12,fontWeight:'700',marginBottom:8,textTransform:'uppercase'}}>სათაური *</Text>
             <TextInput style={{backgroundColor:C.surface2,borderRadius:12,borderWidth:1,borderColor:C.border,padding:13,color:C.text,fontSize:14}} placeholder="მაგ: სახლის გაყვანილობა" placeholderTextColor={C.text2} value={title} onChangeText={setTitle}/>
           </Card>
+
           <Card>
-            <Text style={{color:C.text2,fontSize:12,fontWeight:'700',marginBottom:10,textTransform:'uppercase'}}>კატეგორია *</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={{flexDirection:'row',gap:8}}>
-                {CATS.map(c=>(
-                  <TouchableOpacity key={c} onPress={()=>setCategory(c)} style={{paddingHorizontal:13,paddingVertical:8,borderRadius:20,borderWidth:1.5,borderColor:category===c?C.accent:C.border,backgroundColor:category===c?C.accent+'22':C.surface2}}>
-                    <Text style={{color:category===c?C.accent:C.text2,fontWeight:'600',fontSize:12}}>{c}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
+            <Text style={{color:C.text2,fontSize:12,fontWeight:'700',marginBottom:12,textTransform:'uppercase'}}>კატეგორია *</Text>
+            <View style={{flexDirection:'row',flexWrap:'wrap',gap:10,marginBottom:selCat&&selCat.subs.length>0?16:0}}>
+              {CATEGORIES.map(c=>{const act=category===c.name;return(
+                <TouchableOpacity key={c.name} onPress={()=>{setCategory(c.name);setSubcat('');}}
+                  style={{flexDirection:'row',alignItems:'center',gap:8,paddingHorizontal:14,paddingVertical:11,borderRadius:14,borderWidth:1.5,borderColor:act?C.accent:C.border,backgroundColor:act?C.accent+'18':C.surface2,minWidth:'45%',flex:1}}>
+                  <Text style={{fontSize:18}}>{c.icon}</Text>
+                  <Text style={{color:act?C.accent:C.text,fontWeight:'700',fontSize:13,flex:1}}>{c.name}</Text>
+                  {act&&<Ionicons name="checkmark-circle" size={16} color={C.accent}/>}
+                </TouchableOpacity>
+              );})}
+            </View>
+            {selCat&&selCat.subs.length>0&&(
+              <>
+                <Text style={{color:C.text2,fontSize:12,fontWeight:'700',marginBottom:10,textTransform:'uppercase'}}>ქვეკატეგორია</Text>
+                <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
+                  {selCat.subs.map(s=>(
+                    <TouchableOpacity key={s} onPress={()=>setSubcat(subcat===s?'':s)}
+                      style={{paddingHorizontal:14,paddingVertical:9,borderRadius:20,borderWidth:1.5,borderColor:subcat===s?C.accent:C.border,backgroundColor:subcat===s?C.accent+'22':C.surface2}}>
+                      <Text style={{color:subcat===s?C.accent:C.text2,fontWeight:'600',fontSize:13}}>{s}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
           </Card>
+
           <Card>
             <Text style={{color:C.text2,fontSize:12,fontWeight:'700',marginBottom:8,textTransform:'uppercase'}}>აღწერა</Text>
             <TextInput style={{backgroundColor:C.surface2,borderRadius:12,borderWidth:1,borderColor:C.border,padding:13,color:C.text,fontSize:14,height:80,textAlignVertical:'top',marginBottom:14}} placeholder="სამუშაოს დეტალები..." placeholderTextColor={C.text2} value={desc} onChangeText={setDesc} multiline/>
             <Text style={{color:C.text2,fontSize:12,fontWeight:'700',marginBottom:8,textTransform:'uppercase'}}>ბიუჯეტი (₾)</Text>
-            <TextInput style={{backgroundColor:C.surface2,borderRadius:12,borderWidth:1,borderColor:C.border,padding:13,color:C.text,fontSize:14}} placeholder="სავარაუდო ბიუჯეტი" placeholderTextColor={C.text2} value={budget} onChangeText={setBudget} keyboardType="numeric"/>
+            <TextInput
+              style={{backgroundColor:C.surface2,borderRadius:12,borderWidth:1,borderColor:negotiable?C.border+'60':C.border,padding:13,color:negotiable?C.text2:C.text,fontSize:14,marginBottom:10,opacity:negotiable?0.5:1}}
+              placeholder="სავარაუდო ბიუჯეტი" placeholderTextColor={C.text2}
+              value={negotiable?'':budget} onChangeText={setBudget} keyboardType="numeric" editable={!negotiable}/>
+            <TouchableOpacity onPress={()=>{setNegotiable(!negotiable);if(!negotiable)setBudget('');}}
+              style={{flexDirection:'row',alignItems:'center',gap:12,padding:13,borderRadius:12,borderWidth:1.5,borderColor:negotiable?C.accent:C.border,backgroundColor:negotiable?C.accent+'12':C.surface2}}>
+              <View style={{width:22,height:22,borderRadius:6,borderWidth:2,borderColor:negotiable?C.accent:C.border,backgroundColor:negotiable?C.accent:'transparent',alignItems:'center',justifyContent:'center'}}>
+                {negotiable&&<Ionicons name="checkmark" size={14} color="#fff"/>}
+              </View>
+              <Text style={{color:negotiable?C.accent:C.text,fontWeight:'700',fontSize:14}}>💬 ფასი შეთანხმებით</Text>
+            </TouchableOpacity>
           </Card>
+
           <Card>
             <Text style={{color:C.text2,fontSize:12,fontWeight:'700',marginBottom:10,textTransform:'uppercase'}}>სამუშაოს ვადა *</Text>
             <View style={{flexDirection:'row',gap:10}}>
