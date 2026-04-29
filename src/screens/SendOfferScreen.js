@@ -1,9 +1,11 @@
 // src/screens/SendOfferScreen.js
 import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, Alert, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { Btn, Card } from '../components/UI';
+import { CATEGORIES } from '../utils/categories';
 
 function Label({ t }) {
   return <Text style={{ color:C.text2, fontSize:12, fontWeight:'700', marginBottom:8, textTransform:'uppercase', letterSpacing:0.5 }}>{t}</Text>;
@@ -20,6 +22,8 @@ const PRESETS = [
 
 export default function SendOfferScreen({ route, navigation }) {
   const { requestId, requestTitle } = route.params;
+  const [category,   setCategory]   = useState('');
+  const [subcat,     setSubcat]     = useState('');
   const [price,      setPrice]      = useState('');
   const [negotiable, setNegotiable] = useState(false);
   const [days,       setDays]       = useState('');
@@ -27,18 +31,23 @@ export default function SendOfferScreen({ route, navigation }) {
   const [comment,    setComment]    = useState('');
   const [loading,    setLoading]    = useState(false);
 
+  const selCat = CATEGORIES.find(c => c.name === category);
+
   const dMins = (parseInt(days||0)*24*60) + (parseInt(hours||0)*60);
   const dLabel = [parseInt(days||0)>0 ? `${days} დღე` : '', parseInt(hours||0)>0 ? `${hours} საათი` : ''].filter(Boolean).join(' ');
 
   function applyPreset(p) { setDays(p.d>0?String(p.d):''); setHours(p.h>0?String(p.h):''); }
 
   async function handleSend() {
+    if (!category) return Alert.alert('შეცდომა','კატეგორია სავალდებულოა');
     if (!negotiable && !price) return Alert.alert('შეცდომა','ფასი სავალდებულოა');
     if (dMins <= 0) return Alert.alert('შეცდომა','სამუშაოს ვადა სავალდებულოა');
     setLoading(true);
     try {
       await api('/offers', { method:'POST', body:{
         requestId,
+        category,
+        subcat,
         price: negotiable ? 0 : parseInt(price),
         durationMinutes: dMins,
         duration: dLabel,
@@ -60,6 +69,42 @@ export default function SendOfferScreen({ route, navigation }) {
       <ScrollView contentContainerStyle={{ padding:16, paddingBottom:30 }}>
         <Text style={{ color:C.text, fontSize:22, fontWeight:'900', marginBottom:6 }}>📤 შეთავაზება</Text>
         <Text style={{ color:C.text2, fontSize:13, marginBottom:20 }} numberOfLines={2}>"{requestTitle}"</Text>
+
+        <Card>
+          <Label t="კატეგორია *" />
+          <View style={{ flexDirection:'row', flexWrap:'wrap', gap:10, marginBottom: selCat && selCat.subs.length > 0 ? 16 : 0 }}>
+            {CATEGORIES.map(c => {
+              const act = category === c.name;
+              return (
+                <TouchableOpacity key={c.name} onPress={() => { setCategory(c.name); setSubcat(''); }}
+                  style={{
+                    flexDirection:'row', alignItems:'center', gap:8,
+                    paddingHorizontal:14, paddingVertical:11, borderRadius:14,
+                    borderWidth:1.5, borderColor: act ? C.accent : C.border,
+                    backgroundColor: act ? C.accent+'18' : C.surface2,
+                    minWidth:'45%', flex:1,
+                  }}>
+                  <Text style={{ fontSize:18 }}>{c.icon}</Text>
+                  <Text style={{ color: act ? C.accent : C.text, fontWeight:'700', fontSize:13, flex:1 }}>{c.name}</Text>
+                  {act && <Ionicons name="checkmark-circle" size={16} color={C.accent} />}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          {selCat && selCat.subs.length > 0 && (
+            <>
+              <Label t="ქვეკატეგორია" />
+              <View style={{ flexDirection:'row', flexWrap:'wrap', gap:8 }}>
+                {selCat.subs.map(s => (
+                  <TouchableOpacity key={s} onPress={() => setSubcat(subcat === s ? '' : s)}
+                    style={{ paddingHorizontal:14, paddingVertical:9, borderRadius:20, borderWidth:1.5, borderColor: subcat===s ? C.accent : C.border, backgroundColor: subcat===s ? C.accent+'22' : C.surface2 }}>
+                    <Text style={{ color: subcat===s ? C.accent : C.text2, fontWeight:'600', fontSize:13 }}>{s}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
+        </Card>
 
         <Card>
           <Label t="ფასი (₾) *" />

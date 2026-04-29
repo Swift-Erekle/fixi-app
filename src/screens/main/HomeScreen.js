@@ -229,107 +229,105 @@ export default function HomeScreen({ navigation }) {
     </TouchableOpacity>
   );
 
-  const ListHeader = () => (
-    <View>
-      {/* Title */}
-      <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <View>
-          <Text style={{ color: C.text, fontSize: 24, fontWeight: '900' }}>🔧 ხელოსნები</Text>
-          <Text style={{ color: C.text2, fontSize: 13, marginTop: 2 }}>იპოვე სანდო და გამოცდილი ხელოსნები</Text>
-        </View>
-        <TouchableOpacity onPress={() => navigation.navigate('Notifications')}
-          style={{ backgroundColor: C.surface, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 10 }}>
-          <Ionicons name="notifications-outline" size={20} color={C.text2} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Search & filter bar */}
-      <View style={{ paddingHorizontal: 20, marginBottom: 10 }}>
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <TouchableOpacity
-            onPress={() => setShowFilter(true)}
-            style={{
-              flexDirection: 'row', alignItems: 'center', gap: 6,
-              backgroundColor: hasActiveFilters ? C.accent + '22' : C.surface,
-              borderRadius: 12, borderWidth: 1,
-              borderColor: hasActiveFilters ? C.accent : C.border,
-              paddingHorizontal: 14, paddingVertical: 10,
-            }}
-          >
-            <Ionicons name="options-outline" size={16} color={hasActiveFilters ? C.accent : C.text2} />
-            <Text style={{ color: hasActiveFilters ? C.accent : C.text, fontWeight: '600', fontSize: 13 }}>ფილტრები</Text>
-            {hasActiveFilters && (
-              <View style={{ backgroundColor: C.accent, borderRadius: 10, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '900' }}>
-                  {[category, subCategory, city, companiesOnly].filter(Boolean).length}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          <View style={{
-            flex: 1, flexDirection: 'row', alignItems: 'center',
-            backgroundColor: C.surface, borderRadius: 12,
-            borderWidth: 1, borderColor: C.border, paddingHorizontal: 12,
-          }}>
-            <Text style={{ fontSize: 16, marginRight: 6 }}>🔍</Text>
-            <TextInput
-              style={{ flex: 1, color: C.text, fontSize: 13, paddingVertical: 10 }}
-              placeholder="ძიება..."
-              placeholderTextColor={C.text2}
-              value={search}
-              onChangeText={setSearch}
-            />
-            {search ? (
-              <TouchableOpacity onPress={() => setSearch('')}>
-                <Ionicons name="close-circle" size={18} color={C.text2} />
-              </TouchableOpacity>
-            ) : null}
-          </View>
-        </View>
-      </View>
-
-      {/* Active filter chips */}
-      {hasActiveFilters && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 20, marginBottom: 10 }}>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            {companiesOnly && <Chip label="კომპანიები" onRemove={() => setCompaniesOnly(false)} />}
-            {category && <Chip label={category} onRemove={() => { setCategory(''); setSubCategory(''); }} />}
-            {subCategory && <Chip label={subCategory} onRemove={() => setSubCategory('')} />}
-            {city && <Chip label={city} onRemove={() => setCity('')} color="#3b82f6" />}
-          </View>
-        </ScrollView>
-      )}
-
-      {/* VIP+ Companies */}
-      {companies.length > 0 && (
-        <View style={{ marginBottom: 20 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 12 }}>
-            <Text style={{ color: C.text, fontSize: 16, fontWeight: '800' }}>👑 VIP+ კომპანიები</Text>
-            <TouchableOpacity onPress={() => { setCompaniesOnly(true); setCategory(''); setSubCategory(''); setCity(''); }}>
-              <Text style={{ color: C.accent, fontSize: 13, fontWeight: '600' }}>ყველას ნახვა →</Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
-            {companies.map(c => (
-              <CompanyCard key={c.id} user={c} onPress={() => navigation.navigate('HandymanDetail', { id: c.id })} />
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      <Text style={{ color: C.text2, fontSize: 12, paddingHorizontal: 20, marginBottom: 8 }}>
-        {filtered.length} ხელოსანი
-      </Text>
-    </View>
-  );
-
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+      {/* Static header — outside FlatList so TextInput never loses focus on re-render */}
+      <View>
+        {/* Title */}
+        <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View>
+            <Text style={{ color: C.text, fontSize: 24, fontWeight: '900' }}>🔧 ხელოსნები</Text>
+            <Text style={{ color: C.text2, fontSize: 13, marginTop: 2 }}>იპოვე სანდო და გამოცდილი ხელოსნები</Text>
+          </View>
+          <TouchableOpacity onPress={() => navigation.navigate('Notifications')}
+            style={{ backgroundColor: C.surface, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 10 }}>
+            <Ionicons name="notifications-outline" size={20} color={C.text2} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Search & filter bar */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 10 }}>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity
+              onPress={() => setShowFilter(true)}
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: 6,
+                backgroundColor: hasActiveFilters ? C.accent + '22' : C.surface,
+                borderRadius: 12, borderWidth: 1,
+                borderColor: hasActiveFilters ? C.accent : C.border,
+                paddingHorizontal: 14, paddingVertical: 10,
+              }}
+            >
+              <Ionicons name="options-outline" size={16} color={hasActiveFilters ? C.accent : C.text2} />
+              <Text style={{ color: hasActiveFilters ? C.accent : C.text, fontWeight: '600', fontSize: 13 }}>ფილტრები</Text>
+              {hasActiveFilters && (
+                <View style={{ backgroundColor: C.accent, borderRadius: 10, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ color: '#fff', fontSize: 10, fontWeight: '900' }}>
+                    {[category, subCategory, city, companiesOnly].filter(Boolean).length}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <View style={{
+              flex: 1, flexDirection: 'row', alignItems: 'center',
+              backgroundColor: C.surface, borderRadius: 12,
+              borderWidth: 1, borderColor: C.border, paddingHorizontal: 12,
+            }}>
+              <Text style={{ fontSize: 16, marginRight: 6 }}>🔍</Text>
+              <TextInput
+                style={{ flex: 1, color: C.text, fontSize: 13, paddingVertical: 10 }}
+                placeholder="ძიება..."
+                placeholderTextColor={C.text2}
+                value={search}
+                onChangeText={setSearch}
+              />
+              {search ? (
+                <TouchableOpacity onPress={() => setSearch('')}>
+                  <Ionicons name="close-circle" size={18} color={C.text2} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
+        </View>
+
+        {/* Active filter chips */}
+        {hasActiveFilters && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 20, marginBottom: 10 }}>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {companiesOnly && <Chip label="კომპანიები" onRemove={() => setCompaniesOnly(false)} />}
+              {category && <Chip label={category} onRemove={() => { setCategory(''); setSubCategory(''); }} />}
+              {subCategory && <Chip label={subCategory} onRemove={() => setSubCategory('')} />}
+              {city && <Chip label={city} onRemove={() => setCity('')} color="#3b82f6" />}
+            </View>
+          </ScrollView>
+        )}
+
+        {/* VIP+ Companies */}
+        {companies.length > 0 && (
+          <View style={{ marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 12 }}>
+              <Text style={{ color: C.text, fontSize: 16, fontWeight: '800' }}>👑 VIP+ კომპანიები</Text>
+              <TouchableOpacity onPress={() => { setCompaniesOnly(true); setCategory(''); setSubCategory(''); setCity(''); }}>
+                <Text style={{ color: C.accent, fontSize: 13, fontWeight: '600' }}>ყველას ნახვა →</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
+              {companies.map(c => (
+                <CompanyCard key={c.id} user={c} onPress={() => navigation.navigate('HandymanDetail', { id: c.id })} />
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        <Text style={{ color: C.text2, fontSize: 12, paddingHorizontal: 20, marginBottom: 8 }}>
+          {filtered.length} ხელოსანი
+        </Text>
+      </View>
+
       <FlatList
         data={filtered}
         keyExtractor={i => i.id}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
-        ListHeaderComponent={ListHeader}
         renderItem={({ item }) => (
           <HandymanCard user={item} onPress={() => navigation.navigate('HandymanDetail', { id: item.id })} />
         )}
