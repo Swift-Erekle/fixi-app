@@ -44,8 +44,15 @@ export function AuthProvider({ children }) {
   }
 
   // Auto-logout on 401 (expired/invalid token)
+  // The handler receives the token that caused the 401 and checks it's still the
+  // current token — this prevents a stale in-flight request from a previous session
+  // from logging out a user who just successfully logged in with a new token.
   useEffect(() => {
-    setUnauthorizedHandler(() => { logout().catch(() => {}); });
+    setUnauthorizedHandler(async (failedToken) => {
+      const currentToken = await SecureStore.getItemAsync('token').catch(() => null);
+      if (failedToken && currentToken && failedToken !== currentToken) return;
+      logout().catch(() => {});
+    });
     return () => setUnauthorizedHandler(null);
   }, []);
 

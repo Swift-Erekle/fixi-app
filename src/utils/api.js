@@ -62,8 +62,10 @@ export async function api(path, opts = {}) {
   if (DEBUG && !res.ok) console.warn('[API] Error', res.status, data);
 
   // ── Auto-logout on token expiry (401) ─────────────────────────
+  // Pass the token that caused the 401 so the handler can verify it's still current
+  // (prevents a stale 401 from a previous session from logging out a newly-logged-in user)
   if (res.status === 401 && token && onUnauthorized && !opts.noAutoLogout) {
-    onUnauthorized();
+    onUnauthorized(token);
   }
 
   if (!res.ok) {

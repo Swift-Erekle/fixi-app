@@ -66,10 +66,134 @@ function AnalyticsTab() {
   );
 }
 
+// ────────── User requests sub-modal ──────────
+function UserRequestsModal({ userId, userName, visible, onClose, navigation }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!visible || !userId) return;
+    setLoading(true);
+    api('/admin/users/' + userId + '/requests')
+      .then(data => setItems(Array.isArray(data) ? data : []))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  }, [visible, userId]);
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={{ flex:1, justifyContent:'flex-end', backgroundColor:'rgba(0,0,0,0.7)' }}>
+        <View style={{ backgroundColor:C.surface, borderTopLeftRadius:24, borderTopRightRadius:24, maxHeight:'88%' }}>
+          <View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', padding:18, borderBottomWidth:1, borderBottomColor:C.border }}>
+            <Text style={{ color:C.text, fontWeight:'900', fontSize:15 }}>📋 მოთხოვნები — {userName}</Text>
+            <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={C.text2}/></TouchableOpacity>
+          </View>
+          {loading ? (
+            <View style={{ padding:40, alignItems:'center' }}><ActivityIndicator color={C.accent}/></View>
+          ) : (
+            <FlatList
+              data={items}
+              keyExtractor={r => r.id}
+              contentContainerStyle={{ padding:14, paddingBottom:30 }}
+              ListEmptyComponent={<Empty icon="📋" title="მოთხოვნა ჯერ არ არის"/>}
+              renderItem={({ item:r }) => (
+                <TouchableOpacity
+                  onPress={() => { onClose(); navigation.navigate('RequestDetail', { id:r.id }); }}
+                  style={{ backgroundColor:C.surface2, borderRadius:12, borderWidth:1, borderColor:C.border, padding:12, marginBottom:8 }}
+                >
+                  <View style={{ flexDirection:'row', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
+                    <Text style={{ color:C.text, fontWeight:'700', fontSize:13, flex:1, marginRight:8 }} numberOfLines={2}>{r.title}</Text>
+                    <Tag label={r.status} color={r.status==='open'?C.ok:r.status==='completed'?C.text2:C.warn}/>
+                  </View>
+                  <View style={{ flexDirection:'row', gap:6, flexWrap:'wrap' }}>
+                    {r.category ? <Tag label={r.category}/> : null}
+                    {r.city ? <Tag label={'📍 '+r.city}/> : null}
+                    <Tag label={'💬 '+(r._count?.offers||0)}/>
+                    {r.budget ? <Tag label={'₾'+r.budget}/> : <Tag label="შეთანხმ."/>}
+                  </View>
+                  <Text style={{ color:C.text2, fontSize:11, marginTop:6 }}>
+                    📅 {new Date(r.createdAt).toLocaleDateString('ka-GE')}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// ────────── User offers sub-modal ──────────
+function UserOffersModal({ userId, userName, visible, onClose, navigation }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!visible || !userId) return;
+    setLoading(true);
+    api('/admin/users/' + userId + '/offers')
+      .then(data => setItems(Array.isArray(data) ? data : []))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  }, [visible, userId]);
+
+  const statusColor = s => s==='accepted'?C.ok:s==='pending'?C.warn:C.err;
+  const statusLabel = s => s==='accepted'?'მიღებული':s==='pending'?'მოლოდინში':'უარყოფილი';
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={{ flex:1, justifyContent:'flex-end', backgroundColor:'rgba(0,0,0,0.7)' }}>
+        <View style={{ backgroundColor:C.surface, borderTopLeftRadius:24, borderTopRightRadius:24, maxHeight:'88%' }}>
+          <View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', padding:18, borderBottomWidth:1, borderBottomColor:C.border }}>
+            <Text style={{ color:C.text, fontWeight:'900', fontSize:15 }}>💬 შეთავაზებები — {userName}</Text>
+            <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={C.text2}/></TouchableOpacity>
+          </View>
+          {loading ? (
+            <View style={{ padding:40, alignItems:'center' }}><ActivityIndicator color={C.accent}/></View>
+          ) : (
+            <FlatList
+              data={items}
+              keyExtractor={(o,i) => o.id || String(i)}
+              contentContainerStyle={{ padding:14, paddingBottom:30 }}
+              ListEmptyComponent={<Empty icon="💬" title="შეთავაზება ჯერ არ არის"/>}
+              renderItem={({ item:o }) => {
+                const reqTitle = o.request?.title || 'მოთხოვნა';
+                const reqOwner = o.request?.user ? `${o.request.user.name||''} ${o.request.user.surname||''}`.trim() : '';
+                return (
+                  <TouchableOpacity
+                    onPress={() => o.request?.id && (onClose(), navigation.navigate('RequestDetail', { id:o.request.id }))}
+                    style={{ backgroundColor:C.surface2, borderRadius:12, borderWidth:1, borderColor:C.border, padding:12, marginBottom:8, flexDirection:'row', gap:10 }}
+                  >
+                    <View style={{ flex:1 }}>
+                      <Text style={{ color:C.text, fontWeight:'700', fontSize:13 }} numberOfLines={2}>{reqTitle}</Text>
+                      {reqOwner ? <Text style={{ color:C.text2, fontSize:12, marginTop:2 }}>👤 {reqOwner}</Text> : null}
+                      {o.comment ? <Text style={{ color:C.text2, fontSize:12, marginTop:4 }} numberOfLines={2}>{o.comment}</Text> : null}
+                      <Text style={{ color:C.text2, fontSize:11, marginTop:4 }}>
+                        📅 {new Date(o.createdAt).toLocaleDateString('ka-GE')}
+                      </Text>
+                    </View>
+                    <View style={{ alignItems:'flex-end', justifyContent:'center', gap:6 }}>
+                      <Text style={{ color:C.accent, fontWeight:'900', fontSize:16 }}>₾{o.price}</Text>
+                      <Tag label={statusLabel(o.status)} color={statusColor(o.status)}/>
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 // ────────── User detail modal ──────────
 function UserDetailModal({ userId, visible, onClose, onBlockToggle, navigation }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showRequests, setShowRequests] = useState(false);
+  const [showOffers, setShowOffers] = useState(false);
 
   const load = useCallback(async () => {
     if (!userId) return;
@@ -80,7 +204,9 @@ function UserDetailModal({ userId, visible, onClose, onBlockToggle, navigation }
     finally { setLoading(false); }
   }, [userId]);
 
-  useEffect(() => { if (visible) load(); }, [visible, userId]);
+  useEffect(() => {
+    if (visible) { setShowRequests(false); setShowOffers(false); load(); }
+  }, [visible, userId]);
 
   if (!visible) return null;
 
@@ -89,8 +215,10 @@ function UserDetailModal({ userId, visible, onClose, onBlockToggle, navigation }
   const planOk = user && user.plan && user.plan !== 'start' && user.planExpiresAt && new Date(user.planExpiresAt) > now;
   const trialOk = user && user.plan === 'start' && user.trialExpiresAt && new Date(user.trialExpiresAt) > now;
   const vipOk = user && user.vipType && user.vipType !== 'none' && user.vipExpiresAt && new Date(user.vipExpiresAt) > now;
+  const userName = user ? `${user.name || ''} ${user.surname || ''}`.trim() : '';
 
   return (
+    <>
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={{ flex:1, justifyContent:'flex-end', backgroundColor:'rgba(0,0,0,0.6)' }}>
         <View style={{ backgroundColor:C.surface, borderTopLeftRadius:24, borderTopRightRadius:24, maxHeight:'90%' }}>
@@ -124,16 +252,24 @@ function UserDetailModal({ userId, visible, onClose, onBlockToggle, navigation }
                 </View>
               </View>
 
-              {/* Stats */}
+              {/* Stats — requests & offers are tappable */}
               <View style={{ flexDirection:'row', gap:8, marginBottom:14, flexWrap:'wrap' }}>
+                <TouchableOpacity onPress={() => setShowRequests(true)}
+                  style={{ flex:1, minWidth:70, backgroundColor:C.accent+'18', borderRadius:12, borderWidth:1.5, borderColor:C.accent+'55', padding:10, alignItems:'center' }}>
+                  <Text style={{ color:C.accent, fontSize:18, fontWeight:'900' }}>{user._count?.requests || 0}</Text>
+                  <Text style={{ color:C.accent, fontSize:10, fontWeight:'700', marginTop:2 }}>მოთხოვნები ›</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowOffers(true)}
+                  style={{ flex:1, minWidth:70, backgroundColor:'#3b82f618', borderRadius:12, borderWidth:1.5, borderColor:'#3b82f655', padding:10, alignItems:'center' }}>
+                  <Text style={{ color:'#3b82f6', fontSize:18, fontWeight:'900' }}>{user._count?.offers || 0}</Text>
+                  <Text style={{ color:'#3b82f6', fontSize:10, fontWeight:'700', marginTop:2 }}>შეთავაზ. ›</Text>
+                </TouchableOpacity>
                 {[
-                  { label:'მოთხოვნები', val:user._count?.requests || 0 },
-                  { label:'შეთავაზ.', val:user._count?.offers || 0 },
                   { label:'სამუშაო', val:user.jobs || 0 },
                   { label:'შეფასება', val:user._count?.reviewsReceived || 0 },
                 ].map(s => (
                   <View key={s.label} style={{ flex:1, minWidth:70, backgroundColor:C.surface2, borderRadius:12, borderWidth:1, borderColor:C.border, padding:10, alignItems:'center' }}>
-                    <Text style={{ color:C.accent, fontSize:18, fontWeight:'900' }}>{s.val}</Text>
+                    <Text style={{ color:C.text, fontSize:18, fontWeight:'900' }}>{s.val}</Text>
                     <Text style={{ color:C.text2, fontSize:10, marginTop:2 }}>{s.label}</Text>
                   </View>
                 ))}
@@ -226,6 +362,22 @@ function UserDetailModal({ userId, visible, onClose, onBlockToggle, navigation }
         </View>
       </View>
     </Modal>
+
+    <UserRequestsModal
+      userId={userId}
+      userName={userName}
+      visible={showRequests}
+      onClose={() => setShowRequests(false)}
+      navigation={navigation}
+    />
+    <UserOffersModal
+      userId={userId}
+      userName={userName}
+      visible={showOffers}
+      onClose={() => setShowOffers(false)}
+      navigation={navigation}
+    />
+  </>
   );
 }
 
