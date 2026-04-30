@@ -1,21 +1,25 @@
 // src/screens/CardScreen.js
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, ActivityIndicator, Alert, Platform, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Modal, ActivityIndicator, Alert, Platform, RefreshControl, Switch } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { api } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 import { C } from '../utils/theme';
 import { Btn } from '../components/UI';
 
 export default function CardScreen() {
+  const { user, updateUser } = useAuth();
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [bindUrl, setBindUrl] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [autoRenew, setAutoRenew] = useState(!!user?.autoRenew);
+  const [arLoading, setArLoading] = useState(false);
 
   const load = useCallback(async () => {
-    try { const res = await api('/payment/cards'); setCards(res.cards || []); }
+    try { const res = await api('/payment/cards'); setCards(Array.isArray(res) ? res : (res.cards || [])); }
     catch (e) { }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
@@ -42,6 +46,16 @@ export default function CardScreen() {
   async function setDefault(id) {
     try { await api(`/payment/cards/${id}/default`, { method: 'PATCH' }); load(); }
     catch (e) { Alert.alert('⚠️', e?.error || 'ვერ შესრულდა'); }
+  }
+
+  async function toggleAutoRenew(val) {
+    setArLoading(true);
+    try {
+      await api('/payment/auto-renew', { method: 'PATCH', body: { autoRenew: val } });
+      setAutoRenew(val);
+      updateUser({ autoRenew: val });
+    } catch (e) { Alert.alert('⚠️', e?.error || 'ვერ შესრულდა'); }
+    finally { setArLoading(false); }
   }
 
   async function deleteCard(id) {
@@ -100,6 +114,26 @@ export default function CardScreen() {
       )}
 
       <Btn title="+ ახალი ბარათის მიბმა" onPress={bindNewCard} style={{ marginBottom: 14 }} />
+
+      {/* Auto-renew toggle — only if user has a plan */}
+      {user?.plan && user.plan !== 'start' && (
+        <View style={{ backgroundColor: C.surface, borderRadius: 16, borderWidth: 1, borderColor: autoRenew ? C.ok + '60' : C.border, padding: 16, marginBottom: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flex: 1, marginRight: 12 }}>
+              <Text style={{ color: C.text, fontWeight: '800', fontSize: 15 }}>🔄 ავტო-გახანგრძლივება</Text>
+              <Text style={{ color: C.text2, fontSize: 12, marginTop: 4, lineHeight: 18 }}>
+                {autoRenew
+                  ? 'ჩართულია — ტარიფი ავტომატურად განახლდება ვადის ამოწურვამდე 1 დღით ადრე'
+                  : 'გამორთულია — ვადის გასვლის შემდეგ ტარიფი არ განახლდება'}
+              </Text>
+            </View>
+            {arLoading
+              ? <ActivityIndicator color={C.ok} />
+              : <Switch value={autoRenew} onValueChange={toggleAutoRenew} trackColor={{ false: C.border, true: C.ok }} thumbColor="#fff" />
+            }
+          </View>
+        </View>
+      )}
 
       <Modal visible={!!bindUrl} animationType="slide" onRequestClose={() => setBindUrl(null)}>
         <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: Platform.OS === 'ios' ? 44 : 0 }}>

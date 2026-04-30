@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { C } from '../utils/theme';
@@ -94,6 +95,80 @@ function tabScreenOptions({ route }) {
   };
 }
 
+const PLAN_PRICES = { handyman: { pro: 29, top: 69 }, company: { pro: 99, top: 159 } };
+
+function PlanPickerModal({ visible, onDismiss, onPickPlan }) {
+  const { user } = useAuth();
+  const type = user?.type === 'company' ? 'company' : 'handyman';
+  const prices = PLAN_PRICES[type];
+
+  const plans = [
+    {
+      key: 'start', icon: '🆓', label: 'Start', price: '0', accent: C.text2,
+      features: ['მოთხოვნებზე შეთავაზება', 'ბაზარში განთავსება', 'ჩათი კლიენტებთან'],
+    },
+    {
+      key: 'pro', icon: '⚡', label: 'Pro', price: `${prices.pro}`, accent: '#3498db',
+      features: ['ყველა Start-ის შეძლება', 'Pro ბეჯი', 'პრიორიტეტული ჩვენება', 'ვერიფიკაციის შესაძლებლობა'],
+    },
+    {
+      key: 'top', icon: '🔝', label: 'TOP', price: `${prices.top}`, accent: '#f1c40f',
+      features: ['ყველა Pro-ს შეძლება', 'TOP-ი ბეჯი', 'პირველი პოზიციები', 'ფეიჩერდ სია'],
+    },
+  ];
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss}>
+      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' }}>
+        <View style={{ backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '88%' }}>
+          <View style={{ padding: 20, borderBottomWidth: 1, borderBottomColor: C.border, alignItems: 'center' }}>
+            <Text style={{ color: C.text, fontSize: 20, fontWeight: '900', marginBottom: 4 }}>🎉 მოგესალმებით!</Text>
+            <Text style={{ color: C.text2, fontSize: 13, textAlign: 'center' }}>
+              აირჩიეთ თქვენი სამუშაო ტარიფი — ნებისმიერ დროს შეგიძლიათ შეცვლა.
+            </Text>
+          </View>
+          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 8 }}>
+            {plans.map(p => (
+              <TouchableOpacity key={p.key} onPress={() => p.key === 'start' ? onDismiss() : onPickPlan()}
+                activeOpacity={0.85}
+                style={{ backgroundColor: C.surface2, borderRadius: 16, borderWidth: 1.5, borderColor: p.accent + (p.key === 'start' ? '44' : '88'), padding: 16, marginBottom: 12 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <Text style={{ fontSize: 24 }}>{p.icon}</Text>
+                    <Text style={{ color: p.key === 'start' ? C.text2 : p.accent, fontWeight: '900', fontSize: 18 }}>{p.label}</Text>
+                  </View>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={{ color: p.accent, fontSize: p.key === 'start' ? 16 : 22, fontWeight: '900' }}>
+                      {p.key === 'start' ? 'უფასო' : `${p.price}₾`}
+                    </Text>
+                    {p.key !== 'start' && <Text style={{ color: C.text2, fontSize: 11 }}>/თვე</Text>}
+                  </View>
+                </View>
+                {p.features.map((f, i) => (
+                  <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <Text style={{ color: '#10b981', fontSize: 13 }}>✓</Text>
+                    <Text style={{ color: C.text2, fontSize: 13 }}>{f}</Text>
+                  </View>
+                ))}
+                <View style={{ marginTop: 12, backgroundColor: p.accent + '18', borderRadius: 10, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: p.accent + '33' }}>
+                  <Text style={{ color: p.accent, fontWeight: '700', fontSize: 14 }}>
+                    {p.key === 'start' ? 'უფასოდ გაგრძელება' : `${p.label}-ის გამოწერა →`}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: C.border }}>
+            <TouchableOpacity onPress={onDismiss} style={{ padding: 14, alignItems: 'center' }}>
+              <Text style={{ color: C.text2, fontSize: 14 }}>მოგვიანებით</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 function UserTabs() {
   return (
     <Tab.Navigator screenOptions={tabScreenOptions}>
@@ -119,9 +194,19 @@ function StaffTabs() {
 }
 
 function HomeTabs() {
-  const { user } = useAuth();
+  const { user, showPlanPicker, dismissPlanPicker } = useAuth();
+  const navigation = useNavigation();
   const isStaff = user?.type === 'admin' || user?.type === 'staff';
-  return isStaff ? <StaffTabs /> : <UserTabs />;
+  return (
+    <>
+      {isStaff ? <StaffTabs /> : <UserTabs />}
+      <PlanPickerModal
+        visible={showPlanPicker}
+        onDismiss={dismissPlanPicker}
+        onPickPlan={() => { dismissPlanPicker(); navigation.navigate('Vip'); }}
+      />
+    </>
+  );
 }
 
 function AuthStack() {

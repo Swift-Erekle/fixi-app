@@ -316,33 +316,39 @@ function UserDetailModal({ userId, visible, onClose, onBlockToggle, navigation }
                 </View>
               )}
 
-              {/* Payments history */}
-              {user.vipPayments?.length ? (
-                <View style={{ backgroundColor:C.surface2, borderRadius:12, borderWidth:1, borderColor:C.border, padding:14, marginBottom:14 }}>
-                  <View style={{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-                    <Text style={{ color:C.text2, fontSize:11, fontWeight:'700', textTransform:'uppercase', letterSpacing:0.5 }}>💳 გადახდები</Text>
-                    <Text style={{ color:C.accent, fontWeight:'700', fontSize:13 }}>
-                      სულ: ₾{(user.vipPayments.filter(p=>p.status==='paid').reduce((s,p)=>s+(p.amount||0),0)/100).toFixed(2)}
-                    </Text>
-                  </View>
-                  {user.vipPayments.slice(0,5).map((p,i) => (
-                    <View key={i} style={{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', backgroundColor:C.surface, borderRadius:8, padding:10, marginBottom:6 }}>
-                      <View>
-                        <Text style={{ color:C.text, fontWeight:'600', fontSize:12 }}>
-                          {p.type==='subscription_pro'?'⚡ Pro':p.type==='subscription_top'?'🔝 TOP':p.type==='vip'?'⭐ VIP':p.type==='vipp'?'💜 VIP+':p.type||'—'}
-                        </Text>
-                        <Text style={{ color:C.text2, fontSize:11 }}>{fdate(p.createdAt)}</Text>
-                      </View>
-                      <View style={{ alignItems:'flex-end' }}>
-                        <Text style={{ color:C.accent, fontWeight:'800', fontSize:14 }}>₾{((p.amount||0)/100).toFixed(2)}</Text>
-                        <Text style={{ color:p.status==='paid'?C.ok:p.status==='pending'?C.warn:C.err, fontSize:11 }}>
-                          {p.status==='paid'?'✅':p.status==='pending'?'⏳':'❌'} {p.status}
-                        </Text>
-                      </View>
+              {/* Payments history — VIP + Subscription combined */}
+              {((user.vipPayments?.length || 0) + (user.subscriptionPayments?.length || 0)) > 0 ? (() => {
+                const vipPays = (user.vipPayments || []).map(p => ({ ...p, _kind: 'vip' }));
+                const subPays = (user.subscriptionPayments || []).map(p => ({ ...p, _kind: 'sub' }));
+                const allPays = [...vipPays, ...subPays].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0,8);
+                const totalPaid = allPays.filter(p=>p.status==='paid').reduce((s,p)=>s+(p.amount||0),0);
+                return (
+                  <View style={{ backgroundColor:C.surface2, borderRadius:12, borderWidth:1, borderColor:C.border, padding:14, marginBottom:14 }}>
+                    <View style={{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+                      <Text style={{ color:C.text2, fontSize:11, fontWeight:'700', textTransform:'uppercase', letterSpacing:0.5 }}>💳 გადახდები</Text>
+                      <Text style={{ color:C.accent, fontWeight:'700', fontSize:13 }}>სულ: ₾{(totalPaid/100).toFixed(2)}</Text>
                     </View>
-                  ))}
-                </View>
-              ) : null}
+                    {allPays.map((p,i) => (
+                      <View key={i} style={{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', backgroundColor:C.surface, borderRadius:8, padding:10, marginBottom:6 }}>
+                        <View>
+                          <Text style={{ color:C.text, fontWeight:'600', fontSize:12 }}>
+                            {p._kind==='sub'
+                              ? (p.plan==='top'?'🔝 TOP':p.plan==='pro'?'⚡ Pro':p.plan||'—')
+                              : (p.vipType==='vip'?'⭐ VIP':p.vipType==='vipp'?'💜 VIP+':p.vipType==='bind'?'🔗 ბარათი':p.vipType||'—')}
+                          </Text>
+                          <Text style={{ color:C.text2, fontSize:11 }}>{fdate(p.createdAt)}</Text>
+                        </View>
+                        <View style={{ alignItems:'flex-end' }}>
+                          <Text style={{ color:C.accent, fontWeight:'800', fontSize:14 }}>₾{((p.amount||0)/100).toFixed(2)}</Text>
+                          <Text style={{ color:p.status==='paid'?C.ok:p.status==='pending'?C.warn:C.err, fontSize:11 }}>
+                            {p.status==='paid'?'✅':p.status==='pending'?'⏳':'❌'} {p.status}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                );
+              })() : null}
 
               {/* Actions */}
               <View style={{ gap:10 }}>
@@ -503,6 +509,16 @@ function RequestsTab({ navigation }) {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
+  function handleDelete(id, title) {
+    Alert.alert('მოთხოვნის წაშლა?', title || '', [
+      { text: 'გაუქმება', style: 'cancel' },
+      { text: '🗑 წაშლა', style: 'destructive', onPress: async () => {
+        try { await api('/admin/requests/' + id, { method: 'DELETE' }); load(); }
+        catch (e) { Alert.alert('შეცდომა', e.error || 'ვერ წაიშალა'); }
+      }},
+    ]);
+  }
+
   if (loading) return <ActivityIndicator color={C.accent} style={{ marginTop:30 }}/>;
 
   return (
@@ -514,7 +530,13 @@ function RequestsTab({ navigation }) {
       renderItem={({ item:r }) => (
         <TouchableOpacity onPress={() => navigation.navigate('RequestDetail', { id:r.id })}
           style={{ backgroundColor:C.surface, borderRadius:12, borderWidth:1, borderColor:C.border, padding:12, marginBottom:8 }}>
-          <Text style={{ color:C.text, fontWeight:'700', fontSize:14, marginBottom:4 }} numberOfLines={1}>{r.title}</Text>
+          <View style={{ flexDirection:'row', justifyContent:'space-between', alignItems:'flex-start', marginBottom:4 }}>
+            <Text style={{ color:C.text, fontWeight:'700', fontSize:14, flex:1, marginRight:8 }} numberOfLines={1}>{r.title}</Text>
+            <TouchableOpacity onPress={() => handleDelete(r.id, r.title)}
+              style={{ backgroundColor:C.err+'18', borderRadius:8, borderWidth:1, borderColor:C.err+'55', paddingHorizontal:8, paddingVertical:4 }}>
+              <Text style={{ color:C.err, fontSize:11, fontWeight:'700' }}>🗑</Text>
+            </TouchableOpacity>
+          </View>
           <View style={{ flexDirection:'row', gap:6, flexWrap:'wrap', marginBottom:6 }}>
             <Tag label={r.category}/>
             {r.city && <Tag label={'📍 '+r.city}/>}

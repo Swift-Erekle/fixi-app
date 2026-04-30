@@ -14,13 +14,21 @@ import { Avatar } from '../../components/UI';
 
 const CITIES = ['', ...GEORGIA_CITIES];
 
-function FilterModal({ visible, initialCat, initialSubcat, initialCity, onClose, onApply }) {
+const RATING_OPTS = [
+  { key: '', label: 'ყველა' },
+  { key: '3.5', label: '⭐ 3.5+' },
+  { key: '4.0', label: '⭐ 4.0+' },
+  { key: '4.5', label: '⭐ 4.5+' },
+];
+
+function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialMinRating, onClose, onApply }) {
   const [cat, setCat] = useState(initialCat || '');
   const [subcat, setSubcat] = useState(initialSubcat || '');
   const [city, setCity] = useState(initialCity || '');
+  const [minRating, setMinRating] = useState(initialMinRating || '');
 
   useEffect(() => {
-    if (visible) { setCat(initialCat || ''); setSubcat(initialSubcat || ''); setCity(initialCity || ''); }
+    if (visible) { setCat(initialCat || ''); setSubcat(initialSubcat || ''); setCity(initialCity || ''); setMinRating(initialMinRating || ''); }
   }, [visible]);
 
   const selCat = CATEGORIES.find(c => c.name === cat);
@@ -32,7 +40,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, onClose,
 
           {/* Header */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: C.border }}>
-            <TouchableOpacity onPress={() => { setCat(''); setSubcat(''); setCity(''); }}>
+            <TouchableOpacity onPress={() => { setCat(''); setSubcat(''); setCity(''); setMinRating(''); }}>
               <Text style={{ color: C.text2, fontWeight: '700', fontSize: 14 }}>გასუფთავება</Text>
             </TouchableOpacity>
             <Text style={{ color: C.text, fontWeight: '900', fontSize: 17 }}>ფილტრები</Text>
@@ -89,7 +97,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, onClose,
 
             {/* City */}
             <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>ქალაქი</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
               {CITIES.map(c => (
                 <TouchableOpacity
                   key={c || 'all'}
@@ -106,12 +114,23 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, onClose,
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* Rating */}
+            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>შეფასება</Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+              {RATING_OPTS.map(opt => (
+                <TouchableOpacity key={opt.key} onPress={() => setMinRating(opt.key)}
+                  style={{ flex: 1, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5, borderColor: minRating === opt.key ? '#f1c40f' : C.border, backgroundColor: minRating === opt.key ? '#f1c40f22' : C.surface2, alignItems: 'center' }}>
+                  <Text style={{ color: minRating === opt.key ? '#f1c40f' : C.text2, fontWeight: '700', fontSize: 12 }}>{opt.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </ScrollView>
 
           {/* Apply */}
           <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: C.border }}>
             <TouchableOpacity
-              onPress={() => { onApply({ cat, subcat, city }); onClose(); }}
+              onPress={() => { onApply({ cat, subcat, city, minRating }); onClose(); }}
               style={{ backgroundColor: C.accent, borderRadius: 14, padding: 16, alignItems: 'center' }}
             >
               <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>გამოყენება</Text>
@@ -165,6 +184,7 @@ export default function HomeScreen({ navigation }) {
   const [category, setCategory] = useState('');
   const [subCategory, setSubCategory] = useState('');
   const [city, setCity] = useState('');
+  const [minRating, setMinRating] = useState('');
   const [companiesOnly, setCompaniesOnly] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
 
@@ -179,12 +199,12 @@ export default function HomeScreen({ navigation }) {
       );
       setCompanies(comps);
       setHandymen(data);
-      applyFilters(data, search, category, subCategory, city, companiesOnly);
+      applyFilters(data, search, category, subCategory, city, companiesOnly, minRating);
     } catch (e) { console.warn(e); }
     finally { setLoading(false); setRefreshing(false); }
   }
 
-  function applyFilters(list, q, cat, subcat, c, compsOnly) {
+  function applyFilters(list, q, cat, subcat, c, compsOnly, minRat) {
     let res = list;
     if (compsOnly) res = res.filter(h => h.type === 'company');
     if (q) {
@@ -196,10 +216,18 @@ export default function HomeScreen({ navigation }) {
       );
     }
     if (cat) {
-      res = res.filter(h =>
-        h.specialty?.toLowerCase().includes(cat.toLowerCase()) ||
-        h.specialties?.some(s => s.toLowerCase().includes(cat.toLowerCase()))
-      );
+      const catSubs = CATEGORIES.find(c => c.name === cat)?.subs || [];
+      const catLow = cat.toLowerCase();
+      res = res.filter(h => {
+        if (h.specialty?.toLowerCase().includes(catLow)) return true;
+        if (h.specialties?.some(s => s.toLowerCase().includes(catLow))) return true;
+        if (catSubs.length > 0 && catSubs.some(sub => {
+          const subLow = sub.toLowerCase();
+          return h.specialty?.toLowerCase().includes(subLow) ||
+            h.specialties?.some(s => s.toLowerCase().includes(subLow));
+        })) return true;
+        return false;
+      });
     }
     if (subcat) {
       res = res.filter(h =>
@@ -208,15 +236,24 @@ export default function HomeScreen({ navigation }) {
       );
     }
     if (c) res = res.filter(h => h.city?.toLowerCase() === c.toLowerCase());
+    if (minRat) {
+      const minVal = parseFloat(minRat);
+      res = res.filter(h => {
+        const reviews = h.reviewsReceived;
+        if (!reviews?.length) return false;
+        const avg = reviews.reduce((s, r) => s + r.stars, 0) / reviews.length;
+        return avg >= minVal;
+      });
+    }
     setFiltered(res);
   }
 
-  useEffect(() => { applyFilters(handymen, search, category, subCategory, city, companiesOnly); },
-    [search, category, subCategory, city, companiesOnly, handymen]);
+  useEffect(() => { applyFilters(handymen, search, category, subCategory, city, companiesOnly, minRating); },
+    [search, category, subCategory, city, companiesOnly, minRating, handymen]);
 
   useFocusEffect(useCallback(() => { load(); }, []));
 
-  const hasActiveFilters = category || subCategory || city || companiesOnly;
+  const hasActiveFilters = category || subCategory || city || minRating || companiesOnly;
 
   const Chip = ({ label, onRemove, color = C.accent }) => (
     <TouchableOpacity onPress={onRemove} style={{
@@ -263,7 +300,7 @@ export default function HomeScreen({ navigation }) {
               {hasActiveFilters && (
                 <View style={{ backgroundColor: C.accent, borderRadius: 10, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ color: '#fff', fontSize: 10, fontWeight: '900' }}>
-                    {[category, subCategory, city, companiesOnly].filter(Boolean).length}
+                    {[category, subCategory, city, minRating, companiesOnly].filter(Boolean).length}
                   </Text>
                 </View>
               )}
@@ -298,6 +335,7 @@ export default function HomeScreen({ navigation }) {
               {category && <Chip label={category} onRemove={() => { setCategory(''); setSubCategory(''); }} />}
               {subCategory && <Chip label={subCategory} onRemove={() => setSubCategory('')} />}
               {city && <Chip label={city} onRemove={() => setCity('')} color="#3b82f6" />}
+              {minRating && <Chip label={`⭐ ${minRating}+`} onRemove={() => setMinRating('')} color="#f1c40f" />}
             </View>
           </ScrollView>
         )}
@@ -348,11 +386,13 @@ export default function HomeScreen({ navigation }) {
         initialCat={category}
         initialSubcat={subCategory}
         initialCity={city}
+        initialMinRating={minRating}
         onClose={() => setShowFilter(false)}
-        onApply={({ cat, subcat, city: c }) => {
+        onApply={({ cat, subcat, city: c, minRating: mr }) => {
           setCategory(cat);
           setSubCategory(subcat);
           setCity(c);
+          setMinRating(mr);
           setCompaniesOnly(false);
         }}
       />

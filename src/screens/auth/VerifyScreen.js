@@ -1,6 +1,7 @@
 // src/screens/auth/VerifyScreen.js
 import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, Alert, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
@@ -36,6 +37,9 @@ export default function VerifyScreen({ route, navigation }) {
     setLoading(true);
     try {
       const data = await api('/auth/verify', { method:'POST', body:{ email, code:full } });
+      if (data.user?.type === 'handyman' || data.user?.type === 'company') {
+        await SecureStore.setItemAsync('pendingPlanPicker', 'true').catch(() => {});
+      }
       await login(data.token, data.user);
     } catch (e) { Alert.alert('შეცდომა', e.error||'კოდი არასწორია'); }
     finally { setLoading(false); }

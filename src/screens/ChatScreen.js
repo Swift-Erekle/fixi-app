@@ -1,5 +1,5 @@
 // src/screens/ChatScreen.js
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, Alert, Image, ActivityIndicator,
@@ -21,8 +21,10 @@ export default function ChatScreen({ route, navigation }) {
   const [sending, setSending]     = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
   const [agreeing, setAgreeing]   = useState(false);
+  const [countdown, setCountdown] = useState('');
   const flatRef    = useRef(null);
   const typingTimer = useRef(null);
+  const countdownTimer = useRef(null);
 
   useEffect(() => {
     navigation.setOptions({ title: title || 'ჩათი' });
@@ -257,6 +259,27 @@ export default function ChatScreen({ route, navigation }) {
     return result;
   }, [messages, chat, user]);
 
+  // Countdown timer for agreed offers/proposals
+  useEffect(() => {
+    const completedAt = chat?.offer?.completedAt || chat?.proposal?.completedAt;
+    const isAgreed = (chat?.offer?.status === 'agreed') || (chat?.proposal?.status === 'agreed');
+    if (!isAgreed || !completedAt) { setCountdown(''); clearInterval(countdownTimer.current); return; }
+    function tick() {
+      const diff = new Date(completedAt) - Date.now();
+      if (diff <= 0) { setCountdown('⏱ ვადა გასულია'); clearInterval(countdownTimer.current); return; }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      if (d > 0) setCountdown(`⏱ ${d}დ ${h}სთ ${m}წთ`);
+      else if (h > 0) setCountdown(`⏱ ${h}სთ ${m}წთ ${s}წმ`);
+      else setCountdown(`⏱ ${m}წთ ${s}წმ`);
+    }
+    tick();
+    countdownTimer.current = setInterval(tick, 1000);
+    return () => clearInterval(countdownTimer.current);
+  }, [chat]);
+
   const other = chat ? (user?.type === 'user' ? chat.handyman : chat.user) : null;
   const isFullyAgreed = (chat?.offer?.status === 'agreed') || (chat?.proposal?.status === 'agreed');
 
@@ -332,6 +355,7 @@ export default function ChatScreen({ route, navigation }) {
       {isFullyAgreed && (
         <View style={{ backgroundColor: C.ok + '15', borderBottomWidth: 1, borderBottomColor: C.ok + '30', padding: 10, alignItems: 'center' }}>
           <Text style={{ color: C.ok, fontWeight: '700', fontSize: 13 }}>🤝 შეთანხმება დასრულებულია — თანამშრომლობა დაიწყო</Text>
+          {countdown ? <Text style={{ color: C.ok, fontSize: 12, marginTop: 3 }}>{countdown}</Text> : null}
         </View>
       )}
       {chat?.offer?.status === 'completed' && (

@@ -31,7 +31,11 @@ export default function EditProfileScreen({ navigation }) {
   const [phone,    setPhone]    = useState(user?.phone || '');
   const [city,     setCity]     = useState(user?.city || '');
   const [desc,     setDesc]     = useState(user?.desc || '');
-  const [spec,     setSpec]     = useState(user?.specialty || '');
+  const [specs,    setSpecs]    = useState(
+    Array.isArray(user?.specialties) && user.specialties.length > 0
+      ? user.specialties
+      : user?.specialty ? [user.specialty] : []
+  );
   const [services, setServices] = useState(user?.services?.join(', ') || '');
   const [whatsappEnabled, setWhatsappEnabled] = useState(!!user?.whatsappEnabled); // ✅ NEW
   const [loading,  setLoading]  = useState(false);
@@ -48,8 +52,9 @@ export default function EditProfileScreen({ navigation }) {
       const data = await api('/users/me', { method: 'PATCH', body: {
         name: name.trim(), surname: surname.trim(),
         phone: phone.trim() || null, city: city || null,
-        desc: desc.trim() || null, specialty: spec || null,
-        specialties: spec ? [spec] : [],
+        desc: desc.trim() || null,
+        specialty: specs[0] || null,
+        specialties: specs,
         services: services ? services.split(',').map(s => s.trim()).filter(Boolean) : [],
         ...(isWorker ? { whatsappEnabled } : {}),
       }});
@@ -102,22 +107,29 @@ export default function EditProfileScreen({ navigation }) {
         {isWorker && (
           <>
             <Card>
-              <Label>სპეციალობა</Label>
+              <Label>სპეციალობა (შეგიძლია რამდენიმე)</Label>
+              {specs.length > 0 && (
+                <Text style={{ color: C.accent, fontSize: 12, marginBottom: 10 }}>✓ არჩეული: {specs.join(', ')}</Text>
+              )}
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-                {CATEGORIES.map(c => (
-                  <TouchableOpacity key={c.name} onPress={() => setSpec(c.name)}
-                    style={{
-                      flexDirection: 'row', alignItems: 'center', gap: 8,
-                      paddingHorizontal: 14, paddingVertical: 11, borderRadius: 14,
-                      borderWidth: 1.5, borderColor: spec === c.name ? C.accent : C.border,
-                      backgroundColor: spec === c.name ? C.accent + '18' : C.surface2,
-                      minWidth: '45%', flex: 1,
-                    }}>
-                    <Text style={{ fontSize: 18 }}>{c.icon}</Text>
-                    <Text style={{ color: spec === c.name ? C.accent : C.text, fontWeight: '700', fontSize: 13, flex: 1 }}>{c.name}</Text>
-                    {spec === c.name && <Ionicons name="checkmark-circle" size={16} color={C.accent} />}
-                  </TouchableOpacity>
-                ))}
+                {CATEGORIES.map(c => {
+                  const sel = specs.includes(c.name);
+                  return (
+                    <TouchableOpacity key={c.name}
+                      onPress={() => setSpecs(prev => sel ? prev.filter(s => s !== c.name) : [...prev, c.name])}
+                      style={{
+                        flexDirection: 'row', alignItems: 'center', gap: 8,
+                        paddingHorizontal: 14, paddingVertical: 11, borderRadius: 14,
+                        borderWidth: 1.5, borderColor: sel ? C.accent : C.border,
+                        backgroundColor: sel ? C.accent + '18' : C.surface2,
+                        minWidth: '45%', flex: 1,
+                      }}>
+                      <Text style={{ fontSize: 18 }}>{c.icon}</Text>
+                      <Text style={{ color: sel ? C.accent : C.text, fontWeight: '700', fontSize: 13, flex: 1 }}>{c.name}</Text>
+                      {sel && <Ionicons name="checkmark-circle" size={16} color={C.accent} />}
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </Card>
 
@@ -162,7 +174,7 @@ function PortfolioCard() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) return;
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
       quality: 0.85,
     });
@@ -173,7 +185,8 @@ function PortfolioCard() {
       const slots = Math.min(result.assets.length, 20 - items.length);
       for (let i = 0; i < slots; i++) {
         const a = result.assets[i];
-        form.append('files', { uri: a.uri, name: `port_${Date.now()}_${i}.jpg`, type:'image/jpeg' });
+        const isVideo = a.type === 'video' || a.uri?.match(/\.(mp4|mov|avi|mkv)$/i);
+        form.append('files', { uri: a.uri, name: `port_${Date.now()}_${i}.${isVideo ? 'mp4' : 'jpg'}`, type: isVideo ? 'video/mp4' : 'image/jpeg' });
       }
       const data = await api('/users/portfolio', { method:'POST', body:form });
       setItems(data.portfolio || []);
@@ -201,15 +214,27 @@ function PortfolioCard() {
       {items.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom:12 }}>
           <View style={{ flexDirection:'row', gap:8 }}>
-            {items.map((p, i) => (
-              <View key={i} style={{ position:'relative' }}>
-                <Image source={{ uri:p.url }} style={{ width:100, height:100, borderRadius:12, backgroundColor:C.surface2 }} resizeMode="cover"/>
-                <TouchableOpacity onPress={() => removeAt(i)}
-                  style={{ position:'absolute', top:-6, right:-6, backgroundColor:C.err, borderRadius:12, width:22, height:22, alignItems:'center', justifyContent:'center', borderWidth:2, borderColor:C.bg }}>
-                  <Text style={{ color:'#fff', fontSize:11, fontWeight:'800' }}>✕</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+            {items.map((p, i) => {
+              const isVideo = p.type === 'video' || p.url?.match(/\.(mp4|mov|avi|mkv)(\?|$)/i);
+              return (
+                <View key={i} style={{ position:'relative' }}>
+                  <Image
+                    source={{ uri: isVideo ? (p.thumbnail || p.url) : p.url }}
+                    style={{ width:100, height:100, borderRadius:12, backgroundColor:C.surface2 }}
+                    resizeMode="cover"
+                  />
+                  {isVideo && (
+                    <View style={{ position:'absolute', inset:0, alignItems:'center', justifyContent:'center', backgroundColor:'rgba(0,0,0,0.3)', borderRadius:12 }}>
+                      <Text style={{ fontSize:28 }}>▶️</Text>
+                    </View>
+                  )}
+                  <TouchableOpacity onPress={() => removeAt(i)}
+                    style={{ position:'absolute', top:-6, right:-6, backgroundColor:C.err, borderRadius:12, width:22, height:22, alignItems:'center', justifyContent:'center', borderWidth:2, borderColor:C.bg }}>
+                    <Text style={{ color:'#fff', fontSize:11, fontWeight:'800' }}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
           </View>
         </ScrollView>
       )}
@@ -219,7 +244,7 @@ function PortfolioCard() {
           ? <ActivityIndicator color={C.accent}/>
           : <>
               <Text style={{ fontSize:18 }}>📷</Text>
-              <Text style={{ color:C.text2, fontWeight:'600' }}>ფოტოს დამატება</Text>
+              <Text style={{ color:C.text2, fontWeight:'600' }}>ფოტო / ვიდეო დამატება</Text>
             </>
         }
       </TouchableOpacity>

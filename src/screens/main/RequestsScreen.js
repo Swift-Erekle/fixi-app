@@ -1,6 +1,6 @@
 // src/screens/main/RequestsScreen.js
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, RefreshControl, ScrollView, TextInput, Modal } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, ScrollView, TextInput, Modal, Switch } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,13 +12,28 @@ import { CATEGORIES, GEORGIA_CITIES } from '../../utils/categories';
 
 const CITIES = ['', ...GEORGIA_CITIES];
 
-function FilterModal({ visible, initialCat, initialSubcat, initialCity, onClose, onApply }) {
+const STATUS_OPTS = [
+  { key: '', label: 'ყველა' },
+  { key: 'open', label: 'ღია' },
+  { key: 'pending', label: 'მიმდინარე' },
+  { key: 'completed', label: 'დასრულებული' },
+];
+
+function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialMinBudget, initialMaxBudget, initialStatus, initialUrgent, onClose, onApply }) {
   const [cat, setCat] = useState(initialCat || '');
   const [subcat, setSubcat] = useState(initialSubcat || '');
   const [city, setCity] = useState(initialCity || '');
+  const [minBudget, setMinBudget] = useState(initialMinBudget || '');
+  const [maxBudget, setMaxBudget] = useState(initialMaxBudget || '');
+  const [status, setStatus] = useState(initialStatus || '');
+  const [urgent, setUrgent] = useState(initialUrgent || false);
 
   useEffect(() => {
-    if (visible) { setCat(initialCat || ''); setSubcat(initialSubcat || ''); setCity(initialCity || ''); }
+    if (visible) {
+      setCat(initialCat || ''); setSubcat(initialSubcat || ''); setCity(initialCity || '');
+      setMinBudget(initialMinBudget || ''); setMaxBudget(initialMaxBudget || '');
+      setStatus(initialStatus || ''); setUrgent(initialUrgent || false);
+    }
   }, [visible]);
 
   const selCat = CATEGORIES.find(c => c.name === cat);
@@ -28,7 +43,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, onClose,
       <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' }}>
         <View style={{ backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '90%' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: C.border }}>
-            <TouchableOpacity onPress={() => { setCat(''); setSubcat(''); setCity(''); }}>
+            <TouchableOpacity onPress={() => { setCat(''); setSubcat(''); setCity(''); setMinBudget(''); setMaxBudget(''); setStatus(''); setUrgent(false); }}>
               <Text style={{ color: C.text2, fontWeight: '700', fontSize: 14 }}>გასუფთავება</Text>
             </TouchableOpacity>
             <Text style={{ color: C.text, fontWeight: '900', fontSize: 17 }}>ფილტრები</Text>
@@ -75,7 +90,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, onClose,
             )}
 
             <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>ქალაქი</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
               {CITIES.map(c => (
                 <TouchableOpacity key={c || 'all'} onPress={() => setCity(c)}
                   style={{ paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, borderWidth: 1.5, borderColor: city === c ? '#3b82f6' : C.border, backgroundColor: city === c ? '#3b82f622' : C.surface2 }}>
@@ -85,11 +100,53 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, onClose,
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* Price range */}
+            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>ფასი (₾)</Text>
+            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: C.text2, fontSize: 11, marginBottom: 6 }}>მინ.</Text>
+                <TextInput
+                  style={{ backgroundColor: C.surface2, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 12, color: C.text, fontSize: 15, fontWeight: '700', textAlign: 'center' }}
+                  placeholder="0" placeholderTextColor={C.text2} value={minBudget} onChangeText={setMinBudget} keyboardType="numeric"
+                />
+              </View>
+              <View style={{ alignSelf: 'flex-end', paddingBottom: 12 }}>
+                <Text style={{ color: C.text2, fontSize: 18 }}>–</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: C.text2, fontSize: 11, marginBottom: 6 }}>მაქს.</Text>
+                <TextInput
+                  style={{ backgroundColor: C.surface2, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 12, color: C.text, fontSize: 15, fontWeight: '700', textAlign: 'center' }}
+                  placeholder="∞" placeholderTextColor={C.text2} value={maxBudget} onChangeText={setMaxBudget} keyboardType="numeric"
+                />
+              </View>
+            </View>
+
+            {/* Status */}
+            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>სტატუსი</Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20 }}>
+              {STATUS_OPTS.map(opt => (
+                <TouchableOpacity key={opt.key} onPress={() => setStatus(opt.key)}
+                  style={{ flex: 1, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5, borderColor: status === opt.key ? C.accent : C.border, backgroundColor: status === opt.key ? C.accent + '22' : C.surface2, alignItems: 'center' }}>
+                  <Text style={{ color: status === opt.key ? C.accent : C.text2, fontWeight: '700', fontSize: 13 }}>{opt.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Urgent */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderRadius: 14, borderWidth: 1.5, borderColor: urgent ? C.err + '60' : C.border, backgroundColor: urgent ? C.err + '12' : C.surface2, marginBottom: 10 }}>
+              <View>
+                <Text style={{ color: urgent ? C.err : C.text, fontWeight: '700', fontSize: 14 }}>🚨 გადაუდებელი</Text>
+                <Text style={{ color: C.text2, fontSize: 12 }}>მხოლოდ urgent მოთხოვნები</Text>
+              </View>
+              <Switch value={urgent} onValueChange={setUrgent} trackColor={{ false: C.border, true: C.err }} thumbColor="#fff" />
+            </View>
           </ScrollView>
 
           <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: C.border }}>
             <TouchableOpacity
-              onPress={() => { onApply({ cat, subcat, city }); onClose(); }}
+              onPress={() => { onApply({ cat, subcat, city, minBudget, maxBudget, status, urgent }); onClose(); }}
               style={{ backgroundColor: C.accent, borderRadius: 14, padding: 16, alignItems: 'center' }}
             >
               <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>გამოყენება</Text>
@@ -110,6 +167,10 @@ export default function RequestsScreen({ navigation }) {
   const [cat, setCat] = useState('');
   const [subcat, setSubcat] = useState('');
   const [city, setCity] = useState('');
+  const [minBudget, setMinBudget] = useState('');
+  const [maxBudget, setMaxBudget] = useState('');
+  const [status, setStatus] = useState('');
+  const [urgent, setUrgent] = useState(false);
   const [search, setSearch] = useState('');
   const [showFilter, setShowFilter] = useState(false);
 
@@ -117,25 +178,26 @@ export default function RequestsScreen({ navigation }) {
     if (refresh) setRefreshing(true);
     try {
       const params = new URLSearchParams();
-      if (cat) params.set('category', cat);
-      if (subcat) params.set('specialty', subcat);
+      if (subcat || cat) params.set('category', subcat || cat);
       if (city) params.set('city', city);
+      if (status) params.set('status', status);
+      if (urgent) params.set('urgency', 'urgent');
       const data = await api('/requests?' + params.toString());
       setRequests(data);
     } catch (e) { console.warn(e); }
     finally { setLoading(false); setRefreshing(false); }
   }
 
-  useFocusEffect(useCallback(() => { load(); }, [cat, subcat, city]));
+  useFocusEffect(useCallback(() => { load(); }, [cat, subcat, city, status, urgent]));
 
-  const filtered = search
-    ? requests.filter(r =>
-        r.title?.toLowerCase().includes(search.toLowerCase()) ||
-        r.category?.toLowerCase().includes(search.toLowerCase())
-      )
-    : requests;
+  const filtered = requests.filter(r => {
+    if (search && !r.title?.toLowerCase().includes(search.toLowerCase()) && !r.category?.toLowerCase().includes(search.toLowerCase())) return false;
+    if (minBudget && r.budget != null && r.budget < parseInt(minBudget)) return false;
+    if (maxBudget && r.budget != null && r.budget > parseInt(maxBudget)) return false;
+    return true;
+  });
 
-  const hasActiveFilters = !!(cat || subcat || city);
+  const hasActiveFilters = !!(cat || subcat || city || minBudget || maxBudget || status || urgent);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -185,7 +247,7 @@ export default function RequestsScreen({ navigation }) {
               {hasActiveFilters && (
                 <View style={{ backgroundColor: C.accent, borderRadius: 10, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ color: '#fff', fontSize: 10, fontWeight: '900' }}>
-                    {[cat, subcat, city].filter(Boolean).length}
+                    {[cat, subcat, city, minBudget || maxBudget, status, urgent].filter(Boolean).length}
                   </Text>
                 </View>
               )}
@@ -232,6 +294,24 @@ export default function RequestsScreen({ navigation }) {
                     <Ionicons name="close" size={14} color="#3b82f6" />
                   </TouchableOpacity>
                 )}
+                {(minBudget || maxBudget) && (
+                  <TouchableOpacity onPress={() => { setMinBudget(''); setMaxBudget(''); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: C.ok + '22', borderWidth: 1, borderColor: C.ok + '66' }}>
+                    <Text style={{ color: C.ok, fontSize: 12, fontWeight: '700' }}>₾{minBudget||'0'}–{maxBudget||'∞'}</Text>
+                    <Ionicons name="close" size={14} color={C.ok} />
+                  </TouchableOpacity>
+                )}
+                {status && (
+                  <TouchableOpacity onPress={() => setStatus('')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: C.warn + '22', borderWidth: 1, borderColor: C.warn + '66' }}>
+                    <Text style={{ color: C.warn, fontSize: 12, fontWeight: '700' }}>{STATUS_OPTS.find(o => o.key === status)?.label}</Text>
+                    <Ionicons name="close" size={14} color={C.warn} />
+                  </TouchableOpacity>
+                )}
+                {urgent && (
+                  <TouchableOpacity onPress={() => setUrgent(false)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: C.err + '22', borderWidth: 1, borderColor: C.err + '66' }}>
+                    <Text style={{ color: C.err, fontSize: 12, fontWeight: '700' }}>🚨 გადაუდებელი</Text>
+                    <Ionicons name="close" size={14} color={C.err} />
+                  </TouchableOpacity>
+                )}
               </View>
             </ScrollView>
           )}
@@ -268,8 +348,15 @@ export default function RequestsScreen({ navigation }) {
         initialCat={cat}
         initialSubcat={subcat}
         initialCity={city}
+        initialMinBudget={minBudget}
+        initialMaxBudget={maxBudget}
+        initialStatus={status}
+        initialUrgent={urgent}
         onClose={() => setShowFilter(false)}
-        onApply={({ cat: c, subcat: sc, city: ci }) => { setCat(c); setSubcat(sc); setCity(ci); }}
+        onApply={({ cat: c, subcat: sc, city: ci, minBudget: mn, maxBudget: mx, status: st, urgent: ug }) => {
+          setCat(c); setSubcat(sc); setCity(ci);
+          setMinBudget(mn); setMaxBudget(mx); setStatus(st); setUrgent(ug);
+        }}
       />
     </View>
   );

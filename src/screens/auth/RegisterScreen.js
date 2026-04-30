@@ -43,7 +43,7 @@ export default function RegisterScreen({ navigation }) {
   const [phone,    setPhone]   = useState('');
   const [password, setPass]    = useState('');
   const [pass2,    setPass2]   = useState('');
-  const [spec,     setSpec]    = useState('');
+  const [specs,    setSpecs]   = useState([]);
   const [desc,     setDesc]    = useState('');
   const [whatsappEnabled, setWhatsappEnabled] = useState(false); // ✅ NEW
   const [loading,  setLoading] = useState(false);
@@ -53,7 +53,7 @@ export default function RegisterScreen({ navigation }) {
     if (!name.trim() || !email.trim() || !password) return Alert.alert('შეცდომა','სახელი, ელ-ფოსტა და პაროლი სავალდებულოა');
     if (password.length < 8) return Alert.alert('შეცდომა','პაროლი მინიმუმ 8 სიმბოლო');
     if (password !== pass2)  return Alert.alert('შეცდომა','პაროლები არ ემთხვევა');
-    if (isWorker && !spec)   return Alert.alert('შეცდომა','სპეციალობა სავალდებულოა');
+    if (isWorker && specs.length === 0) return Alert.alert('შეცდომა','მინიმუმ ერთი სპეციალობა სავალდებულოა');
     // ✅ Validation
     if (isWorker && whatsappEnabled && !phone.trim()) {
       return Alert.alert('შეცდომა','WhatsApp-ის ჩასართველად ტელეფონი სავალდებულოა');
@@ -64,8 +64,8 @@ export default function RegisterScreen({ navigation }) {
         name:name.trim(), surname:surname.trim(),
         email:email.trim().toLowerCase(), phone:phone.trim(),
         password, type,
-        specialty:   isWorker ? spec : undefined,
-        specialties: isWorker ? [spec] : undefined,
+        specialty:   isWorker ? specs[0] : undefined,
+        specialties: isWorker ? specs : undefined,
         desc:        isWorker ? desc  : undefined,
         whatsappEnabled: isWorker ? whatsappEnabled : undefined, // ✅ NEW
       }});
@@ -152,22 +152,29 @@ export default function RegisterScreen({ navigation }) {
 
         {isWorker && (
           <Card>
-            <Text style={{ color:C.text2, fontSize:12, fontWeight:'700', marginBottom:12, textTransform:'uppercase', letterSpacing:0.5 }}>სპეციალობა *</Text>
+            <Text style={{ color:C.text2, fontSize:12, fontWeight:'700', marginBottom:4, textTransform:'uppercase', letterSpacing:0.5 }}>სპეციალობა * (შეგიძლია რამდენიმე)</Text>
+            {specs.length > 0 && (
+              <Text style={{ color:C.accent, fontSize:12, marginBottom:10 }}>✓ არჩეული: {specs.join(', ')}</Text>
+            )}
             <View style={{ flexDirection:'row', flexWrap:'wrap', gap:10, marginBottom:14 }}>
-              {CATEGORIES.map(c => (
-                <TouchableOpacity key={c.name} onPress={() => setSpec(c.name)}
-                  style={{
-                    flexDirection:'row', alignItems:'center', gap:8,
-                    paddingHorizontal:14, paddingVertical:11, borderRadius:14,
-                    borderWidth:1.5, borderColor:spec===c.name ? C.accent : C.border,
-                    backgroundColor:spec===c.name ? C.accent+'18' : C.surface2,
-                    minWidth:'45%', flex:1,
-                  }}>
-                  <Text style={{ fontSize:18 }}>{c.icon}</Text>
-                  <Text style={{ color:spec===c.name ? C.accent : C.text, fontWeight:'700', fontSize:13, flex:1 }}>{c.name}</Text>
-                  {spec===c.name && <Ionicons name="checkmark-circle" size={16} color={C.accent}/>}
-                </TouchableOpacity>
-              ))}
+              {CATEGORIES.map(c => {
+                const sel = specs.includes(c.name);
+                return (
+                  <TouchableOpacity key={c.name}
+                    onPress={() => setSpecs(prev => sel ? prev.filter(s => s !== c.name) : [...prev, c.name])}
+                    style={{
+                      flexDirection:'row', alignItems:'center', gap:8,
+                      paddingHorizontal:14, paddingVertical:11, borderRadius:14,
+                      borderWidth:1.5, borderColor:sel ? C.accent : C.border,
+                      backgroundColor:sel ? C.accent+'18' : C.surface2,
+                      minWidth:'45%', flex:1,
+                    }}>
+                    <Text style={{ fontSize:18 }}>{c.icon}</Text>
+                    <Text style={{ color:sel ? C.accent : C.text, fontWeight:'700', fontSize:13, flex:1 }}>{c.name}</Text>
+                    {sel && <Ionicons name="checkmark-circle" size={16} color={C.accent}/>}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
             <Text style={{ color:C.text2, fontSize:12, fontWeight:'700', marginBottom:8, textTransform:'uppercase', letterSpacing:0.5 }}>აღწერა</Text>
             <TextInput

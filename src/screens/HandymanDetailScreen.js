@@ -49,7 +49,7 @@ import { useAuth } from '../context/AuthContext';
 import { Avatar, PlanBadge, Tag, Btn, Divider, Card, StarPicker } from '../components/UI';
 import { CATEGORIES } from '../utils/categories';
 
-const CAT_COLORS={'ელექტრიკოსი':'#8b5cf6','სანტექნიკი':'#3b82f6','კონდიციონერი':'#10b981','მხატვარი':'#f59e0b','დურგალი':'#ef4444','ინტერნეტი':'#06b6d4'};
+const CAT_COLORS={'ელექტრიკოსი':'#8b5cf6','სანტექნიკი':'#3b82f6','კონდიციონერი':'#10b981','მხატვარი':'#f59e0b','დურგალი':'#ef4444','ტექნიკოსი':'#06b6d4','მშენებელი':'#d97706','უნივერსალური':'#6b7280','მებაღე':'#22c55e','სპეციალიზებული':'#a855f7','სახლის':'#ec4899','ფილების':'#f97316','შემდუღებელი':'#dc2626','მეკარე':'#14b8a6'};
 function getColor(s){for(const[k,v]of Object.entries(CAT_COLORS))if(s?.toLowerCase().includes(k.toLowerCase()))return v;return C.accent;}
 
 // ✅ NEW: normalize phone → tel URI + wa.me digits
@@ -258,7 +258,7 @@ export default function HandymanDetailScreen({route,navigation}){
         </View>
         <View style={{padding:16,gap:12}}>
           {hm.services?.length>0&&(<Card><Text style={{color:C.text,fontWeight:'800',fontSize:15,marginBottom:12}}>🔧 სერვისები</Text><View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>{hm.services.map((s,i)=><Tag key={i} label={s} color={color}/>)}</View></Card>)}
-          {hm.portfolio?.filter(p=>p.type==='image').length>0&&(<Card><Text style={{color:C.text,fontWeight:'800',fontSize:15,marginBottom:12}}>🖼️ პორტფოლიო</Text><ScrollView horizontal showsHorizontalScrollIndicator={false}><View style={{flexDirection:'row',gap:8}}>{hm.portfolio.filter(p=>p.type==='image').map((p,i)=><TouchableOpacity key={i} activeOpacity={0.85} onPress={()=>{setPhotoIdx(i);setShowPhotos(true);}}><Image source={{uri:p.url}} style={{width:130,height:100,borderRadius:12,backgroundColor:C.surface2}} resizeMode="cover"/></TouchableOpacity>)}</View></ScrollView></Card>)}
+          {hm.portfolio?.length>0&&(<Card><Text style={{color:C.text,fontWeight:'800',fontSize:15,marginBottom:12}}>🖼️ პორტფოლიო</Text><ScrollView horizontal showsHorizontalScrollIndicator={false}><View style={{flexDirection:'row',gap:8}}>{hm.portfolio.map((p,i)=>{const isVid=p.type==='video'||p.url?.match(/\.(mp4|mov|avi|mkv)(\?|$)/i);const imgIdx=hm.portfolio.slice(0,i).filter(x=>x.type!=='video'&&!x.url?.match(/\.(mp4|mov|avi|mkv)(\?|$)/i)).length;return(<TouchableOpacity key={i} activeOpacity={0.85} onPress={()=>{if(isVid)Linking.openURL(p.url).catch(()=>{});else{setPhotoIdx(imgIdx);setShowPhotos(true);}}}><Image source={{uri:p.url}} style={{width:130,height:100,borderRadius:12,backgroundColor:C.surface2}} resizeMode="cover"/>{isVid&&(<View style={{position:'absolute',inset:0,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(0,0,0,0.35)',borderRadius:12}}><Text style={{fontSize:26}}>▶️</Text></View>)}</TouchableOpacity>);})}</View></ScrollView></Card>)}
           {reviews.length>0&&(<Card><Text style={{color:C.text,fontWeight:'800',fontSize:15,marginBottom:14}}>⭐ შეფასებები ({reviews.length})</Text>{reviews.slice(0,5).map((r,i)=>(<View key={i}><View style={{flexDirection:'row',justifyContent:'space-between',marginBottom:4}}><Text style={{color:C.text,fontWeight:'700',fontSize:13}}>{r.reviewer?.name} {r.reviewer?.surname||''}</Text><Text style={{color:'#f1c40f',fontSize:13}}>{'★'.repeat(r.stars)}{'☆'.repeat(5-r.stars)}</Text></View>{r.comment?<Text style={{color:C.text2,fontSize:13,lineHeight:18}}>{r.comment}</Text>:null}{i<reviews.slice(0,5).length-1&&<Divider/>}</View>))}</Card>)}
           {user&&user.type==='user'&&user.id!==hm.id&&(<Card><TouchableOpacity onPress={()=>setShowReview(!showReview)} style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{color:C.text,fontWeight:'700',fontSize:14}}>✍️ შეფასების დატოვება</Text><Ionicons name={showReview?'chevron-up':'chevron-down'} size={18} color={C.text2}/></TouchableOpacity>{showReview&&(<View style={{marginTop:16}}><StarPicker value={stars} onChange={setStars}/><TextInput style={{marginTop:12,backgroundColor:C.surface2,borderRadius:12,borderWidth:1,borderColor:C.border,padding:13,color:C.text,fontSize:14,height:90,textAlignVertical:'top'}} placeholder="კომენტარი..." placeholderTextColor={C.text2} value={comment} onChangeText={setComment} multiline/><Btn title="გაგზავნა" onPress={submitReview} loading={sending} style={{marginTop:12}}/></View>)}</Card>)}
 
@@ -282,7 +282,7 @@ export default function HandymanDetailScreen({route,navigation}){
         </View>
       </ScrollView>
       {hm&&<ProposalModal handyman={hm} visible={showProposal} onClose={()=>setShowProposal(false)}/>}
-      {showPhotos&&hm?.portfolio&&<PhotoViewer photos={hm.portfolio.filter(p=>p.type==='image')} startIndex={photoIdx} onClose={()=>setShowPhotos(false)}/>}
+      {showPhotos&&hm?.portfolio&&<PhotoViewer photos={hm.portfolio.filter(p=>p.type!=='video'&&!p.url?.match(/\.(mp4|mov|avi|mkv)(\?|$)/i))} startIndex={photoIdx} onClose={()=>setShowPhotos(false)}/>}
       {links && (
         <CallChoiceModal
           visible={showCallModal}
