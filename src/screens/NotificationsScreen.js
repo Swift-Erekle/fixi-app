@@ -48,19 +48,37 @@ export default function NotificationsScreen({ navigation }) {
   }, []);
 
   function handleTap(n) {
-    // Mark as read
     if (!n.read) {
       api('/notifications/read', { method:'POST', body:{ id:n.id } }).catch(() => {});
       setItems(prev => prev.map(x => x.id === n.id ? { ...x, read:true } : x));
     }
-    // Navigate
+
+    // Try structured data field first
+    const data = typeof n.data === 'string' ? (() => { try { return JSON.parse(n.data); } catch { return null; } })() : (n.data || null);
+    if (data) {
+      if (data.chatId)     return navigation.navigate('Chat', { chatId: data.chatId, title: data.title || 'ჩათი' });
+      if (data.requestId)  return navigation.navigate('RequestDetail', { id: data.requestId });
+      if (data.handymanId) return navigation.navigate('HandymanDetail', { id: data.handymanId });
+      if (data.screen === 'Chats') return navigation.navigate('Tabs', { screen: 'Chats' });
+      if (data.type === 'support') return navigation.navigate('Support');
+    }
+
+    // Fall back to link string
     if (n.link) {
-      const m = n.link.match(/[?&](chat|user|req)=([^&]+)/);
-      if (m) {
-        const [_, k, v] = m;
-        if (k === 'chat')  navigation.navigate('Chat', { chatId:v, title:'ჩათი' });
-        if (k === 'user')  navigation.navigate('HandymanDetail', { id:v });
-        if (k === 'req')   navigation.navigate('RequestDetail',  { id:v });
+      // matches: ?chat=x, &chatId=x, ?req=x, ?requestId=x, ?user=x, ?handymanId=x
+      const chatM  = n.link.match(/[?&](?:chat(?:Id)?)=([^&]+)/);
+      const reqM   = n.link.match(/[?&](?:req(?:uest(?:Id)?)?)=([^&]+)/);
+      const userM  = n.link.match(/[?&](?:user(?:Id)?|handyman(?:Id)?)=([^&]+)/);
+      if (chatM) return navigation.navigate('Chat', { chatId: chatM[1], title: 'ჩათი' });
+      if (reqM)  return navigation.navigate('RequestDetail', { id: reqM[1] });
+      if (userM) return navigation.navigate('HandymanDetail', { id: userM[1] });
+      // path-style: /chat/xxx  /request/xxx
+      const pathM = n.link.match(/\/(chat|request|handyman|req)\/([a-z0-9-]+)/i);
+      if (pathM) {
+        const [, seg, id] = pathM;
+        if (seg === 'chat')     return navigation.navigate('Chat', { chatId: id, title: 'ჩათი' });
+        if (seg === 'request' || seg === 'req') return navigation.navigate('RequestDetail', { id });
+        if (seg === 'handyman') return navigation.navigate('HandymanDetail', { id });
       }
     }
   }

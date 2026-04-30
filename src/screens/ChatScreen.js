@@ -2,14 +2,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, Alert, Image, ActivityIndicator, Modal,
+  KeyboardAvoidingView, Platform, Alert, Image, ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { Avatar, Btn } from '../components/UI';
+import { Avatar } from '../components/UI';
 import { connectSocket, getSocket } from '../utils/socket';
 
 export default function ChatScreen({ route, navigation }) {
@@ -20,7 +20,6 @@ export default function ChatScreen({ route, navigation }) {
   const [text, setText]           = useState('');
   const [sending, setSending]     = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
-  const [showAgree, setShowAgree] = useState(false);
   const [agreeing, setAgreeing]   = useState(false);
   const flatRef    = useRef(null);
   const typingTimer = useRef(null);
@@ -138,7 +137,6 @@ export default function ChatScreen({ route, navigation }) {
       } else if (chat.proposal?.id) {
         await api(`/proposals/${chat.proposal.id}/${action}`, { method: 'POST' });
       }
-      setShowAgree(false);
       await loadChat();
       Alert.alert(
         action === 'agree' ? '✅ შეთანხმდი!' : '❌ ვერ შეთანხმდი',
@@ -178,23 +176,24 @@ export default function ChatScreen({ route, navigation }) {
     return false;
   }
 
-  // ✅ NEW: dynamic button label — tells you whose turn it is
-  function agreeButtonLabel() {
-    if (!chat || !user) return 'შევთანხმდით? ▾';
+  function agreeContextText() {
+    if (!chat || !user) return '';
     const offer    = chat.offer;
     const proposal = chat.proposal;
     const isUser     = user.id === chat.userId;
     const isHandyman = user.id === chat.handymanId;
 
     if (offer) {
-      if (isUser     && !offer.recipientAgreed)                       return 'შევთანხმდით? ▾';
-      if (isHandyman && offer.recipientAgreed && !offer.senderAgreed) return 'მომხმარებელი ეთანხმება — შენ? ▾';
+      // Offer flow: handyman sent offer to user's request
+      if (isUser     && !offer.recipientAgreed)                       return '📋 ხელოსანი მოგმართავს — ეთანხმები სამუშაოს პირობებს?';
+      if (isHandyman && offer.recipientAgreed && !offer.senderAgreed) return '✅ მომხმარებელი ეთანხმება — შენ ეთანხმები?';
     }
     if (proposal) {
-      if (isHandyman && !proposal.senderAgreed)                            return 'შევთანხმდით? ▾';
-      if (isUser     && proposal.senderAgreed && !proposal.recipientAgreed) return 'ხელოსანი ეთანხმება — შენ? ▾';
+      // Proposal flow: user sent proposal to handyman
+      if (isHandyman && !proposal.senderAgreed)                             return '📋 მომხმარებელი გთხოვს სამუშაოს დაწყებას — ეთანხმები?';
+      if (isUser     && proposal.senderAgreed && !proposal.recipientAgreed) return '✅ ხელოსანი ეთანხმება — შენ ეთანხმები?';
     }
-    return 'შევთანხმდით? ▾';
+    return '';
   }
 
   const other = chat ? (user?.type === 'user' ? chat.handyman : chat.user) : null;
@@ -259,15 +258,7 @@ export default function ChatScreen({ route, navigation }) {
             )}
           </View>
 
-          {canAgree() && (
-            <TouchableOpacity
-              onPress={() => setShowAgree(true)}
-              style={{ backgroundColor: C.ok + '20', borderRadius: 10, borderWidth: 1, borderColor: C.ok + '50', paddingHorizontal: 12, paddingVertical: 6 }}
-            >
-              <Text style={{ color: C.ok, fontSize: 12, fontWeight: '700' }}>{agreeButtonLabel()}</Text>
-            </TouchableOpacity>
-          )}
-          {!canAgree() && <Ionicons name="chevron-forward" size={16} color={C.text2} />}
+          <Ionicons name="chevron-forward" size={16} color={C.text2} />
         </TouchableOpacity>
       )}
 
@@ -303,6 +294,26 @@ export default function ChatScreen({ route, navigation }) {
         </View>
       )}
 
+      {/* Agreement bar — visible when this user needs to act */}
+      {canAgree() && (
+        <View style={{ backgroundColor: C.surface2, borderTopWidth: 1, borderTopColor: C.accent + '40', padding: 12, paddingHorizontal: 14 }}>
+          <Text style={{ color: C.text2, fontSize: 12, marginBottom: 10, lineHeight: 18 }}>{agreeContextText()}</Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity onPress={() => handleAgreement('agree')} disabled={agreeing}
+              style={{ flex: 1, backgroundColor: C.ok + '20', borderRadius: 12, borderWidth: 1.5, borderColor: C.ok, padding: 12, alignItems: 'center' }}>
+              {agreeing
+                ? <ActivityIndicator color={C.ok} size="small" />
+                : <Text style={{ color: C.ok, fontWeight: '800', fontSize: 14 }}>✅ შევთანხმდი</Text>
+              }
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleAgreement('disagree')} disabled={agreeing}
+              style={{ flex: 1, backgroundColor: C.err + '15', borderRadius: 12, borderWidth: 1.5, borderColor: C.err + '60', padding: 12, alignItems: 'center' }}>
+              <Text style={{ color: C.err, fontWeight: '800', fontSize: 14 }}>❌ ვერ შევთანხმდი</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {/* Input bar (disabled when fully agreed) */}
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', padding: 10, paddingHorizontal: 14, gap: 10, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.surface, opacity: isFullyAgreed ? 0.5 : 1 }}>
         <TouchableOpacity onPress={sendImage} disabled={sending || isFullyAgreed}
@@ -320,40 +331,6 @@ export default function ChatScreen({ route, navigation }) {
           {sending ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="send" size={18} color={text.trim() && !isFullyAgreed ? '#fff' : C.text2} />}
         </TouchableOpacity>
       </View>
-
-      {/* Agreement Modal */}
-      <Modal visible={showAgree} transparent animationType="slide" onRequestClose={() => setShowAgree(false)}>
-        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View style={{ backgroundColor: C.surface, borderRadius: 24, padding: 24, margin: 16 }}>
-            <Text style={{ color: C.text, fontSize: 18, fontWeight: '900', marginBottom: 8, textAlign: 'center' }}>შეთანხმება</Text>
-            <Text style={{ color: C.text2, fontSize: 13, textAlign: 'center', marginBottom: 24, lineHeight: 20 }}>
-              დაადასტურე სამუშაოს შეთანხმება ან მონიშნე, რომ ვერ შეთანხმდი.
-            </Text>
-
-            <TouchableOpacity
-              onPress={() => handleAgreement('agree')}
-              disabled={agreeing}
-              style={{ backgroundColor: C.ok + '20', borderRadius: 14, borderWidth: 1.5, borderColor: C.ok, padding: 15, alignItems: 'center', marginBottom: 10 }}
-            >
-              {agreeing ? <ActivityIndicator color={C.ok} /> : (
-                <Text style={{ color: C.ok, fontWeight: '800', fontSize: 16 }}>✅ შევთანხმდი</Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => handleAgreement('disagree')}
-              disabled={agreeing}
-              style={{ backgroundColor: C.err + '15', borderRadius: 14, borderWidth: 1.5, borderColor: C.err + '60', padding: 15, alignItems: 'center', marginBottom: 10 }}
-            >
-              <Text style={{ color: C.err, fontWeight: '800', fontSize: 16 }}>❌ ვერ შევთანხმდი</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => setShowAgree(false)} style={{ padding: 14, alignItems: 'center' }}>
-              <Text style={{ color: C.text2, fontSize: 14 }}>გაუქმება</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </KeyboardAvoidingView>
   );
 }

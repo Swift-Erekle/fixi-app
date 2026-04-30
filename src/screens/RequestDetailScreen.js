@@ -126,18 +126,20 @@ export default function RequestDetailScreen({ route, navigation }) {
       {/* Main card */}
       <Card>
         {/* Category + status */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
           <View style={{
             backgroundColor: color + '20', borderRadius: 20,
             borderWidth: 1, borderColor: color + '50',
             paddingHorizontal: 12, paddingVertical: 5,
+            flex: 1, flexShrink: 1,
           }}>
-            <Text style={{ color, fontSize: 13, fontWeight: '700' }}>{req.category}</Text>
+            <Text style={{ color, fontSize: 13, fontWeight: '700' }} numberOfLines={2}>{req.category}</Text>
           </View>
           <View style={{
             backgroundColor: statusColor + '20', borderRadius: 20,
             borderWidth: 1, borderColor: statusColor + '50',
             paddingHorizontal: 12, paddingVertical: 5,
+            flexShrink: 0,
           }}>
             <Text style={{ color: statusColor, fontSize: 12, fontWeight: '700' }}>{statusLabel}</Text>
           </View>

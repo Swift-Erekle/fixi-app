@@ -50,7 +50,8 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     setUnauthorizedHandler(async (failedToken) => {
       const currentToken = await SecureStore.getItemAsync('token').catch(() => null);
-      if (failedToken && currentToken && failedToken !== currentToken) return;
+      if (!currentToken) return; // already logged out or login in progress — no token to protect
+      if (failedToken && failedToken !== currentToken) return; // stale 401 from old session
       logout().catch(() => {});
     });
     return () => setUnauthorizedHandler(null);
