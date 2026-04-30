@@ -220,7 +220,10 @@ export default function RequestDetailScreen({ route, navigation }) {
                     {avg && <Text style={{ color: '#f1c40f', fontSize: 12 }}>★ {avg}</Text>}
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={{ color: C.accent, fontWeight: '900', fontSize: 22 }}>₾{offer.price}</Text>
+                    {offer.price === 0
+                      ? <Text style={{ color: C.accent, fontWeight: '800', fontSize: 14 }}>💬 შეთ.</Text>
+                      : <Text style={{ color: C.accent, fontWeight: '900', fontSize: 22 }}>₾{offer.price}</Text>
+                    }
                     {offer.duration && <Text style={{ color: C.text2, fontSize: 12 }}>{offer.duration}</Text>}
                   </View>
                 </View>

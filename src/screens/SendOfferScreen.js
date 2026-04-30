@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, Alert, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { C } from '../utils/theme';
 import { api } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 import { Btn, Card } from '../components/UI';
 
 function Label({ t }) {
@@ -20,6 +21,7 @@ const PRESETS = [
 
 export default function SendOfferScreen({ route, navigation }) {
   const { requestId, requestTitle } = route.params;
+  const { user } = useAuth();
   const [price,      setPrice]      = useState('');
   const [negotiable, setNegotiable] = useState(false);
   const [days,       setDays]       = useState('');
@@ -35,12 +37,37 @@ export default function SendOfferScreen({ route, navigation }) {
   async function handleSend() {
     if (!negotiable && !price) return Alert.alert('შეცდომა','ფასი სავალდებულოა');
     if (dMins <= 0) return Alert.alert('შეცდომა','სამუშაოს ვადა სავალდებულოა');
+
+    // Client-side plan limit check (mirrors website behaviour)
+    if (user && (user.plan === 'start' || !user.plan)) {
+      if (user.trialExpiresAt && new Date(user.trialExpiresAt) < new Date()) {
+        Alert.alert('🔔 Start ტარიფის 3-თვიანი ვადა გასულია',
+          'Pro ან TOP-ზე გადასვლა საჭიროა.',
+          [{ text:'გაუქმება', style:'cancel' },{ text:'ტარიფები', onPress:()=>navigation.navigate('Vip') }]);
+        return;
+      }
+      try {
+        const myOffers = await api('/offers/mine');
+        const now = new Date();
+        const monthlyCount = (myOffers || []).filter(o => {
+          const d = new Date(o.createdAt);
+          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        }).length;
+        if (monthlyCount >= 5) {
+          Alert.alert('💡 ამ თვის შეთავაზებები ამოიწურა',
+            `Start ტარიფზე შეგიძლია 5 შეთავაზება/თვე (${monthlyCount}/5). Pro ან TOP-ზე — ულიმიტო.`,
+            [{ text:'გაუქმება', style:'cancel' },{ text:'ტარიფები', onPress:()=>navigation.navigate('Vip') }]);
+          return;
+        }
+      } catch (_) {}
+    }
+
     setLoading(true);
     try {
       await api('/offers', { method:'POST', body:{
         requestId,
         negotiable,
-        price: negotiable ? null : parseInt(price),
+        price: negotiable ? 0 : parseInt(price),
         durationMinutes: dMins,
         duration: dLabel,
         comment,
