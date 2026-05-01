@@ -35,11 +35,18 @@
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "VIBRATE",
-        "RECEIVE_BOOT_COMPLETED"
+        "RECEIVE_BOOT_COMPLETED",
+        "RECORD_AUDIO"
       ]
     },
     "plugins": [
       "expo-secure-store",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Fixi-ს სჭირდება მიკროფონი ხმოვანი შეტყობინებებისთვის"
+        }
+      ],
       [
         "expo-image-picker",
         {

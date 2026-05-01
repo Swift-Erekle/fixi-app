@@ -77,6 +77,7 @@ export default function RequestDetailScreen({ route, navigation }) {
   const [favorited, setFavorited] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
   const [deleting, setDeleting]   = useState(false);
+  const [statusChanging, setStatusChanging] = useState(false);
 
   useEffect(() => { load(); }, [id]);
 
@@ -130,6 +131,29 @@ export default function RequestDetailScreen({ route, navigation }) {
         } finally { setDeleting(false); }
       }},
     ]);
+  }
+
+  async function handleStatusChange(newStatus) {
+    const labels = { completed: 'დასრულებული', closed: 'დახურული' };
+    const label = labels[newStatus] || newStatus;
+    Alert.alert(
+      `მოთხოვნა → ${label}`,
+      newStatus === 'completed'
+        ? 'მოთხოვნა მონიშნული იქნება დასრულებულად. ხელოსანი ვეღარ გამოგიგზავნის შეთავაზებებს.'
+        : 'მოთხოვნა დაიხურება. ეს ქმედება შეუქცევადია.',
+      [
+        { text: 'გაუქმება', style: 'cancel' },
+        { text: `✅ ${label}`, onPress: async () => {
+          setStatusChanging(true);
+          try {
+            const updated = await api('/requests/' + id + '/status', { method: 'PATCH', body: { status: newStatus } });
+            setReq(prev => ({ ...prev, status: updated.status }));
+          } catch (e) {
+            Alert.alert('შეცდომა', e.error || 'სტატუსის შეცვლა ვერ მოხდა');
+          } finally { setStatusChanging(false); }
+        }},
+      ]
+    );
   }
 
   async function rejectOffer(offerId) {
@@ -411,7 +435,41 @@ export default function RequestDetailScreen({ route, navigation }) {
         </View>
       )}
 
-      {/* Worker CTA */}
+      {/* Owner status management */}
+      {isOwner && ['open', 'pending', 'in_progress'].includes(req.status) && (
+        <View style={{ marginTop: 12, backgroundColor: C.surface, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 16 }}>
+          <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 4 }}>🔧 მოთხოვნის მართვა</Text>
+          <Text style={{ color: C.text2, fontSize: 12, marginBottom: 14 }}>სამუშაო დასრულდა ან გინდა დახუჯო?</Text>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity
+              onPress={() => handleStatusChange('completed')}
+              disabled={statusChanging}
+              style={{ flex: 1, backgroundColor: C.ok + '18', borderRadius: 12, borderWidth: 1.5, borderColor: C.ok + '60', padding: 13, alignItems: 'center' }}
+            >
+              {statusChanging
+                ? <ActivityIndicator size="small" color={C.ok} />
+                : <Text style={{ color: C.ok, fontWeight: '800', fontSize: 13 }}>✅ დასრულებული</Text>
+              }
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleStatusChange('closed')}
+              disabled={statusChanging}
+              style={{ flex: 1, backgroundColor: C.text2 + '15', borderRadius: 12, borderWidth: 1.5, borderColor: C.text2 + '40', padding: 13, alignItems: 'center' }}
+            >
+              <Text style={{ color: C.text2, fontWeight: '800', fontSize: 13 }}>🔒 დახურვა</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Owner — completed/closed status banner */}
+      {isOwner && ['completed', 'closed'].includes(req.status) && (
+        <View style={{ marginTop: 12, backgroundColor: req.status === 'completed' ? C.ok + '15' : C.text2 + '15', borderRadius: 14, borderWidth: 1, borderColor: req.status === 'completed' ? C.ok + '40' : C.text2 + '40', padding: 14, alignItems: 'center' }}>
+          <Text style={{ color: req.status === 'completed' ? C.ok : C.text2, fontWeight: '700', fontSize: 14 }}>
+            {req.status === 'completed' ? '✅ მოთხოვნა დასრულებულია' : '🔒 მოთხოვნა დახურულია'}
+          </Text>
+        </View>
+      )}
       {isWorker && ['open', 'pending'].includes(req.status) && !hasActive && (
         <Btn
           title="📤 შეთავაზების გაგზავნა"

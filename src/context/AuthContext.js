@@ -34,15 +34,19 @@ export function AuthProvider({ children }) {
   async function login(token, userData) {
     lastLoginAt.current = Date.now();
     await SecureStore.setItemAsync('token', token);
+    // ✅ FIX: setUser immediately after token write — no await after this point
+    // so React re-render (AuthStack → MainStack) fires without any delay.
     setUser(userData);
     connectSocket();
     registerForPushNotifications().catch(() => {});
-    // Show plan picker once for newly registered workers
-    const pending = await SecureStore.getItemAsync('pendingPlanPicker').catch(() => null);
-    if (pending === 'true' && (userData.type === 'handyman' || userData.type === 'company')) {
-      await SecureStore.deleteItemAsync('pendingPlanPicker').catch(() => {});
-      setShowPlanPicker(true);
-    }
+    // Show plan picker — run in background, must NOT block or await here
+    // (any await after setUser delays the re-render and causes the "stuck on login" bug)
+    SecureStore.getItemAsync('pendingPlanPicker').then(async (pending) => {
+      if (pending === 'true' && (userData.type === 'handyman' || userData.type === 'company')) {
+        await SecureStore.deleteItemAsync('pendingPlanPicker').catch(() => {});
+        setShowPlanPicker(true);
+      }
+    }).catch(() => {});
   }
 
   function dismissPlanPicker() {
@@ -50,10 +54,12 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
-    await unregisterPushToken().catch(() => {});
-    await SecureStore.deleteItemAsync('token').catch(() => {});
+    // ✅ FIX: disconnect socket & clear user FIRST so no in-flight requests
+    // can fire a stale 401 after a new user logs in
     disconnectSocket();
     setUser(null);
+    await unregisterPushToken().catch(() => {});
+    await SecureStore.deleteItemAsync('token').catch(() => {});
   }
 
   // Auto-logout on 401 (expired/invalid token)
