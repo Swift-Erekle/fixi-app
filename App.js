@@ -12,6 +12,8 @@ console.log('[CONFIG] apiBase:', Constants.expoConfig?.extra?.apiBase);
 // navigationRef is used to navigate from outside React components
 // (e.g. when user taps a push notification that opens the app cold)
 export const navigationRef = React.createRef();
+// ✅ FIX: expose navigationRef globally so AuthContext can reset on logout
+global.navigationRef = navigationRef;
 
 function navigate(name, params) {
   navigationRef.current?.navigate(name, params);

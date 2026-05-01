@@ -54,10 +54,11 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
-    // ✅ FIX: disconnect socket & clear user FIRST so no in-flight requests
-    // can fire a stale 401 after a new user logs in
+    // ✅ FIX: disconnect socket & clear user FIRST
     disconnectSocket();
     setUser(null);
+    // Force navigate to Login immediately, don't wait for state re-render
+    global.navigationRef?.current?.reset({ index: 0, routes: [{ name: 'Login' }] });
     await unregisterPushToken().catch(() => {});
     await SecureStore.deleteItemAsync('token').catch(() => {});
   }

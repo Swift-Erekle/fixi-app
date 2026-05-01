@@ -20,6 +20,8 @@ export default function LoginScreen({ navigation }) {
     try {
       const data = await api('/auth/login', { method: 'POST', body: { email: email.trim().toLowerCase(), password } });
       await login(data.token, data.user);
+      // ✅ FIX: force navigate to MainStack regardless of context re-render timing
+      navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
     } catch (e) {
       console.error('LOGIN ERROR', JSON.stringify(e, null, 2));  // ← Metro-ს კონსოლში ნახავ
       if (e.emailNotVerified) {
