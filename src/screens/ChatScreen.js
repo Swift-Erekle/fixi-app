@@ -122,7 +122,8 @@ export default function ChatScreen({ route, navigation }) {
       const form = new FormData();
       form.append('file', { uri: result.assets[0].uri, name: 'chat.jpg', type: 'image/jpeg' });
       const msg = await api('/chat/' + chatId + '/upload', { method: 'POST', body: form });
-      setMessages(prev => [...prev, msg]);
+      // ✅ dedup: socket newMessage may arrive before API response
+      setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
       setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
     } catch (e) { Alert.alert('შეცდომა', e.error || 'ატვირთვა ვერ მოხდა'); }
     finally { setSending(false); }
@@ -182,7 +183,8 @@ export default function ChatScreen({ route, navigation }) {
       const form = new FormData();
       form.append('file', { uri, name: 'voice.m4a', type: 'audio/mpeg' });
       const msg = await api('/chat/' + chatId + '/upload', { method: 'POST', body: form });
-      setMessages(prev => [...prev, msg]);
+      // ✅ dedup: socket newMessage may arrive before API response
+      setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
       setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
     } catch (e) {
       Alert.alert('შეცდომა', e.error || 'ხმოვანი ვერ გაიგზავნა');

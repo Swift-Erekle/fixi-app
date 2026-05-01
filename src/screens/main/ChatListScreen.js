@@ -26,10 +26,31 @@ export default function ChatListScreen({ navigation }) {
   useEffect(() => {
     const sock = getSocket();
     if (!sock) return;
-    const h = () => load(false);
-    sock.on('newMessage', h);
-    return () => sock.off('newMessage', h);
-  }, []);
+    const handler = (msg) => {
+      // ✅ FIX: don't reload full list — just update timestamp + re-sort in place.
+      // This prevents the "chat jumps to top on open" bug caused by aggressive re-fetch.
+      setChats(prev => {
+        const idx = prev.findIndex(c => c.id === msg.chatId);
+        if (idx === -1) return prev; // unknown chat, ignore
+        const updated = {
+          ...prev[idx],
+          messages: [msg],           // update preview
+          updatedAt: msg.createdAt || new Date().toISOString(),
+          // increment unreadCount only for messages from others
+          unreadCount: msg.fromId !== user?.id
+            ? (prev[idx].unreadCount || 0) + 1
+            : prev[idx].unreadCount || 0,
+        };
+        const newList = [...prev];
+        newList[idx] = updated;
+        // Re-sort by updatedAt descending
+        newList.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        return newList;
+      });
+    };
+    sock.on('newMessage', handler);
+    return () => sock.off('newMessage', handler);
+  }, [user]);
 
   function getOther(chat) {
     if (!user) return null;
