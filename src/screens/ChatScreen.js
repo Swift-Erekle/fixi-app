@@ -7,6 +7,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
+import { useHeaderHeight } from '@react-navigation/elements';
 import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
@@ -16,6 +17,7 @@ import { connectSocket, getSocket } from '../utils/socket';
 export default function ChatScreen({ route, navigation }) {
   const { chatId, title } = route.params;
   const { user } = useAuth();
+  const headerHeight = useHeaderHeight();
   const [chat, setChat]           = useState(null);
   const [messages, setMessages]   = useState([]);
   const [text, setText]           = useState('');
@@ -30,6 +32,9 @@ export default function ChatScreen({ route, navigation }) {
   const flatRef    = useRef(null);
   const typingTimer = useRef(null);
   const countdownTimer = useRef(null);
+  // Stores named socket handlers so cleanup removes only THIS screen's listeners,
+  // without touching ChatListScreen's newMessage listener.
+  const socketHandlersRef = useRef({});
 
   useEffect(() => {
     navigation.setOptions({ title: title || 'ჩათი' });
@@ -39,14 +44,18 @@ export default function ChatScreen({ route, navigation }) {
       const sock = getSocket();
       if (sock) {
         sock.emit('leaveChat', chatId);
-        sock.off('newMessage');
-        sock.off('userTyping');
-        sock.off('offerAgreedSingle');
-        sock.off('offerUpdated');
-        sock.off('offerDisagreed');
-        sock.off('proposalAgreed');
-        sock.off('proposalDisagreed');
-        sock.off('chatBlocked');
+        const { newMsgHandler, typingHandler, onAgreementChange } = socketHandlersRef.current;
+        // ✅ off() with specific handler — does NOT remove ChatListScreen's listener
+        if (newMsgHandler)      sock.off('newMessage',       newMsgHandler);
+        if (typingHandler)      sock.off('userTyping',       typingHandler);
+        if (onAgreementChange) {
+          sock.off('offerAgreedSingle', onAgreementChange);
+          sock.off('offerUpdated',      onAgreementChange);
+          sock.off('offerDisagreed',    onAgreementChange);
+          sock.off('proposalAgreed',    onAgreementChange);
+          sock.off('proposalDisagreed', onAgreementChange);
+          sock.off('chatBlocked',       onAgreementChange);
+        }
       }
     };
   }, [chatId]);
@@ -64,17 +73,26 @@ export default function ChatScreen({ route, navigation }) {
     const sock = await connectSocket();
     if (!sock) return;
     sock.emit('joinChat', chatId);
-    sock.on('newMessage', msg => {
+
+    // ✅ Named handlers — stored in ref for targeted cleanup
+    const newMsgHandler = (msg) => {
       setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
       setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 80);
       if (msg.fromId && msg.fromId !== user?.id) {
         api(`/chat/${chatId}/read`, { method: 'POST' }).catch(() => {});
       }
-    });
-    sock.on('userTyping', ({ userId, isTyping }) => {
+    };
+
+    const typingHandler = ({ userId, isTyping }) => {
       if (userId !== user?.id) setOtherTyping(isTyping);
-    });
+    };
+
     const onAgreementChange = () => loadChat();
+
+    socketHandlersRef.current = { newMsgHandler, typingHandler, onAgreementChange };
+
+    sock.on('newMessage',       newMsgHandler);
+    sock.on('userTyping',       typingHandler);
     sock.on('offerAgreedSingle', onAgreementChange);
     sock.on('offerUpdated',      onAgreementChange);
     sock.on('offerDisagreed',    onAgreementChange);
@@ -460,7 +478,7 @@ export default function ChatScreen({ route, navigation }) {
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: C.bg }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+      keyboardVerticalOffset={headerHeight}
     >
       {/* Other user info bar */}
       {other && (

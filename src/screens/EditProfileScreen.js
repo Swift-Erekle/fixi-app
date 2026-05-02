@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, Alert, TouchableOpacity, KeyboardAvoidingView, Platform, Switch, Image, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
@@ -37,7 +38,7 @@ export default function EditProfileScreen({ navigation }) {
       : user?.specialty ? [user.specialty] : []
   );
   const [services, setServices] = useState(user?.services?.join(', ') || '');
-  const [whatsappEnabled, setWhatsappEnabled] = useState(!!user?.whatsappEnabled); // ✅ NEW
+  const [whatsappEnabled, setWhatsappEnabled] = useState(!!user?.whatsappEnabled);
   const [loading,  setLoading]  = useState(false);
 
   const isWorker = user?.type === 'handyman' || user?.type === 'company';
@@ -78,7 +79,6 @@ export default function EditProfileScreen({ navigation }) {
           <Label>ტელეფონი</Label>
           <StyledInput value={phone} onChangeText={setPhone} placeholder="+995 5XX XXX XXX" keyboardType="phone-pad" />
 
-          {/* ✅ NEW: WhatsApp toggle */}
           {isWorker && (
             <View style={{
               flexDirection:'row', alignItems:'center', gap:12,
@@ -151,7 +151,6 @@ export default function EditProfileScreen({ navigation }) {
               <StyledInput value={desc} onChangeText={setDesc} placeholder="გამოცდილება, გარანტია..." multiline />
             </Card>
 
-            {/* Portfolio */}
             <PortfolioCard />
           </>
         )}
@@ -170,7 +169,6 @@ function PortfolioCard() {
 
   async function pickAndUpload() {
     if (items.length >= 20) return Alert.alert('', 'მაქს. 20 ფაილი');
-    const ImagePicker = require('expo-image-picker');
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) return;
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -210,7 +208,7 @@ function PortfolioCard() {
 
   return (
     <Card>
-      <Label>🖼️ პორტფოლიო ({items.length}/20)</Label>
+      <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>🖼️ პორტფოლიო ({items.length}/20)</Text>
       {items.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom:12 }}>
           <View style={{ flexDirection:'row', gap:8 }}>

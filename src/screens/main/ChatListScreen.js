@@ -14,6 +14,7 @@ export default function ChatListScreen({ navigation }) {
   const { user } = useAuth();
   const [chats, setChats] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const initialLoadDone = React.useRef(false);
 
   async function load(refresh = false) {
     if (refresh) setRefreshing(true);
@@ -22,46 +23,42 @@ export default function ChatListScreen({ navigation }) {
     finally { setRefreshing(false); }
   }
 
-  // Smart focus refresh: update chat data (unread counts, previews) WITHOUT
-  // reshuffling the list. Sort order is managed by the socket handler.
-  // Full reload only happens on initial mount or pull-to-refresh.
-  async function softRefresh() {
-    try {
-      const fresh = await api('/chat/mine');
+  // ROOT CAUSE FIX:
+  // Prisma @updatedAt auto-updates on EVERY chat.update() call — including
+  // mark-as-read when a chat is opened. This means just opening a chat changes
+  // its server updatedAt, so a full load() on focus would always push it to top.
+  //
+  // Solution: first visit → full load (server order). Every return → soft refresh
+  // that updates content (unread, preview) but KEEPS local order intact.
+  // Only the socket newMessage handler is allowed to change order.
+  useFocusEffect(useCallback(() => {
+    if (!initialLoadDone.current) {
+      initialLoadDone.current = true;
+      load();
+      return;
+    }
+    api('/chat/mine').then(fresh => {
       setChats(prev => {
-        // Initial load — no local state yet
         if (prev.length === 0) return fresh;
-
         const freshById = Object.fromEntries(fresh.map(c => [c.id, c]));
-
-        // Update each existing chat with fresh server data but KEEP local order
         const updated = prev
-          .filter(c => freshById[c.id])           // remove deleted chats
+          .filter(c => freshById[c.id])
           .map(c => ({
             ...freshById[c.id],
-            // Keep local updatedAt if socket already moved it higher
-            updatedAt: c.updatedAt > freshById[c.id].updatedAt
-              ? c.updatedAt
-              : freshById[c.id].updatedAt,
-            messages: c.messages?.length ? c.messages : freshById[c.id].messages,
+            updatedAt: c.updatedAt, // keep local socket-managed order
           }));
-
-        // Append truly new chats (e.g. new offer accepted while away)
         const existingIds = new Set(prev.map(c => c.id));
-        const brandNew = fresh.filter(c => !existingIds.has(c.id));
-        // Always sort: server updatedAt doesn't change on open (stable),
-        // but DOES change on send — so this correctly puts sent chats at top.
-        return [...updated, ...brandNew]
+        const brandNew = fresh
+          .filter(c => !existingIds.has(c.id))
           .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        return [...brandNew, ...updated];
       });
-    } catch (e) { console.warn(e); }
-  }
+    }).catch(() => {});
+  }, []));
 
-  // On initial mount: full load
-  useEffect(() => { load(); }, []);
-
-  // On every focus (returning from a chat): soft refresh — no reorder
-  useFocusEffect(useCallback(() => { softRefresh(); }, []));
+  // Socket: ONLY place that re-sorts the list.
+  // Fires when any message is created — own or received.
+  // Chat immediately moves to top. Pull-to-refresh also resets order.
   useEffect(() => {
     const sock = getSocket();
     if (!sock) return;
@@ -69,13 +66,6 @@ export default function ChatListScreen({ navigation }) {
       setChats(prev => {
         const idx = prev.findIndex(c => c.id === msg.chatId);
         if (idx === -1) return prev;
-
-        // newMessage only fires when a real message is created —
-        // just opening a chat does NOT trigger this event.
-        // So we can safely always re-sort here (own + others' messages).
-        // This gives WhatsApp/Messenger/Viber behavior:
-        //   • send or receive → chat goes to top ✅
-        //   • open chat, read, come back → position unchanged ✅
         const updated = {
           ...prev[idx],
           messages: [msg],
@@ -84,7 +74,6 @@ export default function ChatListScreen({ navigation }) {
             ? (prev[idx].unreadCount || 0) + 1
             : prev[idx].unreadCount || 0,
         };
-
         const newList = [...prev];
         newList[idx] = updated;
         newList.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
