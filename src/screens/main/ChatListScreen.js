@@ -31,32 +31,24 @@ export default function ChatListScreen({ navigation }) {
         const idx = prev.findIndex(c => c.id === msg.chatId);
         if (idx === -1) return prev;
 
-        const isOtherPerson = msg.fromId !== user?.id;
+        // newMessage only fires when a real message is created —
+        // just opening a chat does NOT trigger this event.
+        // So we can safely always re-sort here (own + others' messages).
+        // This gives WhatsApp/Messenger/Viber behavior:
+        //   • send or receive → chat goes to top ✅
+        //   • open chat, read, come back → position unchanged ✅
         const updated = {
           ...prev[idx],
-          // always update preview so last message text is correct
           messages: [msg],
-          // only update unreadCount for other person's messages
-          unreadCount: isOtherPerson
+          updatedAt: msg.createdAt || new Date().toISOString(),
+          unreadCount: msg.fromId !== user?.id
             ? (prev[idx].unreadCount || 0) + 1
             : prev[idx].unreadCount || 0,
-          // ✅ FIX Bug 1: only update updatedAt for OTHER person's messages.
-          // Own messages don't move chat to top via socket — useFocusEffect
-          // load() handles it when you navigate back to the list.
-          updatedAt: isOtherPerson
-            ? (msg.createdAt || new Date().toISOString())
-            : prev[idx].updatedAt,
         };
 
         const newList = [...prev];
         newList[idx] = updated;
-
-        // ✅ FIX Bug 2: only re-sort when it's the other person's message.
-        // When YOU send, the chat will correctly go to top on useFocusEffect load().
-        if (isOtherPerson) {
-          newList.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-        }
-
+        newList.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
         return newList;
       });
     };
