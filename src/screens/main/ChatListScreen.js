@@ -27,24 +27,36 @@ export default function ChatListScreen({ navigation }) {
     const sock = getSocket();
     if (!sock) return;
     const handler = (msg) => {
-      // ✅ FIX: don't reload full list — just update timestamp + re-sort in place.
-      // This prevents the "chat jumps to top on open" bug caused by aggressive re-fetch.
       setChats(prev => {
         const idx = prev.findIndex(c => c.id === msg.chatId);
-        if (idx === -1) return prev; // unknown chat, ignore
+        if (idx === -1) return prev;
+
+        const isOtherPerson = msg.fromId !== user?.id;
         const updated = {
           ...prev[idx],
-          messages: [msg],           // update preview
-          updatedAt: msg.createdAt || new Date().toISOString(),
-          // increment unreadCount only for messages from others
-          unreadCount: msg.fromId !== user?.id
+          // always update preview so last message text is correct
+          messages: [msg],
+          // only update unreadCount for other person's messages
+          unreadCount: isOtherPerson
             ? (prev[idx].unreadCount || 0) + 1
             : prev[idx].unreadCount || 0,
+          // ✅ FIX Bug 1: only update updatedAt for OTHER person's messages.
+          // Own messages don't move chat to top via socket — useFocusEffect
+          // load() handles it when you navigate back to the list.
+          updatedAt: isOtherPerson
+            ? (msg.createdAt || new Date().toISOString())
+            : prev[idx].updatedAt,
         };
+
         const newList = [...prev];
         newList[idx] = updated;
-        // Re-sort by updatedAt descending
-        newList.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+        // ✅ FIX Bug 2: only re-sort when it's the other person's message.
+        // When YOU send, the chat will correctly go to top on useFocusEffect load().
+        if (isOtherPerson) {
+          newList.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        }
+
         return newList;
       });
     };
