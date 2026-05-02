@@ -22,7 +22,47 @@ export default function ChatListScreen({ navigation }) {
     finally { setRefreshing(false); }
   }
 
-  useFocusEffect(useCallback(() => { load(); }, []));
+  // Smart focus refresh: update chat data (unread counts, previews) WITHOUT
+  // reshuffling the list. Sort order is managed by the socket handler.
+  // Full reload only happens on initial mount or pull-to-refresh.
+  async function softRefresh() {
+    try {
+      const fresh = await api('/chat/mine');
+      setChats(prev => {
+        // Initial load — no local state yet
+        if (prev.length === 0) return fresh;
+
+        const freshById = Object.fromEntries(fresh.map(c => [c.id, c]));
+
+        // Update each existing chat with fresh server data but KEEP local order
+        const updated = prev
+          .filter(c => freshById[c.id])           // remove deleted chats
+          .map(c => ({
+            ...freshById[c.id],
+            // Keep local updatedAt if socket already moved it higher
+            updatedAt: c.updatedAt > freshById[c.id].updatedAt
+              ? c.updatedAt
+              : freshById[c.id].updatedAt,
+            messages: c.messages?.length ? c.messages : freshById[c.id].messages,
+          }));
+
+        // Append truly new chats (e.g. new offer accepted while away)
+        const existingIds = new Set(prev.map(c => c.id));
+        const brandNew = fresh.filter(c => !existingIds.has(c.id));
+        if (brandNew.length > 0) {
+          return [...updated, ...brandNew]
+            .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        }
+        return updated; // order unchanged
+      });
+    } catch (e) { console.warn(e); }
+  }
+
+  // On initial mount: full load
+  useEffect(() => { load(); }, []);
+
+  // On every focus (returning from a chat): soft refresh — no reorder
+  useFocusEffect(useCallback(() => { softRefresh(); }, []));
   useEffect(() => {
     const sock = getSocket();
     if (!sock) return;
