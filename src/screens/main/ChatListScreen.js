@@ -49,11 +49,10 @@ export default function ChatListScreen({ navigation }) {
         // Append truly new chats (e.g. new offer accepted while away)
         const existingIds = new Set(prev.map(c => c.id));
         const brandNew = fresh.filter(c => !existingIds.has(c.id));
-        if (brandNew.length > 0) {
-          return [...updated, ...brandNew]
-            .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-        }
-        return updated; // order unchanged
+        // Always sort: server updatedAt doesn't change on open (stable),
+        // but DOES change on send — so this correctly puts sent chats at top.
+        return [...updated, ...brandNew]
+          .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
       });
     } catch (e) { console.warn(e); }
   }
