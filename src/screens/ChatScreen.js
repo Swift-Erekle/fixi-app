@@ -32,8 +32,6 @@ export default function ChatScreen({ route, navigation }) {
   const flatRef    = useRef(null);
   const typingTimer = useRef(null);
   const countdownTimer = useRef(null);
-  // Stores named socket handlers so cleanup removes only THIS screen's listeners,
-  // without touching ChatListScreen's newMessage listener.
   const socketHandlersRef = useRef({});
 
   useEffect(() => {
@@ -45,7 +43,6 @@ export default function ChatScreen({ route, navigation }) {
       if (sock) {
         sock.emit('leaveChat', chatId);
         const { newMsgHandler, typingHandler, onAgreementChange } = socketHandlersRef.current;
-        // ✅ off() with specific handler — does NOT remove ChatListScreen's listener
         if (newMsgHandler)      sock.off('newMessage',       newMsgHandler);
         if (typingHandler)      sock.off('userTyping',       typingHandler);
         if (onAgreementChange) {
@@ -74,7 +71,6 @@ export default function ChatScreen({ route, navigation }) {
     if (!sock) return;
     sock.emit('joinChat', chatId);
 
-    // ✅ Named handlers — stored in ref for targeted cleanup
     const newMsgHandler = (msg) => {
       setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
       setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 80);
@@ -140,7 +136,6 @@ export default function ChatScreen({ route, navigation }) {
       const form = new FormData();
       form.append('file', { uri: result.assets[0].uri, name: 'chat.jpg', type: 'image/jpeg' });
       const msg = await api('/chat/' + chatId + '/upload', { method: 'POST', body: form });
-      // ✅ dedup: socket newMessage may arrive before API response
       setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
       setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
     } catch (e) { Alert.alert('შეცდომა', e.error || 'ატვირთვა ვერ მოხდა'); }
@@ -201,7 +196,6 @@ export default function ChatScreen({ route, navigation }) {
       const form = new FormData();
       form.append('file', { uri, name: 'voice.m4a', type: 'audio/mpeg' });
       const msg = await api('/chat/' + chatId + '/upload', { method: 'POST', body: form });
-      // ✅ dedup: socket newMessage may arrive before API response
       setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
       setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
     } catch (e) {
@@ -252,8 +246,6 @@ export default function ChatScreen({ route, navigation }) {
     } finally { setAgreeing(false); }
   }
 
-  // Offer flow: USER first (recipientAgreed), HANDYMAN confirms (senderAgreed)
-  // Proposal flow: HANDYMAN first (senderAgreed), USER confirms (recipientAgreed)
   function canAgree() {
     if (!chat || !user) return false;
     const offer    = chat.offer;
@@ -271,7 +263,6 @@ export default function ChatScreen({ route, navigation }) {
     return false;
   }
 
-  // Only user can disagree on offer flow; both can disagree on proposal flow
   function canDisagree() {
     if (!chat || !user) return false;
     const offer    = chat.offer;
@@ -279,7 +270,6 @@ export default function ChatScreen({ route, navigation }) {
     const isUser     = user.id === chat.userId;
     const isHandyman = user.id === chat.handymanId;
     if (offer && offer.status === 'accepted') {
-      // Server allows ONLY user to disagree on offers
       if (isUser && !offer.recipientAgreed) return true;
     }
     if (proposal && proposal.status === 'accepted') {
@@ -289,7 +279,6 @@ export default function ChatScreen({ route, navigation }) {
     return false;
   }
 
-  // Context text above agreement buttons — exact texts from website
   function agreeContextText() {
     if (!chat || !user) return '';
     const offer    = chat.offer;
@@ -311,7 +300,6 @@ export default function ChatScreen({ route, navigation }) {
     return '';
   }
 
-  // Role-specific instruction injected after "chat opened" system message
   function getChatInstruction() {
     if (!chat || !user) return null;
     const offer    = chat.offer;
@@ -329,19 +317,16 @@ export default function ChatScreen({ route, navigation }) {
     return null;
   }
 
-  // Build the display list: filter old dual-label messages, inject instruction
   const displayMessages = useMemo(() => {
     const instruction = getChatInstruction();
     const result = [];
     let injected = false;
     for (const m of messages) {
-      // Filter server-stored dual-label instruction messages (website also hides these)
       if ((m.type === 'system' || !m.fromId) && m.content &&
           (m.content.includes('🔧 ხელოსანი:') || m.content.includes('👤 მომხმარებელი:'))) {
         continue;
       }
       result.push(m);
-      // Inject role-specific instruction after first "chat opened" or "proposal sent" message
       if (!injected && instruction && (m.type === 'system' || !m.fromId) && m.content &&
           (m.content.includes('ჩათი გაიხსნა') || m.content.includes('შემოთავაზება გაიგზავნა'))) {
         result.push({ id: '__instruction__', type: '__instruction__', content: instruction });
@@ -351,7 +336,6 @@ export default function ChatScreen({ route, navigation }) {
     return result;
   }, [messages, chat, user]);
 
-  // Countdown timer for agreed offers/proposals
   useEffect(() => {
     const completedAt = chat?.offer?.completedAt || chat?.proposal?.completedAt;
     const isAgreed = (chat?.offer?.status === 'agreed') || (chat?.proposal?.status === 'agreed');
@@ -374,6 +358,16 @@ export default function ChatScreen({ route, navigation }) {
 
   const other = chat ? (user?.type === 'user' ? chat.handyman : chat.user) : null;
   const isFullyAgreed = (chat?.offer?.status === 'agreed') || (chat?.proposal?.status === 'agreed');
+
+  // ✅ FIX #9: header tap — request detail if available, otherwise handyman profile
+  function handleHeaderTap() {
+    const reqId = chat?.offer?.request?.id || chat?.offer?.requestId || chat?.requestId;
+    if (reqId) {
+      navigation.navigate('RequestDetail', { id: reqId });
+    } else if (other?.id && (other.type === 'handyman' || other.type === 'company')) {
+      navigation.navigate('HandymanDetail', { id: other.id });
+    }
+  }
 
   function VoiceMessage({ uri, isMe }) {
     const [sound, setSound] = useState(null);
@@ -432,7 +426,6 @@ export default function ChatScreen({ route, navigation }) {
   }
 
   function renderMessage({ item: msg }) {
-    // Role-specific instruction card
     if (msg.type === '__instruction__') {
       return (
         <View style={{ backgroundColor: C.accent + '14', borderRadius: 12, borderWidth: 1, borderColor: C.accent + '40', marginHorizontal: 14, marginVertical: 8, padding: 12 }}>
@@ -480,10 +473,10 @@ export default function ChatScreen({ route, navigation }) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={headerHeight}
     >
-      {/* Other user info bar */}
+      {/* ✅ FIX #9: header tap goes to RequestDetail if requestId exists */}
       {other && (
         <TouchableOpacity
-          onPress={() => navigation.navigate('HandymanDetail', { id: other.id })}
+          onPress={handleHeaderTap}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.surface, padding: 12, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: C.border }}
         >
           <Avatar user={other} size={36} />
@@ -499,7 +492,6 @@ export default function ChatScreen({ route, navigation }) {
         </TouchableOpacity>
       )}
 
-      {/* Status banners */}
       {isFullyAgreed && (
         <View style={{ backgroundColor: C.ok + '15', borderBottomWidth: 1, borderBottomColor: C.ok + '30', padding: 10, alignItems: 'center' }}>
           <Text style={{ color: C.ok, fontWeight: '700', fontSize: 13 }}>🤝 შეთანხმება დასრულებულია — თანამშრომლობა დაიწყო</Text>
@@ -532,7 +524,6 @@ export default function ChatScreen({ route, navigation }) {
         </View>
       )}
 
-      {/* Agreement bar — appears when it's this user's turn to decide */}
       {canAgree() && (
         <View style={{ backgroundColor: C.surface2, borderTopWidth: 1.5, borderTopColor: C.accent + '50', padding: 12, paddingHorizontal: 14 }}>
           <Text style={{ color: C.text2, fontSize: 12, marginBottom: 10, lineHeight: 18 }}>{agreeContextText()}</Text>
@@ -554,9 +545,7 @@ export default function ChatScreen({ route, navigation }) {
         </View>
       )}
 
-      {/* Input bar */}
       <View style={{ borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.surface, opacity: isFullyAgreed ? 0.5 : 1 }}>
-        {/* Recording indicator */}
         {isRecording && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, paddingHorizontal: 16, backgroundColor: C.err + '12', borderBottomWidth: 1, borderBottomColor: C.err + '30' }}>
             <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: C.err }} />
@@ -575,11 +564,11 @@ export default function ChatScreen({ route, navigation }) {
           )}
           <TextInput
             style={{ flex: 1, backgroundColor: C.surface2, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, color: C.text, fontSize: 14, maxHeight: 110, borderWidth: 1, borderColor: C.border }}
-            placeholder={isFullyAgreed ? '🤝 ჩათი დაბლოკილია' : isRecording ? '🎤 ჩაწერა...' : 'შეტყობინება...'} placeholderTextColor={C.text2}
+            placeholder={isFullyAgreed ? '🤝 ჩათი დაბლოკილია' : isRecording ? '🎤 ჩაწერა...' : 'შეტყობინება...'}
+            placeholderTextColor={C.text2}
             value={text} onChangeText={handleTyping} multiline
             editable={!isFullyAgreed && !isRecording}
           />
-          {/* Voice record button (when text empty and not recording) */}
           {!text.trim() && !isRecording && !isFullyAgreed && (
             <TouchableOpacity
               onPressIn={startRecording}
@@ -590,14 +579,12 @@ export default function ChatScreen({ route, navigation }) {
               <Ionicons name="mic-outline" size={20} color={C.text2} />
             </TouchableOpacity>
           )}
-          {/* Stop recording button (while recording) */}
           {isRecording && (
             <TouchableOpacity onPress={stopRecording}
               style={{ backgroundColor: C.err, borderRadius: 20, width: 42, height: 42, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="stop" size={20} color="#fff" />
             </TouchableOpacity>
           )}
-          {/* Send text button (when text has content) */}
           {text.trim() && !isRecording && (
             <TouchableOpacity onPress={sendMessage} disabled={!text.trim() || sending || isFullyAgreed}
               style={{ backgroundColor: text.trim() && !isFullyAgreed ? C.accent : C.surface2, borderRadius: 20, width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: text.trim() && !isFullyAgreed ? C.accent : C.border }}>

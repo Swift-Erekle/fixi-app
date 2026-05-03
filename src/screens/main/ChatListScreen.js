@@ -56,16 +56,21 @@ export default function ChatListScreen({ navigation }) {
     }).catch(() => {});
   }, []));
 
-  // Socket: ONLY place that re-sorts the list.
-  // Fires when any message is created — own or received.
-  // Chat immediately moves to top. Pull-to-refresh also resets order.
+  // ✅ FIX #3: Socket handler — if message belongs to unknown chat, fetch full list.
+  // This handles: new chat created while user is on this screen (push notification edge case).
   useEffect(() => {
     const sock = getSocket();
     if (!sock) return;
     const handler = (msg) => {
       setChats(prev => {
         const idx = prev.findIndex(c => c.id === msg.chatId);
-        if (idx === -1) return prev;
+
+        // ✅ NEW: unknown chat — reload full list from server
+        if (idx === -1) {
+          load();
+          return prev;
+        }
+
         const updated = {
           ...prev[idx],
           messages: [msg],

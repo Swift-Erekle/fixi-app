@@ -38,7 +38,7 @@ export default function SendOfferScreen({ route, navigation }) {
     if (!negotiable && !price) return Alert.alert('შეცდომა','ფასი სავალდებულოა');
     if (dMins <= 0) return Alert.alert('შეცდომა','სამუშაოს ვადა სავალდებულოა');
 
-    // Client-side plan limit check (mirrors website behaviour)
+    // Client-side plan limit check
     if (user && (user.plan === 'start' || !user.plan)) {
       if (user.trialExpiresAt && new Date(user.trialExpiresAt) < new Date()) {
         Alert.alert('🔔 Start ტარიფის 3-თვიანი ვადა გასულია',
@@ -48,14 +48,14 @@ export default function SendOfferScreen({ route, navigation }) {
       }
       try {
         const myOffers = await api('/offers/mine');
-        const now = new Date();
-        const monthlyCount = (myOffers || []).filter(o => {
-          const d = new Date(o.createdAt);
-          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-        }).length;
-        if (monthlyCount >= 5) {
-          Alert.alert('💡 ამ თვის შეთავაზებები ამოიწურა',
-            `Start ტარიფზე შეგიძლია 5 შეთავაზება/თვე (${monthlyCount}/5). Pro ან TOP-ზე — ულიმიტო.`,
+        // ✅ FIX #5: rolling 30-day window instead of calendar month
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const recentCount = (myOffers || []).filter(o =>
+          new Date(o.createdAt) >= thirtyDaysAgo
+        ).length;
+        if (recentCount >= 5) {
+          Alert.alert('💡 ბოლო 30 დღის შეთავაზებები ამოიწურა',
+            `Start ტარიფზე შეგიძლია 5 შეთავაზება/30 დღეში (${recentCount}/5). Pro ან TOP-ზე — ულიმიტო.`,
             [{ text:'გაუქმება', style:'cancel' },{ text:'ტარიფები', onPress:()=>navigation.navigate('Vip') }]);
           return;
         }
