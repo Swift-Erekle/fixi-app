@@ -61,6 +61,7 @@ export default function ChatListScreen({ navigation }) {
   useEffect(() => {
     const sock = getSocket();
     if (!sock) return;
+
     const handler = (msg) => {
       setChats(prev => {
         const idx = prev.findIndex(c => c.id === msg.chatId);
@@ -85,8 +86,46 @@ export default function ChatListScreen({ navigation }) {
         return newList;
       });
     };
-    sock.on('newMessage', handler);
-    return () => sock.off('newMessage', handler);
+
+    // ✅ FIX: agreement events must also push the chat to top —
+    // these change the chat UI (agree/disagree buttons appear) but emit
+    // NO newMessage event, so without this listener the chat silently
+    // drifts down while other chats receive messages.
+    const agreementHandler = ({ chatId, offerId, proposalId } = {}) => {
+      const id = chatId;
+      setChats(prev => {
+        // If we know the chatId, bump it to top with a fresh timestamp
+        if (id) {
+          const idx = prev.findIndex(c => c.id === id);
+          if (idx !== -1) {
+            const bumped = { ...prev[idx], updatedAt: new Date().toISOString() };
+            const newList = [...prev];
+            newList[idx] = bumped;
+            newList.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+            return newList;
+          }
+        }
+        // chatId unknown — fall back to full server reload
+        load();
+        return prev;
+      });
+    };
+
+    sock.on('newMessage',       handler);
+    sock.on('offerAgreedSingle', agreementHandler);
+    sock.on('offerUpdated',      agreementHandler);
+    sock.on('offerDisagreed',    agreementHandler);
+    sock.on('proposalAgreed',    agreementHandler);
+    sock.on('proposalDisagreed', agreementHandler);
+
+    return () => {
+      sock.off('newMessage',       handler);
+      sock.off('offerAgreedSingle', agreementHandler);
+      sock.off('offerUpdated',      agreementHandler);
+      sock.off('offerDisagreed',    agreementHandler);
+      sock.off('proposalAgreed',    agreementHandler);
+      sock.off('proposalDisagreed', agreementHandler);
+    };
   }, [user]);
 
   function getOther(chat) {
