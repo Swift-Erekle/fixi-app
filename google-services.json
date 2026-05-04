@@ -1,13 +1,13 @@
 {
   "project_info": {
     "project_number": "793209520137",
-    "project_id": "fixi-app",
-    "storage_bucket": "fixi-app.firebasestorage.app"
+    "project_id": "xelosani-app",
+    "storage_bucket": "xelosani-app.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:793209520137:android:c9d2b466ed16d2f4e178d8",
+        "mobilesdk_app_id": "1:793209520137:android:4e8245c1eebc4a65e178d8",
         "android_client_info": {
           "package_name": "ge.fixi.app"
         }
