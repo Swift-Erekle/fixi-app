@@ -11,6 +11,7 @@ import { api } from '../../utils/api';
 import { CATEGORIES, GEORGIA_CITIES } from '../../utils/categories';
 import HandymanCard from '../../components/HandymanCard';
 import { Avatar } from '../../components/UI';
+import BellButton from '../../components/BellButton';
 
 const CITIES = ['', ...GEORGIA_CITIES];
 
@@ -276,10 +277,7 @@ export default function HomeScreen({ navigation }) {
             <Text style={{ color: C.text, fontSize: 24, fontWeight: '900' }}>🔧 ხელოსნები</Text>
             <Text style={{ color: C.text2, fontSize: 13, marginTop: 2 }}>იპოვე სანდო და გამოცდილი ხელოსნები</Text>
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('Notifications')}
-            style={{ backgroundColor: C.surface, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 10 }}>
-            <Ionicons name="notifications-outline" size={20} color={C.text2} />
-          </TouchableOpacity>
+          <BellButton navigation={navigation} />
         </View>
 
         {/* Search & filter bar */}

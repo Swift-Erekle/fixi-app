@@ -9,6 +9,7 @@ import { api } from '../utils/api';
 import { getSocket } from '../utils/socket';
 import { C } from '../utils/theme';
 import { Empty } from '../components/UI';
+import { useAuth } from '../context/AuthContext';
 
 function timeAgo(d) {
   const diff = Math.floor((Date.now() - new Date(d)) / 1000);
@@ -20,6 +21,8 @@ function timeAgo(d) {
 }
 
 export default function NotificationsScreen({ navigation }) {
+  // ✅ clearUnread — optional (null-safe), works with both old and new AuthContext
+  const { clearUnread } = useAuth() || {};
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -34,9 +37,10 @@ export default function NotificationsScreen({ navigation }) {
 
   useFocusEffect(useCallback(() => {
     load();
-    // Auto-mark all as read on open
+    // Mark all as read on open + clear bell badge (null-safe)
     api('/notifications/read', { method:'POST', body:{} }).catch(() => {});
-  }, [load]));
+    if (typeof clearUnread === 'function') clearUnread();
+  }, [load, clearUnread]));
 
   // Live notifications
   useEffect(() => {

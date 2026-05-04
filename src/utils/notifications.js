@@ -1,125 +1,142 @@
-// src/utils/notifications.js
-// ══════════════════════════════════════════════════════════════
-// Expo Push Notifications — token registration + listener helpers
-// Mobile app file — lives in fixi-app/src/utils/
-// Requires: expo-notifications, expo-device (already in Expo SDK)
-// ══════════════════════════════════════════════════════════════
+// NOTIFICATION BELL (in-app notifications)
+// ========================================================
+let notifCache = [];
 
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
-import { Platform } from 'react-native';
-import { api } from './api';
-
-// ── How to display notifications when app is in FOREGROUND ──
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge:  true,
-  }),
-});
-
-/**
- * Request permission + get Expo push token + save to server.
- * Call this after successful login or on app startup if already logged in.
- * @returns {string|null} Expo push token or null if not granted
- */
-export async function registerForPushNotifications() {
-  // Push only works on real devices
-  if (!Device.isDevice) {
-    console.warn('[PUSH] Push notifications require a physical device');
-    return null;
-  }
-
-  // Android needs a notification channel
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'Fixi.ge',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#ff6b2b',
-      sound: 'default',
-    });
-
-    await Notifications.setNotificationChannelAsync('chat', {
-      name: 'ჩათის შეტყობინებები',
-      importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 200],
-      lightColor: '#ff6b2b',
-      sound: 'default',
-    });
-  }
-
-  // Check / request permissions
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  let finalStatus = existing;
-
-  if (existing !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
-
-  if (finalStatus !== 'granted') {
-    console.warn('[PUSH] Permission denied');
-    return null;
-  }
-
-  // Get the Expo push token
+async function loadNotifications() {
+  if (!currentUser) return;
   try {
-    const tokenData = await Notifications.getExpoPushTokenAsync();
-    const pushToken = tokenData.data;
+    const data = await api('/notifications');
+    notifCache = data.notifications || [];
+    renderNotifBell(data.unreadCount || 0);
+    renderNotifDropdown();
+  } catch (_) { /* silent */ }
+}
 
-    // Save token to backend — noAutoLogout prevents a 401 here from kicking the user out
-    await api('/push/expo-token', {
-      method: 'POST',
-      body: { token: pushToken, platform: Platform.OS },
-      noAutoLogout: true,
-    });
-
-    return pushToken;
-  } catch (err) {
-    console.warn('[PUSH] getExpoPushTokenAsync error:', err.message);
-    return null;
+function renderNotifBell(unreadCount) {
+  const dot = document.getElementById('navBellDot');
+  if (!dot) return;
+  if (unreadCount > 0) {
+    // ✅ Show number badge
+    dot.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+    dot.style.display = 'flex';
+  } else {
+    // ✅ Clean bell — hide badge entirely
+    dot.textContent = '';
+    dot.style.display = 'none';
   }
 }
 
-/**
- * Remove push token from backend on logout.
- */
-export async function unregisterPushToken() {
-  try {
-    const tokenData = await Notifications.getExpoPushTokenAsync().catch(() => null);
-    if (tokenData?.data) {
-      await api('/push/expo-token', {
-        method: 'DELETE',
-        body: { token: tokenData.data },
-        noAutoLogout: true,
-      }).catch(() => {});
+function renderNotifDropdown() {
+  const list = document.getElementById('notifList');
+  if (!list) return;
+  if (!notifCache.length) {
+    list.innerHTML = '<div class="notif-empty">შეტყობინება ჯერ არ არის</div>';
+    return;
+  }
+  list.innerHTML = notifCache.map(n => {
+    const ico = notifIcon(n.type);
+    const time = notifRelativeTime(n.createdAt);
+    return `<div class="notif-item ${n.read ? '' : 'unread'}" onclick="onNotifClick('${sanitize(n.id)}', ${n.link ? `'${sanitize(n.link)}'` : 'null'})">
+  <div class="notif-ico">${ico}</div>
+  <div class="notif-body">
+    <div class="notif-title">${sanitize(n.title)}</div>
+    ${n.body ? `<div class="notif-desc">${sanitize(n.body)}</div>` : ''}
+    <div class="notif-time">${time}</div>
+  </div>
+</div>`;
+  }).join('');
+}
+
+function notifIcon(type) {
+  switch (type) {
+    case 'new_offer': return '💬';
+    case 'offer_accepted': return '🎉';
+    case 'offer_rejected': return '❌';
+    case 'new_message': return '✉️';
+    case 'offer_updated': return '✏️';
+    default: return '🔔';
+  }
+}
+
+function notifRelativeTime(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return 'ახლახან';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return min + ' წუთის წინ';
+  const hrs = Math.floor(min / 60);
+  if (hrs < 24) return hrs + ' სთ წინ';
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return days + ' დღის წინ';
+  return new Date(iso).toLocaleDateString('ka-GE', { day: 'numeric', month: 'short' });
+}
+
+function toggleNotifDropdown(event) {
+  if (event) event.stopPropagation();
+  const dd = document.getElementById('notifDropdown');
+  if (!dd) return;
+  const isOpen = dd.classList.toggle('open');
+  if (isOpen) {
+    loadNotifications();
+    // ✅ Mark all as read as soon as dropdown opens — badge clears
+    setTimeout(() => markAllNotifRead(), 800);
+    // Dismiss on outside click
+    setTimeout(() => {
+      document.addEventListener('click', closeNotifOnOutside, { once: true });
+    }, 0);
+  }
+}
+
+function closeNotifOnOutside(e) {
+  const dd = document.getElementById('notifDropdown');
+  if (dd && !dd.contains(e.target) && !e.target.closest('.nav-bell')) {
+    dd.classList.remove('open');
+  } else if (dd) {
+    // Still open — re-attach listener
+    setTimeout(() => {
+      document.addEventListener('click', closeNotifOnOutside, { once: true });
+    }, 0);
+  }
+}
+
+async function onNotifClick(id, link) {
+  // Mark as read
+  api('/notifications/read', { method: 'POST', body: { id } }).catch(() => { });
+  const n = notifCache.find(x => x.id === id);
+  if (n) n.read = true;
+  renderNotifBell(notifCache.filter(x => !x.read).length);
+  renderNotifDropdown();
+
+  // Follow link if present
+  if (link) {
+    document.getElementById('notifDropdown')?.classList.remove('open');
+    // Parse link — support ?chat=xxx, ?req=yyy, ?review=handymanId, ?proposal=xxx
+    const params = new URLSearchParams(link.startsWith('?') ? link.slice(1) : link);
+    const chatId     = params.get('chat');
+    const reqId      = params.get('req');
+    const reviewId   = params.get('review');
+    const proposalId = params.get('proposal');
+    if (chatId)     { openChat(chatId); }
+    else if (reqId) { openRequestDetail(reqId); }
+    else if (proposalId) { openProposalView(proposalId); }
+    else if (reviewId) {
+      // Open handyman's profile and auto-focus the review form
+      showProfile(reviewId);
+      setTimeout(() => {
+        const r = document.getElementById('revComment') || document.getElementById('reviewComment');
+        if (r) { r.focus(); r.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      }, 400);
     }
-  } catch (_) {}
+  }
 }
 
-/**
- * Add listeners for notification events.
- * Call inside a useEffect in App.js or AppNavigator.js.
- *
- * @param {function} onNotification  - called when notification received in foreground
- * @param {function} onResponse      - called when user taps a notification
- * @returns cleanup function (remove listeners)
- */
-export function addNotificationListeners(onNotification, onResponse) {
-  const sub1 = Notifications.addNotificationReceivedListener(onNotification);
-  const sub2 = Notifications.addNotificationResponseReceivedListener(onResponse);
-  return () => {
-    sub1.remove();
-    sub2.remove();
-  };
+async function markAllNotifRead() {
+  try {
+    await api('/notifications/read', { method: 'POST', body: {} });
+    notifCache.forEach(n => n.read = true);
+    renderNotifBell(0);
+    renderNotifDropdown();
+  } catch (_) { }
 }
 
-/**
- * Get the notification that launched the app (if any).
- * Use on startup to handle cold-start deep links.
- */
-export async function getInitialNotification() {
-  return Notifications.getLastNotificationResponseAsync();
-}
+// ========================================================

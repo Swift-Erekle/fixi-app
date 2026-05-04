@@ -9,6 +9,7 @@ import { api } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import RequestCard from '../../components/RequestCard';
 import { CATEGORIES, GEORGIA_CITIES } from '../../utils/categories';
+import BellButton from '../../components/BellButton';
 
 const CITIES = ['', ...GEORGIA_CITIES];
 
@@ -214,10 +215,7 @@ export default function RequestsScreen({ navigation }) {
                   : 'იპოვე შეკვეთა და გახდი პირველი შემდეგ მომხმარებელთან!'}
               </Text>
             </View>
-            <TouchableOpacity onPress={() => navigation.navigate('Notifications')}
-              style={{ backgroundColor: C.surface, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 10, marginLeft: 12 }}>
-              <Ionicons name="notifications-outline" size={20} color={C.text2} />
-            </TouchableOpacity>
+            <BellButton navigation={navigation} style={{ marginLeft: 12 }} />
           </View>
           {user?.type === 'user' && (
             <TouchableOpacity
