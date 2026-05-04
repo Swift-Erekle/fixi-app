@@ -28,6 +28,7 @@ export default function ChatScreen({ route, navigation }) {
   const recTimer = useRef(null);
   const [otherTyping, setOtherTyping] = useState(false);
   const [agreeing, setAgreeing]   = useState(false);
+  const [disagreeing, setDisagreeing] = useState(false);
   const [countdown, setCountdown] = useState('');
   const flatRef    = useRef(null);
   const typingTimer = useRef(null);
@@ -226,7 +227,9 @@ export default function ChatScreen({ route, navigation }) {
   }
 
   async function _doAgreement(action) {
-    setAgreeing(true);
+    // ✅ FIX: separate loading states — spinner on the clicked button only
+    if (action === 'agree') setAgreeing(true);
+    else setDisagreeing(true);
     try {
       const offerId = chat.offer?.id;
       if (offerId) {
@@ -243,7 +246,10 @@ export default function ChatScreen({ route, navigation }) {
         Alert.alert('შეცდომა', e.error || 'ვერ შესრულდა');
       }
       await loadChat();
-    } finally { setAgreeing(false); }
+    } finally {
+      setAgreeing(false);
+      setDisagreeing(false);
+    }
   }
 
   function canAgree() {
@@ -528,17 +534,20 @@ export default function ChatScreen({ route, navigation }) {
         <View style={{ backgroundColor: C.surface2, borderTopWidth: 1.5, borderTopColor: C.accent + '50', padding: 12, paddingHorizontal: 14 }}>
           <Text style={{ color: C.text2, fontSize: 12, marginBottom: 10, lineHeight: 18 }}>{agreeContextText()}</Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <TouchableOpacity onPress={() => handleAgreement('agree')} disabled={agreeing}
-              style={{ flex: 1, backgroundColor: C.ok + '20', borderRadius: 12, borderWidth: 1.5, borderColor: C.ok, padding: 13, alignItems: 'center' }}>
+            <TouchableOpacity onPress={() => handleAgreement('agree')} disabled={agreeing || disagreeing}
+              style={{ flex: 1, backgroundColor: C.ok + '20', borderRadius: 12, borderWidth: 1.5, borderColor: C.ok, padding: 13, alignItems: 'center', opacity: disagreeing ? 0.45 : 1 }}>
               {agreeing
                 ? <ActivityIndicator color={C.ok} size="small" />
                 : <Text style={{ color: C.ok, fontWeight: '800', fontSize: 14 }}>✅ შევთანხმდი</Text>
               }
             </TouchableOpacity>
             {canDisagree() && (
-              <TouchableOpacity onPress={() => handleAgreement('disagree')} disabled={agreeing}
-                style={{ flex: 1, backgroundColor: C.err + '15', borderRadius: 12, borderWidth: 1.5, borderColor: C.err + '60', padding: 13, alignItems: 'center' }}>
-                <Text style={{ color: C.err, fontWeight: '800', fontSize: 14 }}>❌ ვერ შევთანხმდი</Text>
+              <TouchableOpacity onPress={() => handleAgreement('disagree')} disabled={agreeing || disagreeing}
+                style={{ flex: 1, backgroundColor: C.err + '15', borderRadius: 12, borderWidth: 1.5, borderColor: C.err + '60', padding: 13, alignItems: 'center', opacity: agreeing ? 0.45 : 1 }}>
+                {disagreeing
+                  ? <ActivityIndicator color={C.err} size="small" />
+                  : <Text style={{ color: C.err, fontWeight: '800', fontSize: 14 }}>❌ ვერ შევთანხმდი</Text>
+                }
               </TouchableOpacity>
             )}
           </View>

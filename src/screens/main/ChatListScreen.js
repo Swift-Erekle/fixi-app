@@ -91,7 +91,8 @@ export default function ChatListScreen({ navigation }) {
 
   function getOther(chat) {
     if (!user) return null;
-    return user.type === 'user' ? chat.handyman : chat.user;
+    // Use actual IDs — works for both offer chats and proposal chats
+    return chat.userId === user.id ? chat.handyman : chat.user;
   }
 
   function formatTime(d) {
@@ -137,7 +138,12 @@ export default function ChatListScreen({ navigation }) {
                   <Text style={{ color:C.text, fontWeight:unread>0?'900':'700', fontSize:15 }}>{other?.name} {other?.surname||''}</Text>
                   <Text style={{ color:C.text2, fontSize:11 }}>{formatTime(item.updatedAt)}</Text>
                 </View>
-                {item.offer?.request && <Text style={{ color:C.accent, fontSize:11, marginBottom:2 }} numberOfLines={1}>📋 {item.offer.request.title}</Text>}
+                {item.offer?.request
+                  ? <Text style={{ color:C.accent, fontSize:11, marginBottom:2 }} numberOfLines={1}>📋 {item.offer.request.title}</Text>
+                  : item.proposal?.title
+                    ? <Text style={{ color:'#a78bfa', fontSize:11, marginBottom:2 }} numberOfLines={1}>💌 {item.proposal.title}</Text>
+                    : null
+                }
                 <Text style={{ color:unread>0?C.text:C.text2, fontSize:13, fontWeight:unread>0?'600':'400' }} numberOfLines={1}>{preview}</Text>
               </View>
             </TouchableOpacity>
