@@ -9,6 +9,23 @@ const CAT_ICONS  = { 'ელექტრიკოსი':'⚡','სანტე�
 function getCatColor(c) { for (const [k,v] of Object.entries(CAT_COLORS)) if (c?.toLowerCase().includes(k.toLowerCase())) return v; return C.accent; }
 function getCatIcon(c)  { for (const [k,v] of Object.entries(CAT_ICONS))  if (c?.toLowerCase().includes(k.toLowerCase())) return v; return '📋'; }
 
+// Returns an image-displayable URL for any media item.
+// For Cloudinary videos: swap to the auto-generated JPEG thumbnail (first frame).
+function mediaThumbnailUrl(item) {
+  if (!item) return null;
+  const url  = typeof item === 'string' ? item : item.url;
+  const type = typeof item === 'string'
+    ? (/\.(mp4|webm|mov|avi|mkv)/i.test(url) ? 'video' : 'image')
+    : (item.type || 'image');
+  if (!url || type === 'voice') return null;
+  if (type === 'video') {
+    return url
+      .replace('/video/upload/', '/video/upload/f_jpg,so_auto/')
+      .replace(/\.(mp4|webm|mov|avi|mkv)(\?.*)?$/i, '.jpg');
+  }
+  return url;
+}
+
 function Badge({ color, label }) {
   return (
     <View style={{ backgroundColor: color + '25', borderRadius: 10, borderWidth: 1, borderColor: color + '60', paddingHorizontal: 7, paddingVertical: 2 }}>
@@ -21,6 +38,7 @@ export default function RequestCard({ request, onPress }) {
   const { user } = useAuth();
   const [fav, setFav]           = useState(request.isFavorite || false);
   const [toggling, setToggling] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const color    = getCatColor(request.category);
   const catIcon  = getCatIcon(request.category);
   const ageMs    = request.createdAt ? Date.now() - new Date(request.createdAt).getTime() : Infinity;
@@ -33,7 +51,9 @@ export default function RequestCard({ request, onPress }) {
   const mediaArr = Array.isArray(request.media)
     ? request.media
     : (request.media ? (() => { try { return JSON.parse(request.media); } catch { return []; } })() : []);
-  const firstImage = mediaArr[0] ? (typeof mediaArr[0] === 'string' ? mediaArr[0] : mediaArr[0]?.url) : null;
+  // Skip voice items — find first image or video and get its thumbnail URL
+  const firstVisual = mediaArr.find(m => (typeof m === 'string' ? 'image' : (m.type || 'image')) !== 'voice');
+  const thumbUrl = imgError ? null : mediaThumbnailUrl(firstVisual);
 
   async function toggleFav() {
     if (!user) { Alert.alert('', 'შესვლა საჭიროა'); return; }
@@ -54,8 +74,8 @@ export default function RequestCard({ request, onPress }) {
 
         {/* Left: image or emoji placeholder */}
         <View style={{ width: 105, height: 105, borderRadius: 14, overflow: 'hidden', flexShrink: 0 }}>
-          {firstImage ? (
-            <Image source={{ uri: firstImage }} style={{ width: 105, height: 105 }} resizeMode="cover" />
+          {thumbUrl ? (
+            <Image source={{ uri: thumbUrl }} style={{ width: 105, height: 105 }} resizeMode="cover" onError={() => setImgError(true)} />
           ) : (
             <View style={{ width: 105, height: 105, backgroundColor: color + '20', borderWidth: 1.5, borderColor: color + '45', borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ fontSize: 42 }}>{catIcon}</Text>
