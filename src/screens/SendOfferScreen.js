@@ -46,20 +46,23 @@ export default function SendOfferScreen({ route, navigation }) {
           [{ text:'გაუქმება', style:'cancel' },{ text:'ტარიფები', onPress:()=>navigation.navigate('Vip') }]);
         return;
       }
-      try {
-        const myOffers = await api('/offers/mine');
-        // ✅ FIX #5: rolling 30-day window instead of calendar month
-        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        const recentCount = (myOffers || []).filter(o =>
-          new Date(o.createdAt) >= thirtyDaysAgo
-        ).length;
-        if (recentCount >= 5) {
-          Alert.alert('💡 ბოლო 30 დღის შეთავაზებები ამოიწურა',
-            `Start ტარიფზე შეგიძლია 5 შეთავაზება/30 დღეში (${recentCount}/5). Pro ან TOP-ზე — ულიმიტო.`,
-            [{ text:'გაუქმება', style:'cancel' },{ text:'ტარიფები', onPress:()=>navigation.navigate('Vip') }]);
-          return;
-        }
-      } catch (_) {}
+      // Admin-granted unlimited mode: skip the monthly count check
+      if (!user.startUnlimited) {
+        try {
+          const myOffers = await api('/offers/mine');
+          // ✅ FIX #5: rolling 30-day window instead of calendar month
+          const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+          const recentCount = (myOffers || []).filter(o =>
+            new Date(o.createdAt) >= thirtyDaysAgo
+          ).length;
+          if (recentCount >= 5) {
+            Alert.alert('💡 ბოლო 30 დღის შეთავაზებები ამოიწურა',
+              `Start ტარიფზე შეგიძლია 5 შეთავაზება/30 დღეში (${recentCount}/5). Pro ან TOP-ზე — ულიმიტო.`,
+              [{ text:'გაუქმება', style:'cancel' },{ text:'ტარიფები', onPress:()=>navigation.navigate('Vip') }]);
+            return;
+          }
+        } catch (_) {}
+      }
     }
 
     setLoading(true);

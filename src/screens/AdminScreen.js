@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, ActivityIndicator,
-  RefreshControl, Alert, FlatList, TextInput, Modal,
+  RefreshControl, Alert, FlatList, TextInput, Modal, Switch,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -189,11 +189,12 @@ function UserOffersModal({ userId, userName, visible, onClose, navigation }) {
 }
 
 // ────────── User detail modal ──────────
-function UserDetailModal({ userId, visible, onClose, onBlockToggle, navigation }) {
+function UserDetailModal({ userId, visible, onClose, onBlockToggle, navigation, isAdmin }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showRequests, setShowRequests] = useState(false);
   const [showOffers, setShowOffers] = useState(false);
+  const [unlimitedToggling, setUnlimitedToggling] = useState(false);
 
   const load = useCallback(async () => {
     if (!userId) return;
@@ -207,6 +208,19 @@ function UserDetailModal({ userId, visible, onClose, onBlockToggle, navigation }
   useEffect(() => {
     if (visible) { setShowRequests(false); setShowOffers(false); load(); }
   }, [visible, userId]);
+
+  async function toggleStartUnlimited(value) {
+    if (unlimitedToggling || !user) return;
+    setUnlimitedToggling(true);
+    try {
+      await api(`/admin/users/${user.id}/start-unlimited`, { method: 'PATCH', body: { startUnlimited: value } });
+      setUser(prev => ({ ...prev, startUnlimited: value }));
+    } catch (e) {
+      Alert.alert('შეცდომა', e.error || 'ვერ შესრულდა');
+    } finally {
+      setUnlimitedToggling(false);
+    }
+  }
 
   if (!visible) return null;
 
@@ -313,6 +327,21 @@ function UserDetailModal({ userId, visible, onClose, onBlockToggle, navigation }
                       </View>
                     </View>
                   ) : null}
+                  {isAdmin ? (
+                    <View style={{ marginTop:12, paddingTop:12, borderTopWidth:1, borderTopColor:C.border, flexDirection:'row', alignItems:'center', justifyContent:'space-between' }}>
+                      <View style={{ flex:1, marginRight:12 }}>
+                        <Text style={{ color:C.text, fontWeight:'700', fontSize:13 }}>∞ ულიმიტო Start (3 თვე)</Text>
+                        <Text style={{ color:C.text2, fontSize:11, marginTop:2 }}>5 შეთ./30 დღის ლიმიტი გაუქმდება trial-ის განმავლობაში</Text>
+                      </View>
+                      <Switch
+                        value={!!user.startUnlimited}
+                        onValueChange={toggleStartUnlimited}
+                        disabled={unlimitedToggling}
+                        trackColor={{ false: C.border, true: C.accent }}
+                        thumbColor={'#fff'}
+                      />
+                    </View>
+                  ) : null}
                 </View>
               )}
 
@@ -388,7 +417,7 @@ function UserDetailModal({ userId, visible, onClose, onBlockToggle, navigation }
 }
 
 // ────────── Accounts tab ──────────
-function AccountsTab({ navigation }) {
+function AccountsTab({ navigation, isAdmin }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -490,6 +519,7 @@ function AccountsTab({ navigation }) {
         onClose={() => { setDetailVisible(false); setSelectedUserId(null); }}
         onBlockToggle={toggleBlock}
         navigation={navigation}
+        isAdmin={isAdmin}
       />
     </View>
   );
@@ -738,7 +768,7 @@ export default function AdminScreen({ navigation }) {
       {/* Content */}
       <View style={{ flex:1 }}>
         {tab === 'analytics' && isAdmin && <AnalyticsTab/>}
-        {tab === 'accounts'  && <AccountsTab navigation={navigation}/>}
+        {tab === 'accounts'  && <AccountsTab navigation={navigation} isAdmin={isAdmin}/>}
         {tab === 'requests'  && <RequestsTab navigation={navigation}/>}
         {tab === 'support'   && <SupportTab  navigation={navigation}/>}
         {tab === 'staff'     && <StaffTab    isAdmin={isAdmin}/>}
