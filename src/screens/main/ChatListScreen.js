@@ -111,16 +111,18 @@ export default function ChatListScreen({ navigation }) {
       });
     };
 
-    sock.on('newMessage',       handler);
+    sock.on('newMessage',        handler);
     sock.on('offerAgreedSingle', agreementHandler);
+    sock.on('offerAgreedBoth',   agreementHandler);
     sock.on('offerUpdated',      agreementHandler);
     sock.on('offerDisagreed',    agreementHandler);
     sock.on('proposalAgreed',    agreementHandler);
     sock.on('proposalDisagreed', agreementHandler);
 
     return () => {
-      sock.off('newMessage',       handler);
+      sock.off('newMessage',        handler);
       sock.off('offerAgreedSingle', agreementHandler);
+      sock.off('offerAgreedBoth',   agreementHandler);
       sock.off('offerUpdated',      agreementHandler);
       sock.off('offerDisagreed',    agreementHandler);
       sock.off('proposalAgreed',    agreementHandler);

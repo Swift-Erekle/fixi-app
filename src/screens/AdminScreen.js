@@ -11,6 +11,7 @@ import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { Avatar, Card, Btn, Tag, Empty } from '../components/UI';
+import { CATEGORIES } from '../utils/categories';
 
 const TABS = [
   { key:'analytics', label:'📊', adminOnly:true  },
@@ -63,6 +64,192 @@ function AnalyticsTab() {
         {stat('💰','შემოს. ₾',         ((data.vipRevenueTetri || 0) / 100).toFixed(0), C.ok)}
       </View>
     </ScrollView>
+  );
+}
+
+const GEO_CITIES = [
+  'თბილისი','ბათუმი','ქუთაისი','რუსთავი','გორი','ზუგდიდი','ფოთი','თელავი',
+  'ახალციხე','ოზურგეთი','ქობულეთი','ხაშური','სამტრედია','სენაკი','ზესტაფონი',
+  'მარნეული','ბოლნისი','გარდაბანი','კასპი','ქარელი','ჭიათურა','ხონი',
+];
+
+// ────────── Admin Quick Registration modal ──────────
+function QuickRegModal({ visible, onClose, onSuccess }) {
+  const [type,    setType]    = useState('handyman');
+  const [name,    setName]    = useState('');
+  const [surname, setSurname] = useState('');
+  const [email,   setEmail]   = useState('');
+  const [phone,   setPhone]   = useState('');
+  const [pass,    setPass]    = useState('');
+  const [city,    setCity]    = useState('');
+  const [specs,   setSpecs]   = useState([]);
+  const [desc,    setDesc]    = useState('');
+  const [whatsapp, setWhatsapp] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showCities, setShowCities] = useState(false);
+
+  const isCompany = type === 'company';
+
+  function reset() {
+    setType('handyman'); setName(''); setSurname(''); setEmail(''); setPhone('');
+    setPass(''); setCity(''); setSpecs([]); setDesc(''); setWhatsapp(false); setLoading(false); setShowCities(false);
+  }
+
+  useEffect(() => { if (visible) reset(); }, [visible]);
+
+  function toggleSpec(name) {
+    setSpecs(prev => prev.includes(name) ? prev.filter(s => s !== name) : [...prev, name]);
+  }
+
+  async function handleSubmit() {
+    if (!name.trim())            return Alert.alert('შეცდომა', 'სახელი სავალდებულოა');
+    if (!isCompany && !surname.trim()) return Alert.alert('შეცდომა', 'გვარი სავალდებულოა');
+    if (!email.trim())           return Alert.alert('შეცდომა', 'ელ-ფოსტა სავალდებულოა');
+    if (!pass || pass.length < 8) return Alert.alert('შეცდომა', 'პაროლი მინიმუმ 8 სიმბოლო');
+    if (specs.length === 0)      return Alert.alert('შეცდომა', 'მინიმუმ ერთი სპეციალობა');
+    if (whatsapp && !phone.trim()) return Alert.alert('შეცდომა', 'WhatsApp-ისთვის ტელეფონი საჭიროა');
+
+    setLoading(true);
+    try {
+      const user = await api('/admin/register-worker', {
+        method: 'POST',
+        body: {
+          name: name.trim(), surname: isCompany ? '' : surname.trim(),
+          email: email.trim().toLowerCase(), phone: phone.trim() || undefined,
+          password: pass, type,
+          specialty: specs[0], specialties: specs,
+          city: city || undefined, desc: desc.trim() || undefined,
+          whatsappEnabled: whatsapp,
+        },
+      });
+      Alert.alert('✅ ანგარიში შეიქმნა!', user.email);
+      onSuccess?.();
+      onClose();
+    } catch (e) {
+      Alert.alert('შეცდომა', e.error || 'რეგისტრაცია ვერ მოხდა');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (!visible) return null;
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={{ flex:1, justifyContent:'flex-end', backgroundColor:'rgba(0,0,0,0.6)' }}>
+        <View style={{ backgroundColor:C.surface, borderTopLeftRadius:24, borderTopRightRadius:24, maxHeight:'95%' }}>
+          {/* Header */}
+          <View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', padding:18, borderBottomWidth:1, borderBottomColor:C.border }}>
+            <Text style={{ color:C.text, fontWeight:'900', fontSize:16 }}>⚡ სწრაფი რეგისტრაცია</Text>
+            <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={C.text2}/></TouchableOpacity>
+          </View>
+
+          <ScrollView contentContainerStyle={{ padding:16, paddingBottom:30 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            {/* Type selector */}
+            <View style={{ flexDirection:'row', gap:8, marginBottom:16 }}>
+              {[{k:'handyman',l:'🔧 ხელოსანი'},{k:'company',l:'🏢 კომპანია'}].map(t => (
+                <TouchableOpacity key={t.k} onPress={() => setType(t.k)} style={{ flex:1, padding:11, borderRadius:10, borderWidth:1.5, borderColor:type===t.k?C.accent:C.border, backgroundColor:type===t.k?C.accent+'22':C.surface2, alignItems:'center' }}>
+                  <Text style={{ color:type===t.k?C.accent:C.text2, fontWeight:'700', fontSize:13 }}>{t.l}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Name */}
+            <Text style={{ color:C.text2, fontSize:12, fontWeight:'700', marginBottom:6, textTransform:'uppercase', letterSpacing:0.5 }}>{isCompany ? 'კომპანიის სახელი *' : 'სახელი *'}</Text>
+            <TextInput style={{ backgroundColor:C.surface2, borderRadius:10, borderWidth:1, borderColor:C.border, padding:12, color:C.text, fontSize:14, marginBottom:12 }}
+              placeholder={isCompany ? 'მაგ: BuildPro საქართველო' : 'სახელი'} placeholderTextColor={C.text2}
+              value={name} onChangeText={setName} />
+
+            {/* Surname — handyman only */}
+            {!isCompany && (<>
+              <Text style={{ color:C.text2, fontSize:12, fontWeight:'700', marginBottom:6, textTransform:'uppercase', letterSpacing:0.5 }}>გვარი *</Text>
+              <TextInput style={{ backgroundColor:C.surface2, borderRadius:10, borderWidth:1, borderColor:C.border, padding:12, color:C.text, fontSize:14, marginBottom:12 }}
+                placeholder="გვარი" placeholderTextColor={C.text2} value={surname} onChangeText={setSurname} />
+            </>)}
+
+            {/* Email */}
+            <Text style={{ color:C.text2, fontSize:12, fontWeight:'700', marginBottom:6, textTransform:'uppercase', letterSpacing:0.5 }}>ელ-ფოსტა *</Text>
+            <TextInput style={{ backgroundColor:C.surface2, borderRadius:10, borderWidth:1, borderColor:C.border, padding:12, color:C.text, fontSize:14, marginBottom:12 }}
+              placeholder="worker@email.com" placeholderTextColor={C.text2} keyboardType="email-address" autoCapitalize="none"
+              value={email} onChangeText={setEmail} />
+
+            {/* Phone */}
+            <Text style={{ color:C.text2, fontSize:12, fontWeight:'700', marginBottom:6, textTransform:'uppercase', letterSpacing:0.5 }}>ტელეფონი</Text>
+            <TextInput style={{ backgroundColor:C.surface2, borderRadius:10, borderWidth:1, borderColor:C.border, padding:12, color:C.text, fontSize:14, marginBottom:12 }}
+              placeholder="+995 5XX XXX XXX" placeholderTextColor={C.text2} keyboardType="phone-pad"
+              value={phone} onChangeText={setPhone} />
+
+            {/* Password */}
+            <Text style={{ color:C.text2, fontSize:12, fontWeight:'700', marginBottom:6, textTransform:'uppercase', letterSpacing:0.5 }}>პაროლი * (მინ. 8)</Text>
+            <TextInput style={{ backgroundColor:C.surface2, borderRadius:10, borderWidth:1, borderColor:C.border, padding:12, color:C.text, fontSize:14, marginBottom:12 }}
+              placeholder="••••••••" placeholderTextColor={C.text2} secureTextEntry
+              value={pass} onChangeText={setPass} />
+
+            {/* City picker */}
+            <Text style={{ color:C.text2, fontSize:12, fontWeight:'700', marginBottom:6, textTransform:'uppercase', letterSpacing:0.5 }}>ქალაქი</Text>
+            <TouchableOpacity onPress={() => setShowCities(!showCities)}
+              style={{ backgroundColor:C.surface2, borderRadius:10, borderWidth:1, borderColor:showCities?C.accent:C.border, padding:12, marginBottom:4, flexDirection:'row', justifyContent:'space-between', alignItems:'center' }}>
+              <Text style={{ color:city ? C.text : C.text2, fontSize:14 }}>{city || '— ქალაქი —'}</Text>
+              <Ionicons name={showCities?'chevron-up':'chevron-down'} size={16} color={C.text2}/>
+            </TouchableOpacity>
+            {showCities && (
+              <View style={{ backgroundColor:C.surface2, borderRadius:10, borderWidth:1, borderColor:C.border, marginBottom:12, maxHeight:200 }}>
+                <ScrollView nestedScrollEnabled>
+                  {GEO_CITIES.map(c => (
+                    <TouchableOpacity key={c} onPress={() => { setCity(c); setShowCities(false); }}
+                      style={{ padding:12, borderBottomWidth:1, borderBottomColor:C.border, backgroundColor:city===c?C.accent+'18':'transparent' }}>
+                      <Text style={{ color:city===c?C.accent:C.text, fontWeight:city===c?'700':'400' }}>{c}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Specialties */}
+            <Text style={{ color:C.text2, fontSize:12, fontWeight:'700', marginBottom:6, marginTop:8, textTransform:'uppercase', letterSpacing:0.5 }}>სპეციალობა * (შეგიძლია რამდენიმე)</Text>
+            {specs.length > 0 && (
+              <Text style={{ color:C.accent, fontSize:12, marginBottom:8 }}>✓ {specs.join(', ')}</Text>
+            )}
+            <View style={{ flexDirection:'row', flexWrap:'wrap', gap:8, marginBottom:14 }}>
+              {CATEGORIES.map(c => {
+                const sel = specs.includes(c.name);
+                return (
+                  <TouchableOpacity key={c.name} onPress={() => toggleSpec(c.name)}
+                    style={{ flexDirection:'row', alignItems:'center', gap:6, paddingHorizontal:12, paddingVertical:9, borderRadius:12, borderWidth:1.5, borderColor:sel?C.accent:C.border, backgroundColor:sel?C.accent+'18':C.surface2 }}>
+                    <Text style={{ fontSize:15 }}>{c.icon}</Text>
+                    <Text style={{ color:sel?C.accent:C.text, fontWeight:'700', fontSize:12 }}>{c.name}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Description */}
+            <Text style={{ color:C.text2, fontSize:12, fontWeight:'700', marginBottom:6, textTransform:'uppercase', letterSpacing:0.5 }}>აღწერა</Text>
+            <TextInput style={{ backgroundColor:C.surface2, borderRadius:10, borderWidth:1, borderColor:C.border, padding:12, color:C.text, fontSize:14, height:80, textAlignVertical:'top', marginBottom:12 }}
+              placeholder="გამოცდილება, სერვისები..." placeholderTextColor={C.text2} multiline
+              value={desc} onChangeText={setDesc} />
+
+            {/* WhatsApp toggle */}
+            <TouchableOpacity onPress={() => setWhatsapp(v => !v)}
+              style={{ flexDirection:'row', alignItems:'center', gap:12, padding:13, borderRadius:12, borderWidth:1.5, borderColor:whatsapp?'#25D366':C.border, backgroundColor:whatsapp?'#25D36615':C.surface2, marginBottom:18 }}>
+              <Switch value={whatsapp} onValueChange={setWhatsapp} trackColor={{ false:C.border, true:'#25D366' }} thumbColor="#fff" />
+              <View>
+                <Text style={{ color:whatsapp?'#25D366':C.text, fontWeight:'700', fontSize:14 }}>💬 WhatsApp</Text>
+                <Text style={{ color:C.text2, fontSize:12, marginTop:2 }}>მსურს მიკავშირდნენ WhatsApp-ით</Text>
+              </View>
+            </TouchableOpacity>
+
+            <View style={{ backgroundColor:'#10b98115', borderRadius:12, borderWidth:1, borderColor:'#10b98130', padding:12, marginBottom:16 }}>
+              <Text style={{ color:'#10b981', fontSize:12, fontWeight:'600', textAlign:'center' }}>
+                ✅ ანგარიში ავტომატურად ვერიფიცირდება · Start · 3 თვე უფასო
+              </Text>
+            </View>
+
+            <Btn title="⚡ Register (Admin)" onPress={handleSubmit} loading={loading} />
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -733,6 +920,7 @@ export default function AdminScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [tab, setTab] = useState('accounts');
+  const [quickRegVisible, setQuickRegVisible] = useState(false);
 
   if (!user || (user.type !== 'admin' && user.type !== 'staff')) {
     return (
@@ -750,10 +938,22 @@ export default function AdminScreen({ navigation }) {
   return (
     <View style={{ flex:1, backgroundColor:C.bg }}>
       {/* Header */}
-      <View style={{ paddingHorizontal:16, paddingTop:insets.top + 16, paddingBottom:10, borderBottomWidth:1, borderBottomColor:C.border }}>
-        <Text style={{ color:C.text, fontSize:22, fontWeight:'900' }}>🛡️ ადმინ პანელი</Text>
-        <Text style={{ color:C.text2, fontSize:12, marginTop:2 }}>{isAdmin ? 'ადმინი' : 'სტაფი'}</Text>
+      <View style={{ paddingHorizontal:16, paddingTop:insets.top + 16, paddingBottom:10, borderBottomWidth:1, borderBottomColor:C.border, flexDirection:'row', alignItems:'center', justifyContent:'space-between' }}>
+        <View>
+          <Text style={{ color:C.text, fontSize:22, fontWeight:'900' }}>🛡️ ადმინ პანელი</Text>
+          <Text style={{ color:C.text2, fontSize:12, marginTop:2 }}>{isAdmin ? 'ადმინი' : 'სტაფი'}</Text>
+        </View>
+        <TouchableOpacity onPress={() => setQuickRegVisible(true)}
+          style={{ backgroundColor:C.accent+'22', borderRadius:10, borderWidth:1.5, borderColor:C.accent+'66', paddingHorizontal:12, paddingVertical:8 }}>
+          <Text style={{ color:C.accent, fontWeight:'800', fontSize:13 }}>⚡ სწრაფი რეგ.</Text>
+        </TouchableOpacity>
       </View>
+
+      <QuickRegModal
+        visible={quickRegVisible}
+        onClose={() => setQuickRegVisible(false)}
+        onSuccess={() => {}}
+      />
 
       {/* Tabs */}
       <View style={{ flexDirection:'row', paddingHorizontal:10, paddingVertical:8, borderBottomWidth:1, borderBottomColor:C.border, gap:6 }}>
