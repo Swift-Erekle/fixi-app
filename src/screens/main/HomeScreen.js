@@ -12,21 +12,23 @@ import { CATEGORIES, GEORGIA_CITIES } from '../../utils/categories';
 import HandymanCard from '../../components/HandymanCard';
 import { Avatar } from '../../components/UI';
 import BellButton from '../../components/BellButton';
+import { useLanguage } from '../../context/LanguageContext';
 
 const CITIES = ['', ...GEORGIA_CITIES];
 
-const RATING_OPTS = [
-  { key: '', label: 'ყველა' },
-  { key: '3.5', label: '⭐ 3.5+' },
-  { key: '4.0', label: '⭐ 4.0+' },
-  { key: '4.5', label: '⭐ 4.5+' },
-];
-
 function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialMinRating, onClose, onApply }) {
+  const { t, tCat, tCity } = useLanguage();
   const [cat, setCat] = useState(initialCat || '');
   const [subcat, setSubcat] = useState(initialSubcat || '');
   const [city, setCity] = useState(initialCity || '');
   const [minRating, setMinRating] = useState(initialMinRating || '');
+
+  const RATING_OPTS = [
+    { key: '', label: t('rating_all') },
+    { key: '3.5', label: '⭐ 3.5+' },
+    { key: '4.0', label: '⭐ 4.0+' },
+    { key: '4.5', label: '⭐ 4.5+' },
+  ];
 
   useEffect(() => {
     if (visible) { setCat(initialCat || ''); setSubcat(initialSubcat || ''); setCity(initialCity || ''); setMinRating(initialMinRating || ''); }
@@ -38,22 +40,18 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' }}>
         <View style={{ backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '90%' }}>
-
-          {/* Header */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: C.border }}>
             <TouchableOpacity onPress={() => { setCat(''); setSubcat(''); setCity(''); setMinRating(''); }}>
-              <Text style={{ color: C.text2, fontWeight: '700', fontSize: 14 }}>გასუფთავება</Text>
+              <Text style={{ color: C.text2, fontWeight: '700', fontSize: 14 }}>{t('filter_clear')}</Text>
             </TouchableOpacity>
-            <Text style={{ color: C.text, fontWeight: '900', fontSize: 17 }}>ფილტრები</Text>
+            <Text style={{ color: C.text, fontWeight: '900', fontSize: 17 }}>{t('filter_title')}</Text>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={22} color={C.text2} />
             </TouchableOpacity>
           </View>
 
           <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 10 }} showsVerticalScrollIndicator={false}>
-
-            {/* Category */}
-            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>კატეგორია</Text>
+            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_category')}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
               {CATEGORIES.map(c => (
                 <TouchableOpacity
@@ -68,16 +66,15 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
                   }}
                 >
                   <Text style={{ fontSize: 20 }}>{c.icon}</Text>
-                  <Text style={{ color: cat === c.name ? C.accent : C.text, fontWeight: '700', fontSize: 13, flex: 1 }}>{c.name}</Text>
+                  <Text style={{ color: cat === c.name ? C.accent : C.text, fontWeight: '700', fontSize: 13, flex: 1 }}>{tCat(c.name)}</Text>
                   {cat === c.name && <Ionicons name="checkmark-circle" size={16} color={C.accent} />}
                 </TouchableOpacity>
               ))}
             </View>
 
-            {/* Subcategory */}
             {selCat && (
               <>
-                <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>ქვეკატეგორია</Text>
+                <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_subcategory')}</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
                   {selCat.subs.map(s => (
                     <TouchableOpacity
@@ -96,8 +93,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
               </>
             )}
 
-            {/* City */}
-            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>ქალაქი</Text>
+            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_city')}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
               {CITIES.map(c => (
                 <TouchableOpacity
@@ -110,14 +106,13 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
                   }}
                 >
                   <Text style={{ color: city === c ? '#3b82f6' : C.text2, fontWeight: '600', fontSize: 13 }}>
-                    {c || '📍 ყველა'}
+                    {c ? tCity(c) : t('filter_all_cities')}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            {/* Rating */}
-            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>შეფასება</Text>
+            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_rating')}</Text>
             <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
               {RATING_OPTS.map(opt => (
                 <TouchableOpacity key={opt.key} onPress={() => setMinRating(opt.key)}
@@ -128,13 +123,12 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
             </View>
           </ScrollView>
 
-          {/* Apply */}
           <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: C.border }}>
             <TouchableOpacity
               onPress={() => { onApply({ cat, subcat, city, minRating }); onClose(); }}
               style={{ backgroundColor: C.accent, borderRadius: 14, padding: 16, alignItems: 'center' }}
             >
-              <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>გამოყენება</Text>
+              <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>{t('filter_apply')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -144,6 +138,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
 }
 
 function CompanyCard({ user, onPress }) {
+  const { t } = useLanguage();
   const avg = user.reviewsReceived?.length
     ? (user.reviewsReceived.reduce((s, r) => s + r.stars, 0) / user.reviewsReceived.length).toFixed(1)
     : null;
@@ -165,10 +160,10 @@ function CompanyCard({ user, onPress }) {
           {user.city ? <Text style={{ color: C.text2, fontSize: 12, marginTop: 2 }}>📍 {user.city}</Text> : null}
         </View>
       </View>
-      {user.verified && <Text style={{ color: '#10b981', fontSize: 12, fontWeight: '600', marginBottom: 6 }}>✅ ვერიფიცირებული</Text>}
+      {user.verified && <Text style={{ color: '#10b981', fontSize: 12, fontWeight: '600', marginBottom: 6 }}>{t('home_verified')}</Text>}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
         {avg ? <Text style={{ color: '#f1c40f', fontWeight: '700', fontSize: 13 }}>★ {avg} ({user.reviewsReceived.length})</Text> : null}
-        <Text style={{ color: C.text2, fontSize: 12 }}>💼 {user.jobs || 0} პროექტი</Text>
+        <Text style={{ color: C.text2, fontSize: 12 }}>💼 {user.jobs || 0} {t('home_projects')}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -176,6 +171,7 @@ function CompanyCard({ user, onPress }) {
 
 export default function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const { t, tCat, tCity } = useLanguage();
   const [handymen, setHandymen] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [filtered, setFiltered] = useState([]);
@@ -269,18 +265,15 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
-      {/* Static header — outside FlatList so TextInput never loses focus on re-render */}
       <View>
-        {/* Title */}
         <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <View>
-            <Text style={{ color: C.text, fontSize: 24, fontWeight: '900' }}>🔧 ხელოსნები</Text>
-            <Text style={{ color: C.text2, fontSize: 13, marginTop: 2 }}>იპოვე სანდო და გამოცდილი ხელოსნები</Text>
+            <Text style={{ color: C.text, fontSize: 24, fontWeight: '900' }}>{t('home_title')}</Text>
+            <Text style={{ color: C.text2, fontSize: 13, marginTop: 2 }}>{t('home_subtitle')}</Text>
           </View>
           <BellButton navigation={navigation} />
         </View>
 
-        {/* Search & filter bar */}
         <View style={{ paddingHorizontal: 20, marginBottom: 10 }}>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <TouchableOpacity
@@ -294,7 +287,7 @@ export default function HomeScreen({ navigation }) {
               }}
             >
               <Ionicons name="options-outline" size={16} color={hasActiveFilters ? C.accent : C.text2} />
-              <Text style={{ color: hasActiveFilters ? C.accent : C.text, fontWeight: '600', fontSize: 13 }}>ფილტრები</Text>
+              <Text style={{ color: hasActiveFilters ? C.accent : C.text, fontWeight: '600', fontSize: 13 }}>{t('home_filters')}</Text>
               {hasActiveFilters && (
                 <View style={{ backgroundColor: C.accent, borderRadius: 10, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ color: '#fff', fontSize: 10, fontWeight: '900' }}>
@@ -311,7 +304,7 @@ export default function HomeScreen({ navigation }) {
               <Text style={{ fontSize: 16, marginRight: 6 }}>🔍</Text>
               <TextInput
                 style={{ flex: 1, color: C.text, fontSize: 13, paddingVertical: 10 }}
-                placeholder="ძიება..."
+                placeholder={t('home_search')}
                 placeholderTextColor={C.text2}
                 value={search}
                 onChangeText={setSearch}
@@ -325,26 +318,24 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Active filter chips */}
         {hasActiveFilters && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 20, marginBottom: 10 }}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              {companiesOnly && <Chip label="კომპანიები" onRemove={() => setCompaniesOnly(false)} />}
-              {category && <Chip label={category} onRemove={() => { setCategory(''); setSubCategory(''); }} />}
+              {companiesOnly && <Chip label={t('home_companies')} onRemove={() => setCompaniesOnly(false)} />}
+              {category && <Chip label={tCat(category)} onRemove={() => { setCategory(''); setSubCategory(''); }} />}
               {subCategory && <Chip label={subCategory} onRemove={() => setSubCategory('')} />}
-              {city && <Chip label={city} onRemove={() => setCity('')} color="#3b82f6" />}
+              {city && <Chip label={tCity(city)} onRemove={() => setCity('')} color="#3b82f6" />}
               {minRating && <Chip label={`⭐ ${minRating}+`} onRemove={() => setMinRating('')} color="#f1c40f" />}
             </View>
           </ScrollView>
         )}
 
-        {/* VIP+ Companies */}
         {companies.length > 0 && (
           <View style={{ marginBottom: 20 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 12 }}>
-              <Text style={{ color: C.text, fontSize: 16, fontWeight: '800' }}>👑 VIP+ კომპანიები</Text>
+              <Text style={{ color: C.text, fontSize: 16, fontWeight: '800' }}>{t('home_vip_companies')}</Text>
               <TouchableOpacity onPress={() => { setCompaniesOnly(true); setCategory(''); setSubCategory(''); setCity(''); }}>
-                <Text style={{ color: C.accent, fontSize: 13, fontWeight: '600' }}>ყველას ნახვა →</Text>
+                <Text style={{ color: C.accent, fontSize: 13, fontWeight: '600' }}>{t('home_view_all')}</Text>
               </TouchableOpacity>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
@@ -356,7 +347,7 @@ export default function HomeScreen({ navigation }) {
         )}
 
         <Text style={{ color: C.text2, fontSize: 12, paddingHorizontal: 20, marginBottom: 8 }}>
-          {filtered.length} ხელოსანი
+          {filtered.length} {t('home_count')}
         </Text>
       </View>
 
@@ -372,8 +363,8 @@ export default function HomeScreen({ navigation }) {
           !loading ? (
             <View style={{ alignItems: 'center', padding: 40 }}>
               <Text style={{ fontSize: 48, marginBottom: 12 }}>🔧</Text>
-              <Text style={{ color: C.text, fontWeight: '700' }}>ხელოსანი ვერ მოიძებნა</Text>
-              <Text style={{ color: C.text2, fontSize: 13, marginTop: 4, textAlign: 'center' }}>სცადე სხვა ფილტრი</Text>
+              <Text style={{ color: C.text, fontWeight: '700' }}>{t('home_not_found')}</Text>
+              <Text style={{ color: C.text2, fontSize: 13, marginTop: 4, textAlign: 'center' }}>{t('home_try_filter')}</Text>
             </View>
           ) : null
         }

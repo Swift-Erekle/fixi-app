@@ -7,20 +7,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import RequestCard from '../../components/RequestCard';
 import { CATEGORIES, GEORGIA_CITIES } from '../../utils/categories';
 import BellButton from '../../components/BellButton';
 
 const CITIES = ['', ...GEORGIA_CITIES];
 
-const STATUS_OPTS = [
-  { key: '', label: 'ყველა' },
-  { key: 'open', label: 'ღია' },
-  { key: 'pending', label: 'მიმდინარე' },
-  { key: 'completed', label: 'დასრულებული' },
-];
-
 function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialMinBudget, initialMaxBudget, initialStatus, initialUrgent, onClose, onApply }) {
+  const { t, tCat, tCity } = useLanguage();
+  const STATUS_OPTS = [
+    { key: '', label: t('status_all') },
+    { key: 'open', label: t('status_open') },
+    { key: 'pending', label: t('status_pending') },
+    { key: 'completed', label: t('status_completed') },
+  ];
   const [cat, setCat] = useState(initialCat || '');
   const [subcat, setSubcat] = useState(initialSubcat || '');
   const [city, setCity] = useState(initialCity || '');
@@ -45,16 +46,16 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
         <View style={{ backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '90%' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: C.border }}>
             <TouchableOpacity onPress={() => { setCat(''); setSubcat(''); setCity(''); setMinBudget(''); setMaxBudget(''); setStatus(''); setUrgent(false); }}>
-              <Text style={{ color: C.text2, fontWeight: '700', fontSize: 14 }}>გასუფთავება</Text>
+              <Text style={{ color: C.text2, fontWeight: '700', fontSize: 14 }}>{t('filter_clear')}</Text>
             </TouchableOpacity>
-            <Text style={{ color: C.text, fontWeight: '900', fontSize: 17 }}>ფილტრები</Text>
+            <Text style={{ color: C.text, fontWeight: '900', fontSize: 17 }}>{t('filter_title')}</Text>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={22} color={C.text2} />
             </TouchableOpacity>
           </View>
 
           <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 10 }} showsVerticalScrollIndicator={false}>
-            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>კატეგორია</Text>
+            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_category')}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
               {CATEGORIES.map(c => (
                 <TouchableOpacity
@@ -69,7 +70,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
                   }}
                 >
                   <Text style={{ fontSize: 18 }}>{c.icon}</Text>
-                  <Text style={{ color: cat === c.name ? C.accent : C.text, fontWeight: '700', fontSize: 13, flex: 1 }}>{c.name}</Text>
+                  <Text style={{ color: cat === c.name ? C.accent : C.text, fontWeight: '700', fontSize: 13, flex: 1 }}>{tCat(c.name)}</Text>
                   {cat === c.name && <Ionicons name="checkmark-circle" size={16} color={C.accent} />}
                 </TouchableOpacity>
               ))}
@@ -77,7 +78,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
 
             {selCat && selCat.subs.length > 0 && (
               <>
-                <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>ქვეკატეგორია</Text>
+                <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_subcategory')}</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
                   {selCat.subs.map(s => (
                     <TouchableOpacity key={s}
@@ -90,23 +91,23 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
               </>
             )}
 
-            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>ქალაქი</Text>
+            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_city')}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
               {CITIES.map(c => (
                 <TouchableOpacity key={c || 'all'} onPress={() => setCity(c)}
                   style={{ paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, borderWidth: 1.5, borderColor: city === c ? '#3b82f6' : C.border, backgroundColor: city === c ? '#3b82f622' : C.surface2 }}>
                   <Text style={{ color: city === c ? '#3b82f6' : C.text2, fontWeight: '600', fontSize: 13 }}>
-                    {c || '📍 ყველა'}
+                    {c ? tCity(c) : t('filter_all_cities')}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             {/* Price range */}
-            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>ფასი (₾)</Text>
+            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_budget')}</Text>
             <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: C.text2, fontSize: 11, marginBottom: 6 }}>მინ.</Text>
+                <Text style={{ color: C.text2, fontSize: 11, marginBottom: 6 }}>{t('filter_budget_min')}</Text>
                 <TextInput
                   style={{ backgroundColor: C.surface2, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 12, color: C.text, fontSize: 15, fontWeight: '700', textAlign: 'center' }}
                   placeholder="0" placeholderTextColor={C.text2} value={minBudget} onChangeText={setMinBudget} keyboardType="numeric"
@@ -116,7 +117,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
                 <Text style={{ color: C.text2, fontSize: 18 }}>–</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: C.text2, fontSize: 11, marginBottom: 6 }}>მაქს.</Text>
+                <Text style={{ color: C.text2, fontSize: 11, marginBottom: 6 }}>{t('filter_budget_max')}</Text>
                 <TextInput
                   style={{ backgroundColor: C.surface2, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 12, color: C.text, fontSize: 15, fontWeight: '700', textAlign: 'center' }}
                   placeholder="∞" placeholderTextColor={C.text2} value={maxBudget} onChangeText={setMaxBudget} keyboardType="numeric"
@@ -125,7 +126,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
             </View>
 
             {/* Status */}
-            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>სტატუსი</Text>
+            <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_status')}</Text>
             <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20 }}>
               {STATUS_OPTS.map(opt => (
                 <TouchableOpacity key={opt.key} onPress={() => setStatus(opt.key)}
@@ -138,8 +139,8 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
             {/* Urgent */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderRadius: 14, borderWidth: 1.5, borderColor: urgent ? C.err + '60' : C.border, backgroundColor: urgent ? C.err + '12' : C.surface2, marginBottom: 10 }}>
               <View>
-                <Text style={{ color: urgent ? C.err : C.text, fontWeight: '700', fontSize: 14 }}>🚨 გადაუდებელი</Text>
-                <Text style={{ color: C.text2, fontSize: 12 }}>მხოლოდ urgent მოთხოვნები</Text>
+                <Text style={{ color: urgent ? C.err : C.text, fontWeight: '700', fontSize: 14 }}>{t('filter_urgent')}</Text>
+                <Text style={{ color: C.text2, fontSize: 12 }}></Text>
               </View>
               <Switch value={urgent} onValueChange={setUrgent} trackColor={{ false: C.border, true: C.err }} thumbColor="#fff" />
             </View>
@@ -150,7 +151,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
               onPress={() => { onApply({ cat, subcat, city, minBudget, maxBudget, status, urgent }); onClose(); }}
               style={{ backgroundColor: C.accent, borderRadius: 14, padding: 16, alignItems: 'center' }}
             >
-              <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>გამოყენება</Text>
+              <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>{t('filter_apply')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -162,6 +163,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
 export default function RequestsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { t, tCat, tCity } = useLanguage();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -208,12 +210,8 @@ export default function RequestsScreen({ navigation }) {
         <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: C.text, fontSize: 24, fontWeight: '900' }}>📋 მოთხოვნები</Text>
-              <Text style={{ color: C.text2, fontSize: 13, marginTop: 2 }}>
-                {user?.type === 'user'
-                  ? 'აირჩიე შენთვის სასურველი სახსური და დაიქირავე შემსრულებელი!'
-                  : 'იპოვე შეკვეთა და გახდი პირველი შემდეგ მომხმარებელთან!'}
-              </Text>
+              <Text style={{ color: C.text, fontSize: 24, fontWeight: '900' }}>{t('req_title')}</Text>
+              <Text style={{ color: C.text2, fontSize: 13, marginTop: 2 }}>{t('req_subtitle')}</Text>
             </View>
             <BellButton navigation={navigation} style={{ marginLeft: 12 }} />
           </View>
@@ -222,7 +220,7 @@ export default function RequestsScreen({ navigation }) {
               onPress={() => navigation.navigate('CreateRequest')}
               style={{ marginTop: 14, backgroundColor: C.accent, borderRadius: 14, padding: 13, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             >
-              <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>+ ახალი მოთხოვნა</Text>
+              <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>{t('req_cta_btn')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -241,7 +239,7 @@ export default function RequestsScreen({ navigation }) {
               }}
             >
               <Ionicons name="options-outline" size={16} color={hasActiveFilters ? C.accent : C.text2} />
-              <Text style={{ color: hasActiveFilters ? C.accent : C.text, fontWeight: '600', fontSize: 13 }}>ფილტრები</Text>
+              <Text style={{ color: hasActiveFilters ? C.accent : C.text, fontWeight: '600', fontSize: 13 }}>{t('home_filters')}</Text>
               {hasActiveFilters && (
                 <View style={{ backgroundColor: C.accent, borderRadius: 10, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ color: '#fff', fontSize: 10, fontWeight: '900' }}>
@@ -258,7 +256,7 @@ export default function RequestsScreen({ navigation }) {
               <Text style={{ fontSize: 16, marginRight: 6 }}>🔍</Text>
               <TextInput
                 style={{ flex: 1, color: C.text, fontSize: 13, paddingVertical: 10 }}
-                placeholder="ძიება..."
+                placeholder={t('req_search')}
                 placeholderTextColor={C.text2}
                 value={search}
                 onChangeText={setSearch}
@@ -276,7 +274,7 @@ export default function RequestsScreen({ navigation }) {
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 {cat && (
                   <TouchableOpacity onPress={() => { setCat(''); setSubcat(''); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: C.accent + '22', borderWidth: 1, borderColor: C.accent + '66' }}>
-                    <Text style={{ color: C.accent, fontSize: 12, fontWeight: '700' }}>{cat}</Text>
+                    <Text style={{ color: C.accent, fontSize: 12, fontWeight: '700' }}>{tCat(cat)}</Text>
                     <Ionicons name="close" size={14} color={C.accent} />
                   </TouchableOpacity>
                 )}
@@ -288,7 +286,7 @@ export default function RequestsScreen({ navigation }) {
                 )}
                 {city && (
                   <TouchableOpacity onPress={() => setCity('')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: '#3b82f622', borderWidth: 1, borderColor: '#3b82f666' }}>
-                    <Text style={{ color: '#3b82f6', fontSize: 12, fontWeight: '700' }}>📍 {city}</Text>
+                    <Text style={{ color: '#3b82f6', fontSize: 12, fontWeight: '700' }}>📍 {tCity(city)}</Text>
                     <Ionicons name="close" size={14} color="#3b82f6" />
                   </TouchableOpacity>
                 )}
@@ -306,7 +304,7 @@ export default function RequestsScreen({ navigation }) {
                 )}
                 {urgent && (
                   <TouchableOpacity onPress={() => setUrgent(false)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: C.err + '22', borderWidth: 1, borderColor: C.err + '66' }}>
-                    <Text style={{ color: C.err, fontSize: 12, fontWeight: '700' }}>🚨 გადაუდებელი</Text>
+                    <Text style={{ color: C.err, fontSize: 12, fontWeight: '700' }}>{t('filter_urgent')}</Text>
                     <Ionicons name="close" size={14} color={C.err} />
                   </TouchableOpacity>
                 )}
@@ -316,7 +314,7 @@ export default function RequestsScreen({ navigation }) {
         </View>
 
         <Text style={{ color: C.text2, fontSize: 12, paddingHorizontal: 20, marginBottom: 8 }}>
-          {filtered.length} მოთხოვნა
+          {filtered.length} {t('req_title').replace('📋 ', '')}
         </Text>
       </View>
 
@@ -335,8 +333,8 @@ export default function RequestsScreen({ navigation }) {
           !loading ? (
             <View style={{ alignItems: 'center', padding: 40 }}>
               <Text style={{ fontSize: 48, marginBottom: 12 }}>📋</Text>
-              <Text style={{ color: C.text, fontWeight: '700' }}>მოთხოვნა ვერ მოიძებნა</Text>
-              <Text style={{ color: C.text2, fontSize: 13, marginTop: 4 }}>სცადე სხვა ფილტრი</Text>
+              <Text style={{ color: C.text, fontWeight: '700' }}>{t('req_not_found')}</Text>
+              <Text style={{ color: C.text2, fontSize: 13, marginTop: 4 }}>{t('home_try_filter')}</Text>
             </View>
           ) : null
         }

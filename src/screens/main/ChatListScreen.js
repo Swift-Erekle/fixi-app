@@ -6,12 +6,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { Avatar, Empty } from '../../components/UI';
 import { getSocket } from '../../utils/socket';
 
 export default function ChatListScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [chats, setChats] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const initialLoadDone = React.useRef(false);
@@ -141,15 +143,15 @@ export default function ChatListScreen({ navigation }) {
     const dt = new Date(d);
     const diff = Math.floor((Date.now()-dt)/86400000);
     if (diff===0) return dt.toLocaleTimeString('ka-GE',{hour:'2-digit',minute:'2-digit'});
-    if (diff===1) return 'გუშინ';
+    if (diff===1) return t('chats_yesterday');
     return dt.toLocaleDateString('ka-GE',{day:'numeric',month:'short'});
   }
 
   return (
     <View style={{ flex:1, backgroundColor:C.bg }}>
       <View style={{ paddingHorizontal:20, paddingTop: insets.top + 16, paddingBottom:14, borderBottomWidth:1, borderBottomColor:C.border }}>
-        <Text style={{ color:C.text, fontSize:22, fontWeight:'900' }}>💬 ჩათები</Text>
-        <Text style={{ color:C.text2, fontSize:13, marginTop:2 }}>შეტყობინებები მომხმარებლებთან</Text>
+        <Text style={{ color:C.text, fontSize:22, fontWeight:'900' }}>{t('chats_title')}</Text>
+        <Text style={{ color:C.text2, fontSize:13, marginTop:2 }}>{t('chats_subtitle')}</Text>
       </View>
       <FlatList
         data={chats}
@@ -159,7 +161,7 @@ export default function ChatListScreen({ navigation }) {
           const other = getOther(item);
           const lastMsg = item.messages?.[0];
           const unread = item.unreadCount || 0;
-          const preview = lastMsg?.type==='image'?'📷 ფოტო':lastMsg?.type==='video'?'🎥 ვიდეო':lastMsg?.type==='voice'?'🎤 ხმა':lastMsg?.content||'';
+          const preview = lastMsg?.type==='image'?t('chats_photo'):lastMsg?.type==='video'?t('chats_video'):lastMsg?.type==='voice'?t('chats_voice'):lastMsg?.content||'';
           return (
             <TouchableOpacity
               onPress={()=>navigation.navigate('Chat',{ chatId:item.id, title:other?`${other.name} ${other.surname||''}`.trim():'ჩათი' })}
@@ -191,7 +193,7 @@ export default function ChatListScreen({ navigation }) {
           );
         }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>load(true)} tintColor={C.accent} />}
-        ListEmptyComponent={<Empty icon="💬" title="ჩათები არ არის" subtitle="შეთავაზების მიღების შემდეგ ჩათი გაიხსნება" />}
+        ListEmptyComponent={<Empty icon="💬" title={t('chats_empty_title')} subtitle={t('chats_empty_sub')} />}
       />
     </View>
   );

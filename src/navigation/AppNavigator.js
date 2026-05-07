@@ -6,6 +6,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { C } from '../utils/theme';
 
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -50,15 +51,6 @@ const SCREEN_OPT = {
   cardStyle: { backgroundColor: C.bg },
 };
 
-const TAB_LABELS = {
-  Home: 'ხელოსნები',
-  Requests: 'მოთხოვნები',
-  Chats: 'ჩათები',
-  ARIA: 'ARIA',
-  Admin: 'ადმინი',
-  Profile: 'პროფილი',
-};
-
 const TAB_ICONS = {
   Home: ['people', 'people-outline'],
   Requests: ['document-text', 'document-text-outline'],
@@ -66,7 +58,15 @@ const TAB_ICONS = {
   Profile: ['person', 'person-outline'],
 };
 
-function tabScreenOptions({ route }) {
+function tabScreenOptions({ route }, t) {
+  const TAB_LABELS = {
+    Home: t('tab_handymen'),
+    Requests: t('tab_requests'),
+    Chats: t('tab_chats'),
+    ARIA: 'ARIA',
+    Admin: t('tab_admin'),
+    Profile: t('tab_profile'),
+  };
   return {
     tabBarStyle: { backgroundColor: C.surface, borderTopColor: C.border, borderTopWidth: 1, height: 62, paddingBottom: 10, paddingTop: 8 },
     tabBarActiveTintColor: route.name === 'ARIA' ? '#a78bfa' : route.name === 'Admin' ? '#10b981' : C.accent,
@@ -99,21 +99,22 @@ const PLAN_PRICES = { handyman: { pro: 29, top: 69 }, company: { pro: 99, top: 1
 
 function PlanPickerModal({ visible, onDismiss, onPickPlan }) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const type = user?.type === 'company' ? 'company' : 'handyman';
   const prices = PLAN_PRICES[type];
 
   const plans = [
     {
       key: 'start', icon: '🆓', label: 'Start', price: '0', accent: C.text2,
-      features: ['მოთხოვნებზე შეთავაზება', 'ბაზარში განთავსება', 'ჩათი კლიენტებთან'],
+      features: [t('plan_start_f1'), t('plan_start_f2'), t('plan_start_f3')],
     },
     {
       key: 'pro', icon: '⚡', label: 'Pro', price: `${prices.pro}`, accent: '#3498db',
-      features: ['ყველა Start-ის შეძლება', 'Pro ბეჯი', 'პრიორიტეტული ჩვენება', 'ვერიფიკაციის შესაძლებლობა'],
+      features: [t('plan_pro_f1'), t('plan_pro_f2'), t('plan_pro_f3'), t('plan_pro_f4')],
     },
     {
       key: 'top', icon: '🔝', label: 'TOP', price: `${prices.top}`, accent: '#f1c40f',
-      features: ['ყველა Pro-ს შეძლება', 'TOP-ი ბეჯი', 'პირველი პოზიციები', 'ფეიჩერდ სია'],
+      features: [t('plan_top_f1'), t('plan_top_f2'), t('plan_top_f3'), t('plan_top_f4')],
     },
   ];
 
@@ -122,10 +123,8 @@ function PlanPickerModal({ visible, onDismiss, onPickPlan }) {
       <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' }}>
         <View style={{ backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '88%' }}>
           <View style={{ padding: 20, borderBottomWidth: 1, borderBottomColor: C.border, alignItems: 'center' }}>
-            <Text style={{ color: C.text, fontSize: 20, fontWeight: '900', marginBottom: 4 }}>🎉 მოგესალმებით!</Text>
-            <Text style={{ color: C.text2, fontSize: 13, textAlign: 'center' }}>
-              აირჩიეთ თქვენი სამუშაო ტარიფი — ნებისმიერ დროს შეგიძლიათ შეცვლა.
-            </Text>
+            <Text style={{ color: C.text, fontSize: 20, fontWeight: '900', marginBottom: 4 }}>{t('plan_welcome')}</Text>
+            <Text style={{ color: C.text2, fontSize: 13, textAlign: 'center' }}>{t('plan_desc')}</Text>
           </View>
           <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 8 }}>
             {plans.map(p => (
@@ -139,9 +138,9 @@ function PlanPickerModal({ visible, onDismiss, onPickPlan }) {
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
                     <Text style={{ color: p.accent, fontSize: p.key === 'start' ? 16 : 22, fontWeight: '900' }}>
-                      {p.key === 'start' ? 'უფასო' : `${p.price}₾`}
+                      {p.key === 'start' ? t('plan_free') : `${p.price}₾`}
                     </Text>
-                    {p.key !== 'start' && <Text style={{ color: C.text2, fontSize: 11 }}>/თვე</Text>}
+                    {p.key !== 'start' && <Text style={{ color: C.text2, fontSize: 11 }}>{t('plan_per_month')}</Text>}
                   </View>
                 </View>
                 {p.features.map((f, i) => (
@@ -152,7 +151,7 @@ function PlanPickerModal({ visible, onDismiss, onPickPlan }) {
                 ))}
                 <View style={{ marginTop: 12, backgroundColor: p.accent + '18', borderRadius: 10, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: p.accent + '33' }}>
                   <Text style={{ color: p.accent, fontWeight: '700', fontSize: 14 }}>
-                    {p.key === 'start' ? 'უფასოდ გაგრძელება' : `${p.label}-ის გამოწერა →`}
+                    {p.key === 'start' ? t('plan_continue_free') : `${p.label} ${t('plan_subscribe')}`}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -160,7 +159,7 @@ function PlanPickerModal({ visible, onDismiss, onPickPlan }) {
           </ScrollView>
           <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: C.border }}>
             <TouchableOpacity onPress={onDismiss} style={{ padding: 14, alignItems: 'center' }}>
-              <Text style={{ color: C.text2, fontSize: 14 }}>მოგვიანებით</Text>
+              <Text style={{ color: C.text2, fontSize: 14 }}>{t('plan_later')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -170,8 +169,9 @@ function PlanPickerModal({ visible, onDismiss, onPickPlan }) {
 }
 
 function UserTabs() {
+  const { t } = useLanguage();
   return (
-    <Tab.Navigator screenOptions={tabScreenOptions}>
+    <Tab.Navigator screenOptions={route => tabScreenOptions(route, t)}>
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Requests" component={RequestsScreen} />
       <Tab.Screen name="Chats" component={ChatListScreen} />
@@ -182,8 +182,9 @@ function UserTabs() {
 }
 
 function StaffTabs() {
+  const { t } = useLanguage();
   return (
-    <Tab.Navigator screenOptions={tabScreenOptions}>
+    <Tab.Navigator screenOptions={route => tabScreenOptions(route, t)}>
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Requests" component={RequestsScreen} />
       <Tab.Screen name="Chats" component={ChatListScreen} />
@@ -210,45 +211,48 @@ function HomeTabs() {
 }
 
 function AuthStack() {
+  const { t } = useLanguage();
   return (
     <Stack.Navigator screenOptions={{ ...SCREEN_OPT, headerShown: false }}>
       <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: true, title: 'რეგისტრაცია' }} />
-      <Stack.Screen name="Verify" component={VerifyScreen} options={{ headerShown: true, title: 'ვერიფიკაცია' }} />
-      <Stack.Screen name="Forgot" component={ForgotScreen} options={{ headerShown: true, title: 'პაროლის აღდგენა' }} />
+      <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: true, title: t('title_register') }} />
+      <Stack.Screen name="Verify" component={VerifyScreen} options={{ headerShown: true, title: t('title_verify') }} />
+      <Stack.Screen name="Forgot" component={ForgotScreen} options={{ headerShown: true, title: t('title_forgot') }} />
     </Stack.Navigator>
   );
 }
 
 function MainStack() {
+  const { t } = useLanguage();
   return (
     <Stack.Navigator screenOptions={SCREEN_OPT}>
       <Stack.Screen name="Tabs" component={HomeTabs} options={{ headerShown: false }} />
-      <Stack.Screen name="HandymanDetail" component={HandymanDetailScreen} options={{ title: 'ხელოსანი' }} />
-      <Stack.Screen name="RequestDetail" component={RequestDetailScreen} options={{ title: 'მოთხოვნა' }} />
-      <Stack.Screen name="CreateRequest" component={CreateRequestScreen} options={{ title: 'ახალი მოთხოვნა' }} />
-      <Stack.Screen name="SendOffer" component={SendOfferScreen} options={{ title: 'შეთავაზება' }} />
-      <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'ჩათი' }} />
-      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'პროფილი' }} />
-      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ title: 'პაროლი' }} />
-      <Stack.Screen name="MyOffers" component={MyOffersScreen} options={{ title: 'ჩემი შეთავაზებები' }} />
-      <Stack.Screen name="MyRequests" component={MyRequestsScreen} options={{ title: 'ჩემი მოთხოვნები' }} />
+      <Stack.Screen name="HandymanDetail" component={HandymanDetailScreen} options={{ title: t('title_handyman') }} />
+      <Stack.Screen name="RequestDetail" component={RequestDetailScreen} options={{ title: t('title_request') }} />
+      <Stack.Screen name="CreateRequest" component={CreateRequestScreen} options={{ title: t('title_new_request') }} />
+      <Stack.Screen name="SendOffer" component={SendOfferScreen} options={{ title: t('title_offer') }} />
+      <Stack.Screen name="Chat" component={ChatScreen} options={{ title: t('title_chat') }} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: t('title_profile_edit') }} />
+      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ title: t('title_password') }} />
+      <Stack.Screen name="MyOffers" component={MyOffersScreen} options={{ title: t('title_my_offers') }} />
+      <Stack.Screen name="MyRequests" component={MyRequestsScreen} options={{ title: t('title_my_requests') }} />
       <Stack.Screen name="Proposals" component={ProposalsScreen} options={{ title: 'Proposals' }} />
       <Stack.Screen name="Vip" component={VipScreen} options={{ title: 'VIP' }} />
-      <Stack.Screen name="Cards" component={CardScreen} options={{ title: 'ბარათები' }} />
-      <Stack.Screen name="Favorites" component={FavoritesScreen} options={{ title: 'შენახული' }} />
-      <Stack.Screen name="Support" component={SupportScreen} options={{ title: 'სუპორტი' }} />
-      <Stack.Screen name="AdminSupportChat" component={AdminSupportChatScreen} options={{ title: 'სუპორტი' }} />
-      <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'შეტყობინებები' }} />
+      <Stack.Screen name="Cards" component={CardScreen} options={{ title: t('title_cards') }} />
+      <Stack.Screen name="Favorites" component={FavoritesScreen} options={{ title: t('title_saved') }} />
+      <Stack.Screen name="Support" component={SupportScreen} options={{ title: t('title_support') }} />
+      <Stack.Screen name="AdminSupportChat" component={AdminSupportChatScreen} options={{ title: t('title_support') }} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: t('title_notifications') }} />
       <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'რეგისტრაცია' }} />
-      <Stack.Screen name="Verify" component={VerifyScreen} options={{ title: 'ვერიფიკაცია' }} />
+      <Stack.Screen name="Register" component={RegisterScreen} options={{ title: t('title_register') }} />
+      <Stack.Screen name="Verify" component={VerifyScreen} options={{ title: t('title_verify') }} />
     </Stack.Navigator>
   );
 }
 
 export default function AppNavigator({ navigationRef }) {
   const { user, loading } = useAuth();
+  const { t } = useLanguage();
 
   if (loading) {
     return (
