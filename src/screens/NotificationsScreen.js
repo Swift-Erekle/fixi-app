@@ -20,6 +20,76 @@ function timeAgo(d, tr, lang) {
   return new Date(d).toLocaleDateString(lang === 'ka' ? 'ka-GE' : lang === 'ru' ? 'ru-RU' : 'en-US');
 }
 
+const NOTIF_TITLE_KEYS = {
+  new_message: 'notif_new_msg',
+  new_offer: 'notif_new_offer',
+  new_proposal: 'notif_new_offer',
+  offer_updated: 'notif_offer_updated',
+  offer_accepted: 'notif_offer_accepted',
+  proposal_accepted: 'notif_offer_accepted',
+  offer_rejected: 'notif_offer_rejected',
+  proposal_rejected: 'notif_offer_rejected',
+  offer_agreed: 'notif_agreed',
+  proposal_agreed: 'notif_agreed',
+  offer_agree_await: 'notif_agree_await',
+  proposal_agree_await: 'notif_agree_await',
+  offer_disagree: 'notif_disagreed',
+  proposal_disagree: 'notif_disagreed',
+  disagreed: 'notif_disagreed',
+  review_reminder: 'notif_review_reminder',
+  renewal_failed: 'notif_renewal_failed',
+  charge_failed: 'notif_charge_failed',
+};
+
+function notificationTitle(n, tr) {
+  const raw = String(n?.title || '');
+  if (raw.includes('შევთანხმდით?')) return tr('notif_agree_await');
+  if (raw.includes('ვერ შევთანხმდით')) return tr('notif_disagreed');
+  if (raw.includes('შეაფასე სამუშაო')) return tr('notif_review_reminder');
+  if (raw.includes('ავტო-განახლება ვერ მოხდა')) return tr('notif_renewal_failed');
+  if (raw.includes('გადახდა ჩამოვარდა')) return tr('notif_charge_failed');
+  if (raw.includes('შევთანხმდით')) return tr('notif_agreed');
+  if (raw.includes('ახალი შეტყობინება')) return tr('notif_new_msg');
+  if (raw.includes('ახალი შემოთავაზება') || raw.includes('ახალი შეთავაზება')) return tr('notif_new_offer');
+  if (raw.includes('შეთავაზება განახლდა')) return tr('notif_offer_updated');
+  if (raw.includes('მიღებულია')) return tr('notif_offer_accepted');
+  if (raw.includes('უარყოფილია') || raw.includes('არ იქნა მიღებული')) return tr('notif_offer_rejected');
+  const key = NOTIF_TITLE_KEYS[n?.type];
+  return key ? tr(key) : raw;
+}
+
+function replaceAllText(value, search, replacement) {
+  return value.split(search).join(replacement);
+}
+
+function notificationBody(n, tr) {
+  let body = String(n?.body || '');
+  if (!body) return '';
+  [
+    ['თანამშრომლობა დაიწყო', tr('notif_body_work_started')],
+    ['შეხვედი ჩათში', tr('notif_body_chat_opened')],
+    ['მომხმარებელი ელოდება შენს დადასტურებას', tr('notif_body_user_awaiting_confirmation')],
+    ['მომხმარებელი ელოდება დადასტურებას', tr('notif_body_user_awaiting_confirmation')],
+    ['ხელოსანი ელოდება შენს დადასტურებას', tr('notif_body_handyman_awaiting_confirmation')],
+    ['ხელოსანი ელოდება დადასტურებას', tr('notif_body_handyman_awaiting_confirmation')],
+    ['მომხმარებელმა უარი თქვა', tr('notif_body_user_declined')],
+    ['შეთავაზება გაუქმდა', tr('notif_body_offer_canceled')],
+    ['დაეთანხმა შენს შეთავაზებას', tr('notif_body_accepted_your_proposal')],
+    ['ბარათი არ არის მიბმული — დაამატე ბარათი ტარიფის გასაგრძელებლად', tr('notif_body_card_missing')],
+    ['ბარათი არ არის მიბმული — პარამეტრები → ბარათი', tr('notif_body_card_missing')],
+    ['ბარათი არ არის მიბმული', tr('notif_body_card_missing')],
+    ['ბარათის ინფო განაახლე — ტარიფი ვადაგასულია', tr('notif_body_card_update')],
+    ['ბარათის ინფო განაახლე — პარამეტრები → ბარათი', tr('notif_body_card_update')],
+    ['ბარათის ინფო განაახლე', tr('notif_body_card_update')],
+    ['ბარათის ინფო შეამოწმე — პარამეტრები → ბარათი', tr('notif_body_card_check')],
+    ['ბარათის ინფო შეამოწმე', tr('notif_body_card_check')],
+    ['შეთ.', tr('notif_price_negotiable')],
+  ].forEach(([search, replacement]) => {
+    body = replaceAllText(body, search, replacement);
+  });
+  return body;
+}
+
 export default function NotificationsScreen({ navigation }) {const { t: tr, lang } = useLanguage();
   // ✅ clearUnread — optional (null-safe), works with both old and new AuthContext
   const { clearUnread } = useAuth() || {};
@@ -101,7 +171,10 @@ export default function NotificationsScreen({ navigation }) {const { t: tr, lang
         keyExtractor={(n) => n.id}
         contentContainerStyle={{ padding: 14, paddingBottom: 20 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => {setRefreshing(true);load();}} tintColor={C.accent} />}
-        renderItem={({ item: n }) =>
+        renderItem={({ item: n }) => {
+          const title = notificationTitle(n, tr);
+          const body = notificationBody(n, tr);
+          return (
         <TouchableOpacity onPress={() => handleTap(n)} activeOpacity={0.85}
         style={{
           backgroundColor: n.read ? C.surface : C.accent + '12',
@@ -111,7 +184,7 @@ export default function NotificationsScreen({ navigation }) {const { t: tr, lang
         }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
               <Text style={{ color: C.text, fontWeight: n.read ? '600' : '800', fontSize: 14, flex: 1, marginRight: 8 }}>
-                {n.title}
+                {title}
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text style={{ color: C.text2, fontSize: 11 }}>{timeAgo(n.createdAt, tr, lang)}</Text>
@@ -120,12 +193,13 @@ export default function NotificationsScreen({ navigation }) {const { t: tr, lang
                 </TouchableOpacity>
               </View>
             </View>
-            {n.body && <Text style={{ color: C.text2, fontSize: 13, lineHeight: 18 }}>{n.body}</Text>}
+            {body && <Text style={{ color: C.text2, fontSize: 13, lineHeight: 18 }}>{body}</Text>}
             {!n.read &&
           <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: C.accent, borderTopLeftRadius: 12, borderBottomLeftRadius: 12 }} />
           }
           </TouchableOpacity>
-        }
+          );
+        }}
         ListEmptyComponent={<Empty icon="🔔" title={tr("screens_adminsupportchatscreen_text_1vh2nb")} subtitle={tr("screens_notificationsscreen_text_p86nsh")} />} />
       
     </View>);
