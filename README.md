@@ -1,4 +1,4 @@
-# ხელოსანი.ge — Expo Mobile App
+# MyFix.ge — Expo Mobile App
 
 React Native აპლიკაცია iOS და Android-ისთვის.
 
@@ -19,7 +19,7 @@ npm install
 `app.json`-ში შეცვალე:
 ```json
 "extra": {
-  "apiBase": "https://xelosani.ge/api"
+  "apiBase": "https://myfix.ge/api"
 }
 ```
 (ლოკალური ტესტისთვის: `"http://YOUR_IP:3000/api"`)
@@ -118,4 +118,4 @@ EAS-ზე secrets-ს დაამატე:
 - eas secret:create — ბოლო ნაბიჯი production build-ზე
 
 API key-ები backend-ზეა, frontend-ი მხოლოდ HTTPS-ით ეკავშირება.
-"# fixi-app" 
+"# MyFix.ge App" 

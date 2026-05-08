@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { translations, categoryTranslations, cityTranslations } from '../utils/translations';
+import { setApiLanguage } from '../utils/api';
 
 const LanguageContext = createContext(null);
 
@@ -19,6 +20,10 @@ export function LanguageProvider({ children }) {
     }).catch(() => {});
   }, []);
 
+  useEffect(() => {
+    setApiLanguage(lang);
+  }, [lang]);
+
   function switchLang() {
     const idx = LANGUAGES.findIndex(l => l.code === lang);
     const next = LANGUAGES[(idx + 1) % LANGUAGES.length];
@@ -26,8 +31,14 @@ export function LanguageProvider({ children }) {
     SecureStore.setItemAsync('app_lang', next.code).catch(() => {});
   }
 
-  function t(key) {
-    return translations[lang]?.[key] || translations['ka']?.[key] || key;
+  function t(key, params = null) {
+    let value = translations[lang]?.[key] || translations['ka']?.[key] || key;
+    if (params && typeof value === 'string') {
+      Object.entries(params).forEach(([name, paramValue]) => {
+        value = value.replace(new RegExp(`{${name}}`, 'g'), String(paramValue));
+      });
+    }
+    return value;
   }
 
   function tCat(georgianName) {

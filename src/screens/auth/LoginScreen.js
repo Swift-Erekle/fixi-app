@@ -40,7 +40,7 @@ export default function LoginScreen({ navigation }) {
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
         <View style={{ alignItems: 'center', marginBottom: 44 }}>
           <Text style={{ fontSize: 40, fontWeight: '900', color: C.text }}>
-            Fixi<Text style={{ color: C.accent }}>.ge</Text>
+            MyFix<Text style={{ color: C.accent }}>.ge</Text>
           </Text>
           <Text style={{ color: C.text2, marginTop: 8, fontSize: 14 }}>{t('login_subtitle')}</Text>
         </View>

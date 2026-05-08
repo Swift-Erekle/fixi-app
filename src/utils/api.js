@@ -1,6 +1,7 @@
 // src/utils/api.js
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
+import { translations } from './translations';
 
 const BASE = (
   Constants.expoConfig?.extra?.apiBase || 'https://myworker-production.up.railway.app/'
@@ -12,6 +13,21 @@ const DEBUG = __DEV__;
 // Module-level callback so AuthContext can hook in for 401 auto-logout
 let onUnauthorized = null;
 export function setUnauthorizedHandler(fn) { onUnauthorized = fn; }
+
+let apiLang = 'ka';
+export function setApiLanguage(lang) {
+  apiLang = translations[lang] ? lang : 'ka';
+}
+
+function apiText(key, params = null) {
+  let value = translations[apiLang]?.[key] || translations.ka?.[key] || key;
+  if (params && typeof value === 'string') {
+    Object.entries(params).forEach(([name, paramValue]) => {
+      value = value.replace(new RegExp(`{${name}}`, 'g'), String(paramValue));
+    });
+  }
+  return value;
+}
 
 export async function api(path, opts = {}) {
   const token = await SecureStore.getItemAsync('token').catch(() => null);
@@ -42,11 +58,13 @@ export async function api(path, opts = {}) {
     if (DEBUG) console.error('[API] Network error:', err.message, 'URL:', fullUrl);
     // Network error / timeout / DNS failure
     if (err.name === 'AbortError') {
-      throw { status: 0, error: '⏱ კავშირი ძალიან ნელია — სცადე თავიდან' };
+      throw { status: 0, error: apiText('api_timeout_error') };
     }
     throw {
       status: 0,
-      error: `📡 სერვერთან კავშირი ვერ მოხდა\n${DEBUG ? '(' + err.message + ')' : 'შეამოწმე ინტერნეტი'}`,
+      error: DEBUG
+        ? `${apiText('api_network_error')}\n(${err.message})`
+        : `${apiText('api_network_error')}\n${apiText('api_check_internet')}`,
     };
   }
   clearTimeout(timeout);
@@ -58,7 +76,7 @@ export async function api(path, opts = {}) {
     data = text ? JSON.parse(text) : {};
   } catch (parseErr) {
     if (DEBUG) console.error('[API] JSON parse error, status:', res.status);
-    data = { error: `სერვერმა არასწორი მონაცემი დააბრუნა (${res.status})` };
+    data = { error: apiText('api_bad_json', { status: res.status }) };
   }
 
   if (DEBUG && !res.ok) console.warn('[API] Error', res.status, data);
@@ -73,7 +91,7 @@ export async function api(path, opts = {}) {
   if (!res.ok) {
     throw {
       status: res.status,
-      error: data.error || `შეცდომა (HTTP ${res.status})`,
+      error: data.error || apiText('api_http_error', { status: res.status }),
       ...data,
     };
   }

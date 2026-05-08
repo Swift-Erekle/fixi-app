@@ -84,7 +84,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
                     <TouchableOpacity key={s}
                       onPress={() => setSubcat(subcat === s ? '' : s)}
                       style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1.5, borderColor: subcat === s ? C.accent : C.border, backgroundColor: subcat === s ? C.accent + '22' : C.surface2 }}>
-                      <Text style={{ color: subcat === s ? C.accent : C.text2, fontWeight: '600', fontSize: 13 }}>{s}</Text>
+                      <Text style={{ color: subcat === s ? C.accent : C.text2, fontWeight: '600', fontSize: 13 }}>{tCat(s)}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -280,7 +280,7 @@ export default function RequestsScreen({ navigation }) {
                 )}
                 {subcat && (
                   <TouchableOpacity onPress={() => setSubcat('')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: C.accent + '18', borderWidth: 1, borderColor: C.accent + '44' }}>
-                    <Text style={{ color: C.accent, fontSize: 12, fontWeight: '600' }}>{subcat}</Text>
+                    <Text style={{ color: C.accent, fontSize: 12, fontWeight: '600' }}>{tCat(subcat)}</Text>
                     <Ionicons name="close" size={14} color={C.accent} />
                   </TouchableOpacity>
                 )}

@@ -1,14 +1,15 @@
 // src/utils/notifications.js
 import * as Notifications from 'expo-notifications';
 import * as SecureStore from 'expo-secure-store';
-import * as Device from 'expo-device';           // ✅ FIX 1: დაამატე
+import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { api } from './api';
+import { translations } from './translations';
 
 const PUSH_TOKEN_KEY = 'pushToken';
 
-// ── Foreground-ში banner ─────────────────────────────────────
+// Foreground banner behavior.
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -22,18 +23,17 @@ Notifications.setNotificationHandler({
 // ============================================================
 export async function registerForPushNotifications() {
   try {
-    // ✅ FIX 1: ფიზიკური მოწყობილობის შემოწმება
-    // getExpoPushTokenAsync ემულატორზე ვერ მუშაობს — ჩუმად null-ს აბრუნებს
+    // Expo push tokens are only available on physical devices.
     if (!Device.isDevice) {
-      console.warn('[Push] ExpoPushToken მხოლოდ ფიზიკურ მოწყობილობაზე მუშაობს!');
+      console.warn('[Push] ExpoPushToken works only on a physical device.');
       return null;
     }
 
-    // ✅ FIX 2: Android channel — MAX priority (HIGH-ს heads-up არ აქვს!)
+    // Android channel with heads-up priority.
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
-        name: 'Fixi Notifications',
-        importance: Notifications.AndroidImportance.MAX,   // HIGH → MAX
+        name: 'MyFix.ge Notifications',
+        importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#ff6b2b',
         showBadge: true,
@@ -42,7 +42,7 @@ export async function registerForPushNotifications() {
       });
     }
 
-    // ── ნებართვა ───────────────────────────────────────────
+    // Permissions.
     const { status: existing } = await Notifications.getPermissionsAsync();
     let finalStatus = existing;
     if (existing !== 'granted') {
@@ -50,7 +50,7 @@ export async function registerForPushNotifications() {
       finalStatus = status;
     }
     if (finalStatus !== 'granted') {
-      console.warn('[Push] ნებართვა უარყოფილია — finalStatus:', finalStatus);
+      console.warn('[Push] Permission denied. finalStatus:', finalStatus);
       return null;
     }
 
@@ -60,43 +60,40 @@ export async function registerForPushNotifications() {
       Constants.easConfig?.projectId;
 
     if (!projectId) {
-      console.error('[Push] projectId ვერ მოიძებნა app.json extra.eas.projectId-ში');
+      console.error('[Push] projectId not found in app.json extra.eas.projectId.');
       return null;
     }
 
-    // ✅ FIX 3: token-ის მიღებისას ცალსახა error logging
+    // Log token retrieval errors explicitly.
     let token;
     try {
       const result = await Notifications.getExpoPushTokenAsync({ projectId });
       token = result.data;
     } catch (tokenErr) {
-      // ❗ ეს შეცდომა ყველაზე ხშირია: FCM credential-ები არ არის Expo-ში
-      console.error('[Push] getExpoPushTokenAsync შეცდომა:', tokenErr?.message ?? tokenErr);
-      console.error('[Push] → შეამოწმე: expo.dev → პროექტი → Credentials → FCM V1 Service Account Key');
+      console.error('[Push] getExpoPushTokenAsync error:', tokenErr?.message ?? tokenErr);
+      console.error('[Push] Check expo.dev project credentials: FCM V1 Service Account Key.');
       return null;
     }
 
-    console.log('[Push] ✅ token მიღებულია:', token);
+    console.log('[Push] Token received:', token);
 
-    // SecureStore-ში შენახვა
     await SecureStore.setItemAsync(PUSH_TOKEN_KEY, token).catch(() => {});
 
-    // Backend-ზე გაგზავნა
     await api('/push/expo-token', {
       method: 'POST',
       body: { token, platform: Platform.OS },
     });
-    console.log('[Push] ✅ token DB-ში შენახულია');
+    console.log('[Push] Token saved in DB.');
 
     return token;
   } catch (err) {
-    console.error('[Push] registerForPushNotifications შეცდომა:', err?.message ?? err);
+    console.error('[Push] registerForPushNotifications error:', err?.message ?? err);
     return null;
   }
 }
 
 // ============================================================
-// unregisterPushToken — logout-ზე
+// unregisterPushToken — logout
 // ============================================================
 export async function unregisterPushToken() {
   try {
@@ -111,7 +108,7 @@ export async function unregisterPushToken() {
 }
 
 // ============================================================
-// App.js-ის import-ები
+// App.js imports
 // ============================================================
 export function addNotificationListeners(onForeground, onTap) {
   const receivedSub = Notifications.addNotificationReceivedListener(n => {
@@ -186,15 +183,26 @@ export function notifIcon(type) {
   }
 }
 
-export function notifRelativeTime(iso) {
+function notificationText(lang, key, params = null) {
+  let value = translations[lang]?.[key] || translations.ka?.[key] || key;
+  if (params && typeof value === 'string') {
+    Object.entries(params).forEach(([name, paramValue]) => {
+      value = value.replace(new RegExp(`{${name}}`, 'g'), String(paramValue));
+    });
+  }
+  return value;
+}
+
+export function notifRelativeTime(iso, lang = 'ka') {
   const diff = Date.now() - new Date(iso).getTime();
   const sec  = Math.floor(diff / 1000);
-  if (sec < 60)  return 'ახლახან';
+  if (sec < 60)  return notificationText(lang, 'time_just_now_app');
   const min = Math.floor(sec / 60);
-  if (min < 60)  return min + ' წუთის წინ';
+  if (min < 60)  return notificationText(lang, 'time_minutes_short', { count: min });
   const hrs = Math.floor(min / 60);
-  if (hrs < 24)  return hrs + ' სთ წინ';
+  if (hrs < 24)  return notificationText(lang, 'time_hours_short', { count: hrs });
   const days = Math.floor(hrs / 24);
-  if (days < 7)  return days + ' დღის წინ';
-  return new Date(iso).toLocaleDateString('ka-GE', { day: 'numeric', month: 'short' });
+  if (days < 7)  return notificationText(lang, 'time_days_short', { count: days });
+  const locale = lang === 'ka' ? 'ka-GE' : lang === 'ru' ? 'ru-RU' : 'en-US';
+  return new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
 }

@@ -86,7 +86,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
                         backgroundColor: subcat === s ? C.accent + '22' : C.surface2,
                       }}
                     >
-                      <Text style={{ color: subcat === s ? C.accent : C.text2, fontWeight: '600', fontSize: 13 }}>{s}</Text>
+                      <Text style={{ color: subcat === s ? C.accent : C.text2, fontWeight: '600', fontSize: 13 }}>{tCat(s)}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -323,7 +323,7 @@ export default function HomeScreen({ navigation }) {
             <View style={{ flexDirection: 'row', gap: 8 }}>
               {companiesOnly && <Chip label={t('home_companies')} onRemove={() => setCompaniesOnly(false)} />}
               {category && <Chip label={tCat(category)} onRemove={() => { setCategory(''); setSubCategory(''); }} />}
-              {subCategory && <Chip label={subCategory} onRemove={() => setSubCategory('')} />}
+              {subCategory && <Chip label={tCat(subCategory)} onRemove={() => setSubCategory('')} />}
               {city && <Chip label={tCity(city)} onRemove={() => setCity('')} color="#3b82f6" />}
               {minRating && <Chip label={`⭐ ${minRating}+`} onRemove={() => setMinRating('')} color="#f1c40f" />}
             </View>

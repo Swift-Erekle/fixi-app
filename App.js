@@ -27,7 +27,7 @@ function handleNotificationResponse(response) {
   if (data.type === 'review_reminder' && data.handymanId) {
     navigate('HandymanDetail', { id: data.handymanId, focusReview: true });
   } else if (data.chatId) {
-    navigate('Chat', { chatId: data.chatId, title: data.title || 'ჩათი' });
+    navigate('Chat', { chatId: data.chatId, title: data.title });
   } else if (data.requestId) {
     navigate('RequestDetail', { id: data.requestId });
   } else if (data.screen === 'Chats') {

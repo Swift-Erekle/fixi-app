@@ -236,7 +236,7 @@ function MainStack() {
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ title: t('title_password') }} />
       <Stack.Screen name="MyOffers" component={MyOffersScreen} options={{ title: t('title_my_offers') }} />
       <Stack.Screen name="MyRequests" component={MyRequestsScreen} options={{ title: t('title_my_requests') }} />
-      <Stack.Screen name="Proposals" component={ProposalsScreen} options={{ title: 'Proposals' }} />
+      <Stack.Screen name="Proposals" component={ProposalsScreen} options={{ title: t('title_proposals') }} />
       <Stack.Screen name="Vip" component={VipScreen} options={{ title: 'VIP' }} />
       <Stack.Screen name="Cards" component={CardScreen} options={{ title: t('title_cards') }} />
       <Stack.Screen name="Favorites" component={FavoritesScreen} options={{ title: t('title_saved') }} />
@@ -258,7 +258,7 @@ export default function AppNavigator({ navigationRef }) {
     return (
       <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}>
         <Text style={{ fontSize: 30, fontWeight: '900', color: C.text, marginBottom: 20 }}>
-          Fixi<Text style={{ color: C.accent }}>.ge</Text>
+          MyFix<Text style={{ color: C.accent }}>.ge</Text>
         </Text>
         <ActivityIndicator color={C.accent} size="large" />
       </View>

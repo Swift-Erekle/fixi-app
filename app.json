@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Fixi",
+    "name": "MyFix.ge",
     "slug": "fixi-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -44,14 +44,14 @@
       [
         "expo-av",
         {
-          "microphonePermission": "Fixi-ს სჭირდება მიკროფონი ხმოვანი შეტყობინებებისთვის"
+          "microphonePermission": "MyFix.ge-ს სჭირდება მიკროფონი ხმოვანი შეტყობინებებისთვის"
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Fixi-ს სჭირდება ფოტოს ასარჩევად პროფილისა და მუშაობის სანახავად",
-          "cameraPermission": "Fixi-ს სჭირდება კამერა ფოტოების გადასაღებად"
+          "photosPermission": "MyFix.ge-ს სჭირდება ფოტოს ასარჩევად პროფილისა და მუშაობის სანახავად",
+          "cameraPermission": "MyFix.ge-ს სჭირდება კამერა ფოტოების გადასაღებად"
         }
       ],
       [
