@@ -25,7 +25,7 @@ function StyledInput({ value, onChangeText, placeholder, multiline, style, keybo
 
 }
 
-export default function EditProfileScreen({ navigation }) {const { t: tr } = useLanguage();
+export default function EditProfileScreen({ navigation }) {const { t: tr, tCat } = useLanguage();
   const { user, updateUser } = useAuth();
   const [name, setName] = useState(user?.name || '');
   const [surname, setSurname] = useState(user?.surname || '');
@@ -109,7 +109,7 @@ export default function EditProfileScreen({ navigation }) {const { t: tr } = use
             <Card>
               <Label>{tr("screens_editprofilescreen_text_gaspxd")}</Label>
               {specs.length > 0 &&
-            <Text style={{ color: C.accent, fontSize: 12, marginBottom: 10 }}>{tr("reg_selected")}{specs.join(', ')}</Text>
+            <Text style={{ color: C.accent, fontSize: 12, marginBottom: 10 }}>{tr("reg_selected")}{specs.map(tCat).join(', ')}</Text>
             }
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                 {CATEGORIES.map((c) => {
@@ -125,7 +125,7 @@ export default function EditProfileScreen({ navigation }) {const { t: tr } = use
                     minWidth: '45%', flex: 1
                   }}>
                       <Text style={{ fontSize: 18 }}>{c.icon}</Text>
-                      <Text style={{ color: sel ? C.accent : C.text, fontWeight: '700', fontSize: 13, flex: 1 }}>{c.name}</Text>
+                      <Text style={{ color: sel ? C.accent : C.text, fontWeight: '700', fontSize: 13, flex: 1 }}>{tCat(c.name)}</Text>
                       {sel && <Ionicons name="checkmark-circle" size={16} color={C.accent} />}
                     </TouchableOpacity>);
 

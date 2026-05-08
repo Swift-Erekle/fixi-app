@@ -16,6 +16,7 @@ const CATEGORY_THEMES = {
   tiler: { fg: '#fb7185', gradient: ['#e11d48', '#fb7185'] },
   welder: { fg: '#ef4444', gradient: ['#dc2626', '#ef4444'] },
   locksmith: { fg: '#a855f7', gradient: ['#9333ea', '#a855f7'] },
+  automechanic: { fg: '#ef4444', gradient: ['#dc2626', '#ef4444'] },
 };
 
 const DEFAULT_THEME = {

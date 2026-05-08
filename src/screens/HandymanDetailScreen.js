@@ -48,9 +48,7 @@ import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { Avatar, PlanBadge, Tag, Btn, Divider, Card, StarPicker } from '../components/UI';
 import { CATEGORIES } from '../utils/categories';
-
-const CAT_COLORS = { 'ელექტრიკოსი': '#8b5cf6', 'სანტექნიკი': '#3b82f6', 'კონდიციონერი': '#10b981', 'მხატვარი': '#f59e0b', 'დურგალი': '#ef4444', 'ტექნიკოსი': '#06b6d4', 'მშენებელი': '#d97706', 'უნივერსალური': '#6b7280', 'მებაღე': '#22c55e', 'სპეციალიზებული': '#a855f7', 'სახლის': '#ec4899', 'ფილების': '#f97316', 'შემდუღებელი': '#dc2626', 'მეკარე': '#14b8a6' };
-function getColor(s) {for (const [k, v] of Object.entries(CAT_COLORS)) if (s?.toLowerCase().includes(k.toLowerCase())) return v;return C.accent;}
+import { getCategoryTheme } from '../utils/categoryTheme';
 
 // ✅ NEW: normalize phone → tel URI + wa.me digits
 function buildContactLinks(rawPhone) {
@@ -236,7 +234,7 @@ export default function HandymanDetailScreen({ route, navigation }) {const { t: 
 
   if (loading) return <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator color={C.accent} size="large" /></View>;
   if (!hm) return <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: C.text2 }}>{tr("screens_handymandetailscreen_text_1brpzd")}</Text></View>;
-  const color = getColor(hm.specialty);
+  const color = getCategoryTheme(hm.specialty).fg;
   const reviews = hm.reviewsReceived || [];
   const avg = reviews.length ? (reviews.reduce((s, r) => s + r.stars, 0) / reviews.length).toFixed(1) : null;
   const links = buildContactLinks(hm.phone);

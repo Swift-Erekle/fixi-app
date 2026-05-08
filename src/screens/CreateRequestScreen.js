@@ -6,11 +6,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { Btn, Card } from '../components/UI';
+import { getCategoryTheme } from '../utils/categoryTheme';
 
 import { CATEGORIES, GEORGIA_CITIES } from '../utils/categories';
 const CITIES = GEORGIA_CITIES;
-const CAT_COLORS = { 'ელექტრიკოსი': '#8b5cf6', 'სანტექნიკი': '#3b82f6', 'კონდიციონერი': '#10b981', 'მხატვარი': '#f59e0b', 'დურგალი': '#ef4444', 'ტექნიკოსი': '#06b6d4', 'მშენებელი': '#d97706', 'უნივერსალური': '#6b7280', 'მებაღე': '#22c55e', 'სპეციალიზებული': '#a855f7', 'სახლის': '#ec4899', 'ფილების': '#f97316', 'შემდუღებელი': '#dc2626', 'მეკარე': '#14b8a6' };
-function getColor(s) {for (const [k, v] of Object.entries(CAT_COLORS)) if (s?.toLowerCase().includes(k.toLowerCase())) return v;return C.accent;}
 function Label({ t }) {return <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t}</Text>;}
 
 export default function CreateRequestScreen({ navigation }) {const { t: tr, tCat, tCity } = useLanguage();
@@ -58,7 +57,7 @@ export default function CreateRequestScreen({ navigation }) {const { t: tr, tCat
     {setLoading(false);}
   }
 
-  const accentColor = getColor(category);
+  const accentColor = getCategoryTheme(category).fg;
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 30 }}>

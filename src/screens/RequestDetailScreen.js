@@ -47,21 +47,10 @@ import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { Avatar, Tag, Btn, Divider, Card } from '../components/UI';
+import { getCategoryTheme } from '../utils/categoryTheme';
 
-const CAT_COLORS = {
-  'ელექტრიკოსი': '#8b5cf6', 'სანტექნიკი': '#3b82f6',
-  'კონდიციონერი': '#10b981', 'მხატვარი': '#f59e0b',
-  'დურგალი': '#ef4444', 'ტექნიკოსი': '#06b6d4',
-  'მშენებელი': '#d97706', 'უნივერსალური': '#6b7280',
-  'მებაღე': '#22c55e', 'სპეციალიზებული': '#a855f7',
-  'სახლის': '#ec4899', 'ფილების': '#f97316',
-  'შემდუღებელი': '#dc2626', 'მეკარე': '#14b8a6'
-};
 function getColor(s) {
-  for (const [k, v] of Object.entries(CAT_COLORS)) {
-    if (s?.toLowerCase().includes(k.toLowerCase())) return v;
-  }
-  return C.accent;
+  return getCategoryTheme(s).fg;
 }
 
 export default function RequestDetailScreen({ route, navigation }) {const { t: tr, tCat, tCity } = useLanguage();
