@@ -1,11 +1,10 @@
 import { useLanguage } from "../context/LanguageContext"; // src/components/HandymanCard.js
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text } from 'react-native';
 import { C } from '../utils/theme';
 import { Avatar, PlanBadge } from './UI'; // ✅ FIXED: PlanBadge imported
-
-const CAT_COLORS = { 'ელექტრიკოსი': '#8b5cf6', 'სანტექნიკი': '#3b82f6', 'კონდიციონერი': '#10b981', 'მხატვარი': '#f59e0b', 'დურგალი': '#ef4444', 'ტექნიკოსი': '#06b6d4', 'მშენებელი': '#d97706', 'უნივერსალური': '#6b7280', 'მებაღე': '#22c55e', 'სპეციალიზებული': '#a855f7', 'სახლის': '#ec4899', 'ფილების': '#f97316', 'შემდუღებელი': '#dc2626', 'მეკარე': '#14b8a6' };
-function getCatColor(s) {for (const [k, v] of Object.entries(CAT_COLORS)) if (s?.toLowerCase().includes(k.toLowerCase())) return v;return C.accent;}
+import GradientActionButton from './GradientActionButton';
+import { getCategoryTheme } from '../utils/categoryTheme';
 
 function Stars({ reviews }) {
   if (!reviews?.length) return null;
@@ -28,7 +27,8 @@ function VipBadge({ user }) {
 
 export default function HandymanCard({ user, onPress }) {const { t: tr, tCat, tCity } = useLanguage();
   const now = new Date();
-  const accentColor = getCatColor(user.specialty);
+  const categoryTheme = getCategoryTheme(user.specialty);
+  const accentColor = categoryTheme.fg;
   const vipOk = user.vipType && user.vipType !== 'none' && user.vipExpiresAt && new Date(user.vipExpiresAt) > now;
   const planTop = user.plan === 'top' && user.planExpiresAt && new Date(user.planExpiresAt) > now;
   const isPlus = planTop || user.vipType === 'vipp';
@@ -92,11 +92,13 @@ export default function HandymanCard({ user, onPress }) {const { t: tr, tCat, tC
         null}
       </View>
 
-      <TouchableOpacity onPress={onPress} activeOpacity={0.85}
-      style={{ backgroundColor: accentColor + '22', borderTopWidth: 1, borderTopColor: accentColor + '44', padding: 13, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}>
-        <Text style={{ fontSize: 15 }}>👁</Text>
-        <Text style={{ color: accentColor, fontWeight: '700', fontSize: 14 }}>{tr("components_handymancard_text_pmqqy8")}</Text>
-      </TouchableOpacity>
+      <GradientActionButton
+        onPress={onPress}
+        icon="👁"
+        title={tr("components_handymancard_text_pmqqy8")}
+        colors={categoryTheme.gradient}
+        shadowColor={categoryTheme.shadow}
+      />
     </View>);
 
 }

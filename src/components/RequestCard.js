@@ -3,10 +3,10 @@ import { View, Text, TouchableOpacity, Alert, Image } from 'react-native';
 import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import GradientActionButton from './GradientActionButton';
+import { getCategoryTheme } from '../utils/categoryTheme';
 
-const CAT_COLORS = { 'ელექტრიკოსი': '#8b5cf6', 'სანტექნიკი': '#3b82f6', 'კონდიციონერი': '#10b981', 'მხატვარი': '#f59e0b', 'დურგალი': '#ef4444', 'ინტერნეტი': '#06b6d4', 'სხვა': '#6b7280' };
 const CAT_ICONS = { 'ელექტრიკოსი': '⚡', 'სანტექნიკი': '🔧', 'კონდიციონერი': '❄️', 'მხატვარი': '🎨', 'დურგალი': '🪚', 'ინტერნეტი': '🌐', 'სხვა': '🛠️', 'მშენებელი': '🏗️', 'მებაღე': '🌿', 'ტექნიკოსი': '💻', 'სახლი': '🏠', 'ფილების': '🪟', 'შემდუღებელი': '🔩', 'მეკარე': '🔑' };
-function getCatColor(c) {for (const [k, v] of Object.entries(CAT_COLORS)) if (c?.toLowerCase().includes(k.toLowerCase())) return v;return C.accent;}
 function getCatIcon(c) {for (const [k, v] of Object.entries(CAT_ICONS)) if (c?.toLowerCase().includes(k.toLowerCase())) return v;return '📋';}
 
 // Returns an image-displayable URL for any media item.
@@ -39,7 +39,8 @@ export default function RequestCard({ request, onPress }) {const { t: tr, tCat, 
   const [fav, setFav] = useState(request.isFavorite || false);
   const [toggling, setToggling] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const color = getCatColor(request.category);
+  const categoryTheme = getCategoryTheme(request.category);
+  const color = categoryTheme.fg;
   const catIcon = getCatIcon(request.category);
   const ageMs = request.createdAt ? Date.now() - new Date(request.createdAt).getTime() : Infinity;
   const isNew = ageMs < 24 * 3600000;
@@ -77,7 +78,7 @@ export default function RequestCard({ request, onPress }) {const { t: tr, tCat, 
           {thumbUrl ?
           <Image source={{ uri: thumbUrl }} style={{ width: 105, height: 105 }} resizeMode="cover" onError={() => setImgError(true)} /> :
 
-          <View style={{ width: 105, height: 105, backgroundColor: color + '20', borderWidth: 1.5, borderColor: color + '45', borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 105, height: 105, backgroundColor: categoryTheme.soft, borderWidth: 1.5, borderColor: categoryTheme.border, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ fontSize: 42 }}>{catIcon}</Text>
             </View>
           }
@@ -121,10 +122,12 @@ export default function RequestCard({ request, onPress }) {const { t: tr, tCat, 
       </TouchableOpacity>
 
       {/* ── Full-width action button ── */}
-      <TouchableOpacity onPress={onPress} activeOpacity={0.85}
-      style={{ backgroundColor: color + '22', borderTopWidth: 1, borderTopColor: color + '44', padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-        <Text style={{ color, fontWeight: '700', fontSize: 14 }}>{tr("req_view_detail")}</Text>
-      </TouchableOpacity>
+      <GradientActionButton
+        onPress={onPress}
+        title={tr("req_view_detail")}
+        colors={categoryTheme.gradient}
+        shadowColor={categoryTheme.shadow}
+      />
     </View>);
 
 }

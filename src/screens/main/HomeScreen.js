@@ -8,16 +8,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
-import { CATEGORIES, GEORGIA_CITIES } from '../../utils/categories';
+import { CATEGORIES } from '../../utils/categories';
 import HandymanCard from '../../components/HandymanCard';
 import { Avatar } from '../../components/UI';
 import BellButton from '../../components/BellButton';
 import { useLanguage } from '../../context/LanguageContext';
-
-const CITIES = ['', ...GEORGIA_CITIES];
+import CityDropdown from '../../components/CityDropdown';
 
 function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialMinRating, onClose, onApply }) {
-  const { t, tCat, tCity } = useLanguage();
+  const { t, tCat } = useLanguage();
   const [cat, setCat] = useState(initialCat || '');
   const [subcat, setSubcat] = useState(initialSubcat || '');
   const [city, setCity] = useState(initialCity || '');
@@ -50,7 +49,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
             </TouchableOpacity>
           </View>
 
-          <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 10 }} showsVerticalScrollIndicator={false}>
+          <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 10 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_category')}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
               {CATEGORIES.map(c => (
@@ -94,23 +93,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
             )}
 
             <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_city')}</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
-              {CITIES.map(c => (
-                <TouchableOpacity
-                  key={c || 'all'}
-                  onPress={() => setCity(c)}
-                  style={{
-                    paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20,
-                    borderWidth: 1.5, borderColor: city === c ? '#3b82f6' : C.border,
-                    backgroundColor: city === c ? '#3b82f622' : C.surface2,
-                  }}
-                >
-                  <Text style={{ color: city === c ? '#3b82f6' : C.text2, fontWeight: '600', fontSize: 13 }}>
-                    {c ? tCity(c) : t('filter_all_cities')}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <CityDropdown value={city} onChange={setCity} />
 
             <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_rating')}</Text>
             <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>

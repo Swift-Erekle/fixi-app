@@ -9,13 +9,12 @@ import { api } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import RequestCard from '../../components/RequestCard';
-import { CATEGORIES, GEORGIA_CITIES } from '../../utils/categories';
+import { CATEGORIES } from '../../utils/categories';
 import BellButton from '../../components/BellButton';
-
-const CITIES = ['', ...GEORGIA_CITIES];
+import CityDropdown from '../../components/CityDropdown';
 
 function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialMinBudget, initialMaxBudget, initialStatus, initialUrgent, onClose, onApply }) {
-  const { t, tCat, tCity } = useLanguage();
+  const { t, tCat } = useLanguage();
   const STATUS_OPTS = [
     { key: '', label: t('status_all') },
     { key: 'open', label: t('status_open') },
@@ -54,7 +53,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
             </TouchableOpacity>
           </View>
 
-          <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 10 }} showsVerticalScrollIndicator={false}>
+          <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 10 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_category')}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
               {CATEGORIES.map(c => (
@@ -92,16 +91,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
             )}
 
             <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_city')}</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
-              {CITIES.map(c => (
-                <TouchableOpacity key={c || 'all'} onPress={() => setCity(c)}
-                  style={{ paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, borderWidth: 1.5, borderColor: city === c ? '#3b82f6' : C.border, backgroundColor: city === c ? '#3b82f622' : C.surface2 }}>
-                  <Text style={{ color: city === c ? '#3b82f6' : C.text2, fontWeight: '600', fontSize: 13 }}>
-                    {c ? tCity(c) : t('filter_all_cities')}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <CityDropdown value={city} onChange={setCity} style={{ marginBottom: 20 }} />
 
             {/* Price range */}
             <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_budget')}</Text>
