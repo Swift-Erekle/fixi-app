@@ -323,6 +323,49 @@ export default function ChatScreen({ route, navigation }) {const { t: tr } = use
     return null;
   }
 
+  function extractSystemTitle(content) {
+    const match = String(content || '').match(/["“”]([^"“”]+)["“”]/);
+    return match?.[1] || '';
+  }
+
+  function translateSystemMessage(content) {
+    if (!content) return content;
+    const sc = String(content);
+    const title = extractSystemTitle(sc);
+
+    if (sc.includes('ვერ შევთანხმდით') || sc.includes('შეჩერდა') || sc.includes('დასრულდა')) {
+      return tr('chat_sys_disagreed');
+    }
+    if (sc.includes('შევთანხმდით') || sc.includes('თანამშრომლობა დაიწყო') || sc.includes('სამუშაო დაიწყო')) {
+      return tr('chat_sys_agreed');
+    }
+    if (sc.includes('ხელოსანი ეთანხმება')) return tr('chat_sys_worker_agreed');
+    if (sc.includes('მომხმარებელი ეთანხმება')) return tr('chat_sys_user_agreed');
+    if (sc.includes('ჩათი გაიხსნა')) {
+      return title ? tr('chat_sys_opened_title', { title }) : tr('rd_chat_opened');
+    }
+    if (
+      sc.includes('შემოთავაზება გაიგზავნა') ||
+      sc.includes('შეთავაზება გაიგზავნა') ||
+      sc.includes('შენი შეთავაზება გაიგზავნა') ||
+      sc.includes('შენითავაზება გაიგზავნა')
+    ) {
+      return title ? tr('chat_sys_offer_sent_title', { title }) : tr('offer_sent');
+    }
+    return sc;
+  }
+
+  function isSystemIntroMessage(content) {
+    const sc = String(content || '');
+    return (
+      sc.includes('ჩათი გაიხსნა') ||
+      sc.includes('შემოთავაზება გაიგზავნა') ||
+      sc.includes('შეთავაზება გაიგზავნა') ||
+      sc.includes('შენი შეთავაზება გაიგზავნა') ||
+      sc.includes('შენითავაზება გაიგზავნა')
+    );
+  }
+
   const displayMessages = useMemo(() => {
     const instruction = getChatInstruction();
     const result = [];
@@ -333,14 +376,13 @@ export default function ChatScreen({ route, navigation }) {const { t: tr } = use
         continue;
       }
       result.push(m);
-      if (!injected && instruction && (m.type === 'system' || !m.fromId) && m.content && (
-      m.content.includes('ჩათი გაიხსნა') || m.content.includes('შემოთავაზება გაიგზავნა'))) {
+      if (!injected && instruction && (m.type === 'system' || !m.fromId) && isSystemIntroMessage(m.content)) {
         result.push({ id: '__instruction__', type: '__instruction__', content: instruction });
         injected = true;
       }
     }
     return result;
-  }, [messages, chat, user]);
+  }, [messages, chat, user, tr]);
 
   useEffect(() => {
     const completedAt = chat?.offer?.completedAt || chat?.proposal?.completedAt;
@@ -441,10 +483,11 @@ export default function ChatScreen({ route, navigation }) {const { t: tr } = use
     }
     const isMe = msg.fromId === user?.id;
     if (msg.type === 'system' || !msg.fromId) {
+      const content = translateSystemMessage(msg.content);
       return (
         <View style={{ alignItems: 'center', marginVertical: 8 }}>
           <View style={{ backgroundColor: C.surface2, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, maxWidth: '85%' }}>
-            <Text style={{ color: C.text2, fontSize: 12, textAlign: 'center' }}>{msg.content}</Text>
+            <Text style={{ color: C.text2, fontSize: 12, textAlign: 'center' }}>{content}</Text>
           </View>
         </View>);
 

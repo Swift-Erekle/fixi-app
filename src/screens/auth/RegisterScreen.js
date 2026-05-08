@@ -80,7 +80,7 @@ export default function RegisterScreen({ navigation }) {
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
         <View style={{ alignItems: 'center', marginBottom: 28, marginTop: 8 }}>
           <Text style={{ fontSize: 30, fontWeight: '900', color: C.text }}>
-            MyFix<Text style={{ color: C.accent }}>.ge</Text>
+            MyFix
           </Text>
           <Text style={{ color: C.text2, fontSize: 13, marginTop: 6 }}>{t('reg_subtitle')}</Text>
         </View>

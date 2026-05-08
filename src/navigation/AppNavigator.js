@@ -258,7 +258,7 @@ export default function AppNavigator({ navigationRef }) {
     return (
       <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}>
         <Text style={{ fontSize: 30, fontWeight: '900', color: C.text, marginBottom: 20 }}>
-          MyFix<Text style={{ color: C.accent }}>.ge</Text>
+          MyFix
         </Text>
         <ActivityIndicator color={C.accent} size="large" />
       </View>

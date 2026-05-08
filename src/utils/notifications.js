@@ -32,7 +32,7 @@ export async function registerForPushNotifications() {
     // Android channel with heads-up priority.
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
-        name: 'MyFix.ge Notifications',
+        name: 'MyFix Notifications',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#ff6b2b',
