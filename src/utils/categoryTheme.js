@@ -1,5 +1,5 @@
 import { C } from './theme';
-import { CATEGORIES } from './categories';
+import { CATEGORIES, getCategorySearchTerms } from './categories';
 
 const CATEGORY_THEMES = {
   electrician: { fg: '#a855f7', gradient: ['#8b5cf6', '#a855f7'] },
@@ -17,6 +17,7 @@ const CATEGORY_THEMES = {
   welder: { fg: '#ef4444', gradient: ['#dc2626', '#ef4444'] },
   locksmith: { fg: '#a855f7', gradient: ['#9333ea', '#a855f7'] },
   automechanic: { fg: '#ef4444', gradient: ['#dc2626', '#ef4444'] },
+  towtruck: { fg: '#ea580c', gradient: ['#c2410c', '#ea580c'] },
 };
 
 const DEFAULT_THEME = {
@@ -36,8 +37,7 @@ function matchesCategoryText(categoryText, value) {
 
 export function getCategoryTheme(value) {
   const category = CATEGORIES.find((item) =>
-    matchesCategoryText(item.name, value) ||
-    item.subs?.some((sub) => matchesCategoryText(sub, value))
+    getCategorySearchTerms(item.name).some((term) => matchesCategoryText(term, value))
   );
   const theme = (category && CATEGORY_THEMES[category.id]) || DEFAULT_THEME;
 

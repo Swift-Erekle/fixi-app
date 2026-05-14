@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
-import { CATEGORIES } from '../../utils/categories';
+import { CATEGORIES, getCategorySearchTerms } from '../../utils/categories';
 import HandymanCard from '../../components/HandymanCard';
 import { Avatar } from '../../components/UI';
 import BellButton from '../../components/BellButton';
@@ -152,6 +152,27 @@ function CompanyCard({ user, onPress }) {
   );
 }
 
+function normalizeFilterText(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getHandymanCategoryValues(handyman) {
+  return [
+    handyman.specialty,
+    ...(Array.isArray(handyman.specialties) ? handyman.specialties : []),
+    ...(Array.isArray(handyman.services) ? handyman.services : []),
+  ].filter(Boolean);
+}
+
+function handymanMatchesTerm(handyman, term) {
+  const needle = normalizeFilterText(term);
+  if (!needle) return false;
+  return getHandymanCategoryValues(handyman).some((value) => {
+    const hay = normalizeFilterText(value);
+    return hay && (hay.includes(needle) || needle.includes(hay));
+  });
+}
+
 export default function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { t, tCat, tCity } = useLanguage();
@@ -192,28 +213,15 @@ export default function HomeScreen({ navigation }) {
       res = res.filter(h =>
         h.name?.toLowerCase().includes(lq) ||
         h.surname?.toLowerCase().includes(lq) ||
-        h.specialty?.toLowerCase().includes(lq)
+        getHandymanCategoryValues(h).some((value) => normalizeFilterText(value).includes(lq))
       );
     }
     if (cat) {
-      const catSubs = CATEGORIES.find(c => c.name === cat)?.subs || [];
-      const catLow = cat.toLowerCase();
-      res = res.filter(h => {
-        if (h.specialty?.toLowerCase().includes(catLow)) return true;
-        if (h.specialties?.some(s => s.toLowerCase().includes(catLow))) return true;
-        if (catSubs.length > 0 && catSubs.some(sub => {
-          const subLow = sub.toLowerCase();
-          return h.specialty?.toLowerCase().includes(subLow) ||
-            h.specialties?.some(s => s.toLowerCase().includes(subLow));
-        })) return true;
-        return false;
-      });
+      const terms = getCategorySearchTerms(cat);
+      res = res.filter(h => terms.some((term) => handymanMatchesTerm(h, term)));
     }
     if (subcat) {
-      res = res.filter(h =>
-        h.specialty?.toLowerCase().includes(subcat.toLowerCase()) ||
-        h.specialties?.some(s => s.toLowerCase().includes(subcat.toLowerCase()))
-      );
+      res = res.filter(h => handymanMatchesTerm(h, subcat));
     }
     if (c) res = res.filter(h => h.city?.toLowerCase() === c.toLowerCase());
     if (minRat) {
