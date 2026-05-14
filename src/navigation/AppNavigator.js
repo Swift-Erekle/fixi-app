@@ -95,7 +95,7 @@ function tabScreenOptions({ route }, t) {
   };
 }
 
-const PLAN_PRICES = { handyman: { pro: 29, top: 69 }, company: { pro: 99, top: 159 } };
+const PLAN_PRICES = { handyman: { pro: '14.99', top: '29.99' }, company: { pro: '29.99', top: '59.99' } };
 
 function PlanPickerModal({ visible, onDismiss, onPickPlan }) {
   const { user } = useAuth();

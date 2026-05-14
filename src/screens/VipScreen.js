@@ -10,12 +10,12 @@ import { C } from '../utils/theme';
 import { Card } from '../components/UI';
 
 const PRICES = {
-  handyman: { vip: { 1: 2, 5: 10 }, vipp: { 1: 4, 5: 18 } },
-  company: { vip: { 1: 5, 5: 25 }, vipp: { 1: 10, 5: 50 } }
+  handyman: { vip: { 1: '1', 5: '5' }, vipp: { 1: '1.5', 5: '7.5' } },
+  company: { vip: { 1: '2', 5: '10' }, vipp: { 1: '3', 5: '15' } }
 };
 const PLAN_PRICES = {
-  handyman: { pro: 29, top: 69 },
-  company: { pro: 99, top: 159 }
+  handyman: { pro: '14.99', top: '29.99' },
+  company: { pro: '29.99', top: '59.99' }
 };
 
 function PriceCard({ icon, label, price, accent, onPress, disabled }) {
