@@ -37,11 +37,27 @@ export default function EditProfileScreen({ navigation }) {const { t: tr, tCat }
     user.specialties :
     user?.specialty ? [user.specialty] : []
   );
-  const [services, setServices] = useState(user?.services?.join(', ') || '');
+  const [services, setServices] = useState(Array.isArray(user?.services) ? user.services : []);
   const [whatsappEnabled, setWhatsappEnabled] = useState(!!user?.whatsappEnabled);
   const [loading, setLoading] = useState(false);
 
   const isWorker = user?.type === 'handyman' || user?.type === 'company';
+  const selectedServiceCategories = CATEGORIES.filter((c) => specs.includes(c.name));
+
+  function toggleSpec(category) {
+    const selected = specs.includes(category.name);
+    if (selected) {
+      const subSet = new Set(category.subs || []);
+      setSpecs((prev) => prev.filter((s) => s !== category.name));
+      setServices((prev) => prev.filter((s) => !subSet.has(s)));
+      return;
+    }
+    setSpecs((prev) => [...prev, category.name]);
+  }
+
+  function toggleService(service) {
+    setServices((prev) => prev.includes(service) ? prev.filter((s) => s !== service) : [...prev, service]);
+  }
 
   async function handleSave() {
     if (!name.trim()) return Alert.alert(tr("error"), tr("screens_adminscreen_text_vlrihw"));
@@ -56,7 +72,7 @@ export default function EditProfileScreen({ navigation }) {const { t: tr, tCat }
           desc: desc.trim() || null,
           specialty: specs[0] || null,
           specialties: specs,
-          services: services ? services.split(',').map((s) => s.trim()).filter(Boolean) : [],
+          services,
           ...(isWorker ? { whatsappEnabled } : {})
         } });
       updateUser(data);
@@ -116,7 +132,7 @@ export default function EditProfileScreen({ navigation }) {const { t: tr, tCat }
                 const sel = specs.includes(c.name);
                 return (
                   <TouchableOpacity key={c.name}
-                  onPress={() => setSpecs((prev) => sel ? prev.filter((s) => s !== c.name) : [...prev, c.name])}
+                  onPress={() => toggleSpec(c)}
                   style={{
                     flexDirection: 'row', alignItems: 'center', gap: 8,
                     paddingHorizontal: 14, paddingVertical: 11, borderRadius: 14,
@@ -131,6 +147,36 @@ export default function EditProfileScreen({ navigation }) {const { t: tr, tCat }
 
               })}
               </View>
+              {selectedServiceCategories.length > 0 &&
+              <View style={{ marginTop: 14 }}>
+                  <Label>{tr("filter_subcategory")}</Label>
+                  {services.length > 0 &&
+                <Text style={{ color: C.accent, fontSize: 12, marginBottom: 10 }}>{tr("reg_selected")}{services.map(tCat).join(', ')}</Text>
+                }
+                  {selectedServiceCategories.map((category) =>
+                <View key={category.name} style={{ marginBottom: 12 }}>
+                      <Text style={{ color: C.text, fontSize: 13, fontWeight: '800', marginBottom: 8 }}>{category.icon} {tCat(category.name)}</Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                        {category.subs.map((service) => {
+                      const selected = services.includes(service);
+                      return (
+                        <TouchableOpacity key={service} onPress={() => toggleService(service)}
+                        style={{
+                          flexDirection: 'row', alignItems: 'center', gap: 6,
+                          paddingHorizontal: 12, paddingVertical: 9, borderRadius: 18,
+                          borderWidth: 1.5, borderColor: selected ? C.accent : C.border,
+                          backgroundColor: selected ? C.accent + '18' : C.surface2
+                        }}>
+                            <Text style={{ color: selected ? C.accent : C.text2, fontWeight: '700', fontSize: 12, maxWidth: 210 }}>{tCat(service)}</Text>
+                            {selected && <Ionicons name="checkmark-circle" size={14} color={C.accent} />}
+                          </TouchableOpacity>);
+
+                    })}
+                      </View>
+                    </View>
+                )}
+                </View>
+              }
             </Card>
 
             <Card>
@@ -145,8 +191,6 @@ export default function EditProfileScreen({ navigation }) {const { t: tr, tCat }
                 )}
                 </View>
               </ScrollView>
-              <Label>{tr("screens_editprofilescreen_text_17p2b4")}</Label>
-              <StyledInput value={services} onChangeText={setServices} placeholder={tr("screens_editprofilescreen_text_we3b35")} />
               <Label>{tr("edit_desc_label")}</Label>
               <StyledInput value={desc} onChangeText={setDesc} placeholder={tr("send_offer_comment_ph")} multiline />
             </Card>

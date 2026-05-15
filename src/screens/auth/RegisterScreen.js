@@ -40,10 +40,12 @@ export default function RegisterScreen({ navigation }) {
   const [password, setPass] = useState('');
   const [pass2, setPass2] = useState('');
   const [specs, setSpecs] = useState([]);
+  const [services, setServices] = useState([]);
   const [desc, setDesc] = useState('');
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
   const isWorker = type === 'handyman' || type === 'company';
+  const selectedServiceCategories = CATEGORIES.filter((c) => specs.includes(c.name));
 
   const TYPES = [
     { key: 'user',     emoji: '👤', label: t('reg_type_user'),     desc: t('reg_type_user_desc') },
@@ -67,12 +69,38 @@ export default function RegisterScreen({ navigation }) {
         password, type,
         specialty: isWorker ? specs[0] : undefined,
         specialties: isWorker ? specs : undefined,
+        services: isWorker ? services : undefined,
         desc: isWorker ? desc : undefined,
         whatsappEnabled: isWorker ? whatsappEnabled : undefined,
       }});
       navigation.navigate('Verify', { email: email.trim().toLowerCase(), devCode: data.devCode });
     } catch (e) { Alert.alert(t('error'), e.error || t('reg_err_failed')); }
     finally { setLoading(false); }
+  }
+
+  function selectType(nextType) {
+    setType(nextType);
+    if (nextType === 'user') {
+      setSpecs([]);
+      setServices([]);
+      setDesc('');
+      setWhatsappEnabled(false);
+    }
+  }
+
+  function toggleSpec(category) {
+    const selected = specs.includes(category.name);
+    if (selected) {
+      const subSet = new Set(category.subs || []);
+      setSpecs((prev) => prev.filter((s) => s !== category.name));
+      setServices((prev) => prev.filter((s) => !subSet.has(s)));
+      return;
+    }
+    setSpecs((prev) => [...prev, category.name]);
+  }
+
+  function toggleService(service) {
+    setServices((prev) => prev.includes(service) ? prev.filter((s) => s !== service) : [...prev, service]);
   }
 
   return (
@@ -89,7 +117,7 @@ export default function RegisterScreen({ navigation }) {
           <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('reg_account_type')}</Text>
           <View style={{ gap: 8 }}>
             {TYPES.map(tp => (
-              <TouchableOpacity key={tp.key} onPress={() => setType(tp.key)}
+              <TouchableOpacity key={tp.key} onPress={() => selectType(tp.key)}
                 style={{
                   flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13, borderRadius: 12,
                   borderWidth: 1.5, borderColor: type === tp.key ? C.accent : C.border,
@@ -159,7 +187,7 @@ export default function RegisterScreen({ navigation }) {
                 const sel = specs.includes(c.name);
                 return (
                   <TouchableOpacity key={c.name}
-                    onPress={() => setSpecs(prev => sel ? prev.filter(s => s !== c.name) : [...prev, c.name])}
+                    onPress={() => toggleSpec(c)}
                     style={{
                       flexDirection: 'row', alignItems: 'center', gap: 8,
                       paddingHorizontal: 14, paddingVertical: 11, borderRadius: 14,
@@ -174,6 +202,38 @@ export default function RegisterScreen({ navigation }) {
                 );
               })}
             </View>
+            {selectedServiceCategories.length > 0 && (
+              <View style={{ marginBottom: 14 }}>
+                <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('filter_subcategory')}</Text>
+                {services.length > 0 && (
+                  <Text style={{ color: C.accent, fontSize: 12, marginBottom: 10 }}>{t('reg_selected')} {services.map(s => tCat(s)).join(', ')}</Text>
+                )}
+                {selectedServiceCategories.map((category) => (
+                  <View key={category.name} style={{ marginBottom: 12 }}>
+                    <Text style={{ color: C.text, fontSize: 13, fontWeight: '800', marginBottom: 8 }}>{category.icon} {tCat(category.name)}</Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                      {category.subs.map((service) => {
+                        const selected = services.includes(service);
+                        return (
+                          <TouchableOpacity
+                            key={service}
+                            onPress={() => toggleService(service)}
+                            style={{
+                              flexDirection: 'row', alignItems: 'center', gap: 6,
+                              paddingHorizontal: 12, paddingVertical: 9, borderRadius: 18,
+                              borderWidth: 1.5, borderColor: selected ? C.accent : C.border,
+                              backgroundColor: selected ? C.accent + '18' : C.surface2,
+                            }}>
+                            <Text style={{ color: selected ? C.accent : C.text2, fontWeight: '700', fontSize: 12, maxWidth: 210 }}>{tCat(service)}</Text>
+                            {selected && <Ionicons name="checkmark-circle" size={14} color={C.accent} />}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
             <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('reg_desc_label')}</Text>
             <TextInput
               style={{ backgroundColor: C.surface2, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 13, color: C.text, fontSize: 14, height: 80, textAlignVertical: 'top' }}
