@@ -14,7 +14,7 @@ const PRICES = {
   company: { vip: { 1: '2', 5: '10' }, vipp: { 1: '3', 5: '15' } }
 };
 const PLAN_PRICES = {
-  handyman: { pro: '14.99', top: '29.99' },
+  handyman: { pro: '9.99', top: '24.99' },
   company: { pro: '29.99', top: '59.99' }
 };
 
