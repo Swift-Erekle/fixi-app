@@ -63,7 +63,7 @@ export default function RegisterScreen({ navigation }) {
     }
     setLoading(true);
     try {
-      const data = await api('/auth/register', { method: 'POST', body: {
+      await api('/auth/register', { method: 'POST', body: {
         name: name.trim(), surname: surname.trim(),
         email: email.trim().toLowerCase(), phone: phone.trim(),
         password, type,
@@ -73,7 +73,7 @@ export default function RegisterScreen({ navigation }) {
         desc: isWorker ? desc : undefined,
         whatsappEnabled: isWorker ? whatsappEnabled : undefined,
       }});
-      navigation.navigate('Verify', { email: email.trim().toLowerCase(), devCode: data.devCode });
+      navigation.navigate('Verify', { email: email.trim().toLowerCase() });
     } catch (e) { Alert.alert(t('error'), e.error || t('reg_err_failed')); }
     finally { setLoading(false); }
   }

@@ -8,7 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Btn } from '../../components/UI';
 
 export default function VerifyScreen({ route, navigation }) {const { t: tr } = useLanguage();
-  const { email, devCode } = route.params || {};
+  const { email } = route.params || {};
   const { login } = useAuth();
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -48,8 +48,8 @@ export default function VerifyScreen({ route, navigation }) {const { t: tr } = u
   async function handleResend() {
     setResending(true);
     try {
-      const data = await api('/auth/resend', { method: 'POST', body: { email } });
-      Alert.alert('✅', tr("screens_auth_verifyscreen_text_1b7uf5") + (data.devCode ? ` (dev: ${data.devCode})` : ''));
+      await api('/auth/resend', { method: 'POST', body: { email } });
+      Alert.alert('✅', tr("screens_auth_verifyscreen_text_1b7uf5"));
     } catch (e) {Alert.alert(tr("error"), e.error || tr("verify_err_resend"));} finally
     {setResending(false);}
   }
@@ -66,13 +66,6 @@ export default function VerifyScreen({ route, navigation }) {const { t: tr } = u
           <Text style={{ color: C.text2, fontSize: 14, textAlign: 'center' }}>{tr("screens_auth_verifyscreen_6_fk1c1y")}</Text>
           <Text style={{ color: C.accent, fontWeight: '800', fontSize: 15, marginTop: 4 }}>{email}</Text>
         </View>
-
-        {/* Dev code hint */}
-        {devCode ?
-        <View style={{ backgroundColor: C.warn + '18', borderRadius: 12, borderWidth: 1, borderColor: C.warn + '40', padding: 12, marginBottom: 20 }}>
-            <Text style={{ color: C.warn, textAlign: 'center', fontSize: 13, fontWeight: '700' }}>{tr("screens_auth_verifyscreen_dev_o7d5p")}{devCode}</Text>
-          </View> :
-        null}
 
         {/* OTP inputs */}
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, marginBottom: 32 }}>

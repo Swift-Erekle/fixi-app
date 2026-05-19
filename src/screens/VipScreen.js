@@ -85,7 +85,6 @@ export default function VipScreen() {const { t: tr } = useLanguage();
     setBusy(true);
     try {
       const res = await api('/payment/create-order', { method: 'POST', body: { vipType, days } });
-      if (res.demo) {Alert.alert('✅ demo', '');await refreshUser();} else
       if (res.redirectUrl) setCheckoutUrl(res.redirectUrl);else
       Alert.alert('⚠️', tr("screens_vipscreen_text_1t7xd2"));
     } catch (e) {Alert.alert(tr("screens_cardscreen_text_1pf8t0"), e?.error || tr("screens_adminscreen_text_1vf9mb"));} finally
@@ -97,9 +96,8 @@ export default function VipScreen() {const { t: tr } = useLanguage();
     try {
       // ✅ FIXED: correct endpoint for subscription plans
       const res = await api('/payment/subscribe', { method: 'POST', body: { plan, cardId: null } });
-      if (res.demo) {Alert.alert('✅ demo', '');await refreshUser();} else
       if (res.redirectUrl) setCheckoutUrl(res.redirectUrl);else
-      if (res.ok) {Alert.alert('✅', tr("screens_vipscreen_text_14hldm"));await refreshUser();} else
+      if (res.charged || res.success || res.ok) {Alert.alert('✅', res.message || tr("screens_vipscreen_text_14hldm"));await refreshUser();} else
       Alert.alert('⚠️', tr("screens_vipscreen_text_1t7xd2"));
     } catch (e) {Alert.alert(tr("screens_cardscreen_text_1pf8t0"), e?.error || tr("screens_adminscreen_text_1vf9mb"));} finally
     {setBusy(false);}
@@ -107,7 +105,7 @@ export default function VipScreen() {const { t: tr } = useLanguage();
 
   function onNavChange(navState) {
     const u = String(navState.url || '');
-    if (u.includes('/payment-success') || u.includes('payment-ok')) {
+    if (u.includes('/payment-success')) {
       setCheckoutUrl(null);
       Alert.alert('🎉', tr("screens_vipscreen_text_2xsznl"));
       setTimeout(() => refreshUser(), 1500);

@@ -29,14 +29,13 @@ export default function CardScreen() {const { t: tr } = useLanguage();
   async function bindNewCard() {
     try {
       const res = await api('/payment/cards/bind', { method: 'POST' });
-      if (res.demo) {Alert.alert('✅ Demo', tr("screens_cardscreen_text_m46xde"));load();} else
       if (res.redirectUrl) setBindUrl(res.redirectUrl);
     } catch (e) {Alert.alert(tr("screens_cardscreen_text_1pf8t0"), e?.error || tr("screens_cardscreen_text_jql6y8"));}
   }
 
   function onNavChange(navState) {
     const u = String(navState.url || '');
-    if (u.includes('/payment-success') || u.includes('payment-ok')) {
+    if (u.includes('/payment-success')) {
       setBindUrl(null);
       Alert.alert(tr("screens_cardscreen_text_1vfd3s"), tr("screens_cardscreen_0_10_w3lomn"));
       setTimeout(load, 1500);

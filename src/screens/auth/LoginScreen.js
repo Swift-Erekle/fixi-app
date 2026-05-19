@@ -24,7 +24,7 @@ export default function LoginScreen({ navigation }) {
       navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
     } catch (e) {
       if (e.emailNotVerified) {
-        navigation.navigate('Verify', { email: e.email || email.trim().toLowerCase(), devCode: e.devCode });
+        navigation.navigate('Verify', { email: e.email || email.trim().toLowerCase() });
         Alert.alert(t('login_verify_title'), t('login_verify_msg'));
       } else {
         const msg = (typeof e === 'object' && e !== null)
