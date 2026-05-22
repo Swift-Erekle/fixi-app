@@ -1,5 +1,5 @@
 import { useLanguage } from "../context/LanguageContext"; // src/screens/CardScreen.js
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal, ActivityIndicator, Alert, Platform, RefreshControl, Switch } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +17,7 @@ export default function CardScreen() {const { t: tr } = useLanguage();
   const [refreshing, setRefreshing] = useState(false);
   const [autoRenew, setAutoRenew] = useState(!!user?.autoRenew);
   const [arLoading, setArLoading] = useState(false);
+  const bindHandled = useRef(false); // guards onNavChange from firing success twice
 
   const load = useCallback(async () => {
     try {const res = await api('/payment/cards');setCards(Array.isArray(res) ? res : res.cards || []);}
@@ -29,16 +30,20 @@ export default function CardScreen() {const { t: tr } = useLanguage();
   async function bindNewCard() {
     try {
       const res = await api('/payment/cards/bind', { method: 'POST' });
-      if (res.redirectUrl) setBindUrl(res.redirectUrl);
+      if (res.redirectUrl) { bindHandled.current = false; setBindUrl(res.redirectUrl); }
     } catch (e) {Alert.alert(tr("screens_cardscreen_text_1pf8t0"), e?.error || tr("screens_cardscreen_text_jql6y8"));}
   }
 
   function onNavChange(navState) {
     const u = String(navState.url || '');
     if (u.includes('/payment-success')) {
+      if (bindHandled.current) return; // fire success only once
+      bindHandled.current = true;
       setBindUrl(null);
       Alert.alert(tr("screens_cardscreen_text_1vfd3s"), tr("screens_cardscreen_0_10_w3lomn"));
-      setTimeout(load, 1500);
+      // Poll a few times so the saved card shows up as soon as Flitt's callback lands
+      let n = 0;
+      const iv = setInterval(() => { load(); if (++n >= 4) clearInterval(iv); }, 1500);
     } else if (u.includes('/payment-fail') || u.includes('/cancel')) {setBindUrl(null);}
   }
 
@@ -137,9 +142,21 @@ export default function CardScreen() {const { t: tr } = useLanguage();
       <Modal visible={!!bindUrl} animationType="slide" onRequestClose={() => setBindUrl(null)}>
         <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: Platform.OS === 'ios' ? 44 : 0 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: C.surface }}>
-            <TouchableOpacity onPress={() => setBindUrl(null)} style={{ padding: 4 }}><Ionicons name="close" size={26} color={C.text} /></TouchableOpacity>            <Text style={{ color: C.text, fontWeight: '700', marginLeft: 12 }}>{tr("screens_cardscreen_text_1i794i")}</Text>
+            <TouchableOpacity onPress={() => setBindUrl(null)} style={{ padding: 4 }}><Ionicons name="close" size={26} color={C.text} /></TouchableOpacity>
+            <Ionicons name="lock-closed" size={15} color={C.ok} style={{ marginLeft: 12 }} />
+            <Text style={{ color: C.text, fontWeight: '700', marginLeft: 6 }}>{tr("screens_cardscreen_text_1i794i")}</Text>
           </View>
-          {bindUrl && <WebView source={{ uri: bindUrl }} onNavigationStateChange={onNavChange} startInLoadingState />}
+          {bindUrl && <WebView
+            source={{ uri: bindUrl }}
+            onNavigationStateChange={onNavChange}
+            startInLoadingState
+            renderLoading={() => (
+              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg }}>
+                <ActivityIndicator size="large" color={C.accent} />
+                <Text style={{ color: C.text2, marginTop: 12, fontSize: 13 }}>უსაფრთხო გვერდი იტვირთება...</Text>
+              </View>
+            )}
+          />}
         </View>
       </Modal>
     </ScrollView>);

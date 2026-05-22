@@ -32,6 +32,8 @@ function handleNotificationResponse(response) {
     navigate('RequestDetail', { id: data.requestId });
   } else if (data.screen === 'Chats') {
     navigate('Tabs', { screen: 'Chats' });
+  } else if (data.screen === 'Cards' || data.type === 'renewal_failed' || data.type === 'charge_failed') {
+    navigate('Cards'); // auto-renewal / card issues → card management
   } else if (data.type === 'support') {
     navigate('Support');
   }

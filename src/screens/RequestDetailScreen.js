@@ -268,7 +268,7 @@ export default function RequestDetailScreen({ route, navigation }) {const { t: t
         </Text>
         <View style={{ flexDirection: 'row', gap: 14 }}>
           <Text style={{ color: C.text2, fontSize: 12 }}>
-            💬 {req.offers?.length || 0}{tr("components_requestcard_text_1xkkuo")}
+            💬 {(typeof req.offersCount === 'number' ? req.offersCount : (req.offers?.length || 0))}{tr("components_requestcard_text_1xkkuo")}
             </Text>
           <Text style={{ color: C.text2, fontSize: 12 }}>
             🗓 {new Date(req.createdAt).toLocaleDateString('ka-GE')}

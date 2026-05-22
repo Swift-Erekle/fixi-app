@@ -134,6 +134,7 @@ export default function NotificationsScreen({ navigation }) {const { t: tr, lang
       if (data.requestId) return navigation.navigate('RequestDetail', { id: data.requestId });
       if (data.handymanId) return navigation.navigate('HandymanDetail', { id: data.handymanId });
       if (data.screen === 'Chats') return navigation.navigate('Tabs', { screen: 'Chats' });
+      if (data.screen === 'Cards' || data.type === 'renewal_failed' || data.type === 'charge_failed') return navigation.navigate('Cards');
       if (data.type === 'support') return navigation.navigate('Support');
     }
 
@@ -143,9 +144,11 @@ export default function NotificationsScreen({ navigation }) {const { t: tr, lang
       const chatM = n.link.match(/[?&](?:chat(?:Id)?)=([^&]+)/);
       const reqM = n.link.match(/[?&](?:req(?:uest(?:Id)?)?)=([^&]+)/);
       const userM = n.link.match(/[?&](?:user(?:Id)?|handyman(?:Id)?)=([^&]+)/);
+      const cardM = n.link.match(/[?&]card=/);
       if (chatM) return navigation.navigate('Chat', { chatId: chatM[1], title: tr("dash_chats") });
       if (reqM) return navigation.navigate('RequestDetail', { id: reqM[1] });
       if (userM) return navigation.navigate('HandymanDetail', { id: userM[1] });
+      if (cardM) return navigation.navigate('Cards');
       // path-style: /chat/xxx  /request/xxx
       const pathM = n.link.match(/\/(chat|request|handyman|req)\/([a-z0-9-]+)/i);
       if (pathM) {

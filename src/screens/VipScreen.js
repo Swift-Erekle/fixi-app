@@ -1,5 +1,5 @@
 import { useLanguage } from "../context/LanguageContext"; // src/screens/VipScreen.js
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal, ActivityIndicator, Alert, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
@@ -66,6 +66,7 @@ export default function VipScreen() {const { t: tr } = useLanguage();
   const { user, refreshUser } = useAuth();
   const [busy, setBusy] = useState(false);
   const [checkoutUrl, setCheckoutUrl] = useState(null);
+  const paidHandled = useRef(false); // guards onNavChange from firing success twice
 
   if (!user) return (
     <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}>
@@ -85,8 +86,8 @@ export default function VipScreen() {const { t: tr } = useLanguage();
     setBusy(true);
     try {
       const res = await api('/payment/create-order', { method: 'POST', body: { vipType, days } });
-      if (res.redirectUrl) setCheckoutUrl(res.redirectUrl);else
-      Alert.alert('⚠️', tr("screens_vipscreen_text_1t7xd2"));
+      if (res.redirectUrl) { paidHandled.current = false; setCheckoutUrl(res.redirectUrl); }
+      else Alert.alert('⚠️', tr("screens_vipscreen_text_1t7xd2"));
     } catch (e) {Alert.alert(tr("screens_cardscreen_text_1pf8t0"), e?.error || tr("screens_adminscreen_text_1vf9mb"));} finally
     {setBusy(false);}
   }
@@ -96,9 +97,9 @@ export default function VipScreen() {const { t: tr } = useLanguage();
     try {
       // ✅ FIXED: correct endpoint for subscription plans
       const res = await api('/payment/subscribe', { method: 'POST', body: { plan, cardId: null } });
-      if (res.redirectUrl) setCheckoutUrl(res.redirectUrl);else
-      if (res.charged || res.success || res.ok) {Alert.alert('✅', res.message || tr("screens_vipscreen_text_14hldm"));await refreshUser();} else
-      Alert.alert('⚠️', tr("screens_vipscreen_text_1t7xd2"));
+      if (res.redirectUrl) { paidHandled.current = false; setCheckoutUrl(res.redirectUrl); }
+      else if (res.charged || res.success || res.ok) { Alert.alert('✅', res.message || tr("screens_vipscreen_text_14hldm")); await refreshUser(); }
+      else Alert.alert('⚠️', tr("screens_vipscreen_text_1t7xd2"));
     } catch (e) {Alert.alert(tr("screens_cardscreen_text_1pf8t0"), e?.error || tr("screens_adminscreen_text_1vf9mb"));} finally
     {setBusy(false);}
   }
@@ -106,9 +107,13 @@ export default function VipScreen() {const { t: tr } = useLanguage();
   function onNavChange(navState) {
     const u = String(navState.url || '');
     if (u.includes('/payment-success')) {
+      if (paidHandled.current) return; // fire success only once
+      paidHandled.current = true;
       setCheckoutUrl(null);
       Alert.alert('🎉', tr("screens_vipscreen_text_2xsznl"));
-      setTimeout(() => refreshUser(), 1500);
+      // Poll a few times so the activated plan/VIP shows up as soon as Flitt's callback lands
+      let n = 0;
+      const iv = setInterval(() => { refreshUser(); if (++n >= 4) clearInterval(iv); }, 1500);
     } else if (u.includes('/payment-fail') || u.includes('/cancel')) {
       setCheckoutUrl(null);
     }
@@ -177,9 +182,20 @@ export default function VipScreen() {const { t: tr } = useLanguage();
             <TouchableOpacity onPress={() => setCheckoutUrl(null)} style={{ padding: 4 }}>
               <Ionicons name="close" size={26} color={C.text} />
             </TouchableOpacity>
-            <Text style={{ color: C.text, fontWeight: '700', marginLeft: 12, fontSize: 16 }}>TBC Pay</Text>
+            <Ionicons name="lock-closed" size={15} color={C.ok} style={{ marginLeft: 12 }} />
+            <Text style={{ color: C.text, fontWeight: '700', marginLeft: 6, fontSize: 16 }}>უსაფრთხო გადახდა</Text>
           </View>
-          {checkoutUrl && <WebView source={{ uri: checkoutUrl }} onNavigationStateChange={onNavChange} startInLoadingState />}
+          {checkoutUrl && <WebView
+            source={{ uri: checkoutUrl }}
+            onNavigationStateChange={onNavChange}
+            startInLoadingState
+            renderLoading={() => (
+              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg }}>
+                <ActivityIndicator size="large" color={C.accent} />
+                <Text style={{ color: C.text2, marginTop: 12, fontSize: 13 }}>უსაფრთხო გადახდა იტვირთება...</Text>
+              </View>
+            )}
+          />}
         </View>
       </Modal>
     </ScrollView>);
