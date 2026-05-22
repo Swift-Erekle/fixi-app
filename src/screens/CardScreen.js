@@ -17,6 +17,7 @@ export default function CardScreen() {const { t: tr } = useLanguage();
   const [refreshing, setRefreshing] = useState(false);
   const [autoRenew, setAutoRenew] = useState(!!user?.autoRenew);
   const [arLoading, setArLoading] = useState(false);
+  const [cardConsent, setCardConsent] = useState(false);
   const bindHandled = useRef(false); // guards onNavChange from firing success twice
 
   const load = useCallback(async () => {
@@ -28,8 +29,12 @@ export default function CardScreen() {const { t: tr } = useLanguage();
   useFocusEffect(useCallback(() => {load();}, [load]));
 
   async function bindNewCard() {
+    if (!cardConsent) {
+      Alert.alert(tr("screens_cardscreen_text_1pf8t0"), tr("payment_consent_required"));
+      return;
+    }
     try {
-      const res = await api('/payment/cards/bind', { method: 'POST' });
+      const res = await api('/payment/cards/bind', { method: 'POST', body: { cardSaveConsentAccepted: true } });
       if (res.redirectUrl) { bindHandled.current = false; setBindUrl(res.redirectUrl); }
     } catch (e) {Alert.alert(tr("screens_cardscreen_text_1pf8t0"), e?.error || tr("screens_cardscreen_text_jql6y8"));}
   }
@@ -40,6 +45,7 @@ export default function CardScreen() {const { t: tr } = useLanguage();
       if (bindHandled.current) return; // fire success only once
       bindHandled.current = true;
       setBindUrl(null);
+      setCardConsent(false);
       Alert.alert(tr("screens_cardscreen_text_1vfd3s"), tr("screens_cardscreen_0_10_w3lomn"));
       // Poll a few times so the saved card shows up as soon as Flitt's callback lands
       let n = 0;
@@ -73,6 +79,13 @@ export default function CardScreen() {const { t: tr } = useLanguage();
     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => {setRefreshing(true);load();}} tintColor={C.accent} />}>
 
       <Text style={{ color: C.text, fontSize: 22, fontWeight: '900', marginBottom: 20 }}>{tr("screens_cardscreen_text_72gxob")}</Text>
+
+      <View style={{ backgroundColor: C.surface, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 14, marginBottom: 14 }}>
+        <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 6 }}>{tr("subscription_info_title")}</Text>
+        <Text style={{ color: C.text2, fontSize: 12, lineHeight: 18 }}>{tr("card_bind_hint")}</Text>
+        <Text style={{ color: C.text2, fontSize: 12, lineHeight: 18, marginTop: 6 }}>{tr("card_delete_instructions")}</Text>
+        <Text style={{ color: C.text2, fontSize: 12, lineHeight: 18, marginTop: 6 }}>{tr("subscription_cancel_instructions")}</Text>
+      </View>
 
       {cards.length === 0 ?
       <View style={{ backgroundColor: C.surface, borderRadius: 18, borderWidth: 1, borderColor: C.border, padding: 32, alignItems: 'center', marginBottom: 16 }}>
@@ -117,7 +130,12 @@ export default function CardScreen() {const { t: tr } = useLanguage();
       )
       }
 
-      <Btn title={tr("screens_cardscreen_text_9i63pa")} onPress={bindNewCard} style={{ marginBottom: 14 }} />
+      <TouchableOpacity onPress={() => setCardConsent(v => !v)} activeOpacity={0.8}
+        style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: C.surface2, borderRadius: 14, borderWidth: 1, borderColor: cardConsent ? C.accent + '80' : C.border, padding: 12, marginBottom: 10 }}>
+        <Ionicons name={cardConsent ? 'checkbox' : 'square-outline'} size={22} color={cardConsent ? C.accent : C.text2} />
+        <Text style={{ color: C.text2, fontSize: 12, lineHeight: 18, flex: 1 }}>{tr("card_bind_consent")}</Text>
+      </TouchableOpacity>
+      <Btn title={tr("screens_cardscreen_text_9i63pa")} onPress={bindNewCard} style={{ marginBottom: 14, opacity: cardConsent ? 1 : 0.55 }} />
 
       {/* Auto-renew toggle — only if user has a plan */}
       {user?.plan && user.plan !== 'start' &&

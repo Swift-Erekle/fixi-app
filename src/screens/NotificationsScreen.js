@@ -37,6 +37,7 @@ const NOTIF_TITLE_KEYS = {
   proposal_disagree: 'notif_disagreed',
   disagreed: 'notif_disagreed',
   review_reminder: 'notif_review_reminder',
+  renewal_notice: 'notif_renewal_notice',
   renewal_failed: 'notif_renewal_failed',
   charge_failed: 'notif_charge_failed',
 };
@@ -46,6 +47,7 @@ function notificationTitle(n, tr) {
   if (raw.includes('შევთანხმდით?')) return tr('notif_agree_await');
   if (raw.includes('ვერ შევთანხმდით')) return tr('notif_disagreed');
   if (raw.includes('შეაფასე სამუშაო')) return tr('notif_review_reminder');
+  if (raw.includes('შემდეგი ავტო-გადახდა')) return tr('notif_renewal_notice');
   if (raw.includes('ავტო-განახლება ვერ მოხდა')) return tr('notif_renewal_failed');
   if (raw.includes('გადახდა ჩამოვარდა')) return tr('notif_charge_failed');
   if (raw.includes('შევთანხმდით')) return tr('notif_agreed');

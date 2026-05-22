@@ -29,10 +29,10 @@ function PriceCard({ icon, label, price, accent, onPress, disabled }) {
 
 }
 
-function PlanCard({ icon, label, price, features, accent, onPress, active }) {const { t: tr } = useLanguage();
+function PlanCard({ icon, label, price, features, accent, onPress, active, disabled }) {const { t: tr } = useLanguage();
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.85}
-    style={{ backgroundColor: C.surface, borderRadius: 18, borderWidth: active ? 2 : 1, borderColor: active ? accent : C.border, padding: 18, marginBottom: 12 }}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.85} disabled={disabled}
+    style={{ backgroundColor: C.surface, borderRadius: 18, borderWidth: active ? 2 : 1, borderColor: active ? accent : C.border, padding: 18, marginBottom: 12, opacity: disabled ? 0.55 : 1 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Text style={{ fontSize: 24 }}>{icon}</Text>
@@ -61,11 +61,23 @@ function PlanCard({ icon, label, price, features, accent, onPress, active }) {co
 
 }
 
+function ConsentToggle({ checked, onPress, text }) {
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}
+      style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, borderRadius: 12, borderWidth: 1, borderColor: checked ? C.accent + '80' : C.border, backgroundColor: C.surface2, padding: 12, marginTop: 10 }}>
+      <Ionicons name={checked ? 'checkbox' : 'square-outline'} size={22} color={checked ? C.accent : C.text2} />
+      <Text style={{ color: C.text2, fontSize: 12, lineHeight: 18, flex: 1 }}>{text}</Text>
+    </TouchableOpacity>
+  );
+}
+
 export default function VipScreen() {const { t: tr } = useLanguage();
   const nav = useNavigation();
   const { user, refreshUser } = useAuth();
   const [busy, setBusy] = useState(false);
   const [checkoutUrl, setCheckoutUrl] = useState(null);
+  const [subConsent, setSubConsent] = useState(false);
+  const [cardSaveConsent, setCardSaveConsent] = useState(false);
   const paidHandled = useRef(false); // guards onNavChange from firing success twice
 
   if (!user) return (
@@ -93,10 +105,22 @@ export default function VipScreen() {const { t: tr } = useLanguage();
   }
 
   async function buyPlan(plan) {
+    if (!subConsent || !cardSaveConsent) {
+      Alert.alert(tr("screens_cardscreen_text_1pf8t0"), tr("payment_consent_required"));
+      return;
+    }
     setBusy(true);
     try {
       // ✅ FIXED: correct endpoint for subscription plans
-      const res = await api('/payment/subscribe', { method: 'POST', body: { plan, cardId: null } });
+      const res = await api('/payment/subscribe', {
+        method: 'POST',
+        body: {
+          plan,
+          cardId: null,
+          subscriptionConsentAccepted: true,
+          cardSaveConsentAccepted: true
+        }
+      });
       if (res.redirectUrl) { paidHandled.current = false; setCheckoutUrl(res.redirectUrl); }
       else if (res.charged || res.success || res.ok) { Alert.alert('✅', res.message || tr("screens_vipscreen_text_14hldm")); await refreshUser(); }
       else Alert.alert('⚠️', tr("screens_vipscreen_text_1t7xd2"));
@@ -125,6 +149,7 @@ export default function VipScreen() {const { t: tr } = useLanguage();
   const topFeatures = uType === 'handyman' ?
   [tr("screens_vipscreen_pro_1tw4uw"), tr("screens_vipscreen_vip_1c4jv1"), tr("screens_vipscreen_top_1ifph8"), tr("screens_vipscreen_30_3zjbp7")] :
   [tr("screens_vipscreen_pro_1tw4uw"), tr("screens_vipscreen_vip_1c4jv1"), tr("screens_vipscreen_vip_cgk0kg"), tr("screens_vipscreen_top_1ifph8")];
+  const canBuyPlan = subConsent && cardSaveConsent && !busy;
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
@@ -162,8 +187,23 @@ export default function VipScreen() {const { t: tr } = useLanguage();
 
       {/* Plans — ✅ FIXED endpoint */}
       <Text style={{ color: C.text, fontWeight: '800', fontSize: 17, marginBottom: 14 }}>{tr("screens_vipscreen_text_nvsktp")}</Text>
-      <PlanCard icon="⚡" label="Pro" price={planPr.pro} features={proFeatures} accent="#3b82f6" onPress={() => buyPlan('pro')} active={planOk && user.plan === 'pro'} />
-      <PlanCard icon="🔝" label="TOP" price={planPr.top} features={topFeatures} accent="#f1c40f" onPress={() => buyPlan('top')} active={planOk && user.plan === 'top'} />
+      <Card style={{ marginBottom: 12 }}>
+        <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 6 }}>{tr("subscription_info_title")}</Text>
+        <Text style={{ color: C.text2, fontSize: 12, lineHeight: 19 }}>{tr("subscription_notice")}</Text>
+        <Text style={{ color: C.text2, fontSize: 12, lineHeight: 19, marginTop: 6 }}>{tr("subscription_cancel_instructions")}</Text>
+        <ConsentToggle
+          checked={subConsent}
+          onPress={() => setSubConsent(v => !v)}
+          text={tr("subscription_consent", { plan: 'Pro/TOP', price: `${planPr.pro}₾ / ${planPr.top}₾` })}
+        />
+        <ConsentToggle
+          checked={cardSaveConsent}
+          onPress={() => setCardSaveConsent(v => !v)}
+          text={tr("subscription_card_consent")}
+        />
+      </Card>
+      <PlanCard icon="⚡" label="Pro" price={planPr.pro} features={proFeatures} accent="#3b82f6" onPress={() => buyPlan('pro')} active={planOk && user.plan === 'pro'} disabled={!canBuyPlan} />
+      <PlanCard icon="🔝" label="TOP" price={planPr.top} features={topFeatures} accent="#f1c40f" onPress={() => buyPlan('top')} active={planOk && user.plan === 'top'} disabled={!canBuyPlan} />
 
       <Card style={{ marginTop: 8 }}>
         <Text style={{ color: C.text2, fontSize: 12, lineHeight: 20 }}>{tr("vip_modal_pay_btn")}

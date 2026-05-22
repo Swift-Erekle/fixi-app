@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, Switch } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, Switch, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
@@ -43,6 +43,7 @@ export default function RegisterScreen({ navigation }) {
   const [services, setServices] = useState([]);
   const [desc, setDesc] = useState('');
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const isWorker = type === 'handyman' || type === 'company';
   const selectedServiceCategories = CATEGORIES.filter((c) => specs.includes(c.name));
@@ -61,6 +62,7 @@ export default function RegisterScreen({ navigation }) {
     if (isWorker && whatsappEnabled && !phone.trim()) {
       return Alert.alert(t('error'), t('reg_err_whatsapp'));
     }
+    if (!termsAccepted) return Alert.alert(t('error'), t('reg_terms_required'));
     setLoading(true);
     try {
       await api('/auth/register', { method: 'POST', body: {
@@ -72,6 +74,8 @@ export default function RegisterScreen({ navigation }) {
         services: isWorker ? services : undefined,
         desc: isWorker ? desc : undefined,
         whatsappEnabled: isWorker ? whatsappEnabled : undefined,
+        termsAccepted: true,
+        privacyAccepted: true,
       }});
       navigation.navigate('Verify', { email: email.trim().toLowerCase() });
     } catch (e) { Alert.alert(t('error'), e.error || t('reg_err_failed')); }
@@ -251,7 +255,22 @@ export default function RegisterScreen({ navigation }) {
           </View>
         )}
 
-        <Btn title={t('reg_btn')} onPress={handleRegister} loading={loading} />
+        <TouchableOpacity onPress={() => setTermsAccepted(v => !v)} activeOpacity={0.8}
+          style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: C.surface, borderRadius: 14, borderWidth: 1, borderColor: termsAccepted ? C.accent + '80' : C.border, padding: 12, marginBottom: 14 }}>
+          <Ionicons name={termsAccepted ? 'checkbox' : 'square-outline'} size={22} color={termsAccepted ? C.accent : C.text2} />
+          <Text style={{ color: C.text2, fontSize: 12, lineHeight: 18, flex: 1 }}>
+            {t('reg_terms_prefix')}{' '}
+            <Text style={{ color: C.accent, fontWeight: '800' }} onPress={() => Linking.openURL('https://myfix.ge/terms.html').catch(() => {})}>
+              {t('footer_terms')}
+            </Text>
+            {' '}{t('reg_terms_and')}{' '}
+            <Text style={{ color: C.accent, fontWeight: '800' }} onPress={() => Linking.openURL('https://myfix.ge/privacy.html').catch(() => {})}>
+              {t('footer_privacy')}
+            </Text>
+          </Text>
+        </TouchableOpacity>
+
+        <Btn title={t('reg_btn')} onPress={handleRegister} loading={loading} style={{ opacity: termsAccepted ? 1 : 0.55 }} />
 
         <TouchableOpacity onPress={() => navigation.navigate('Login')} style={{ alignItems: 'center', marginTop: 20 }}>
           <Text style={{ color: C.text2, fontSize: 14 }}>

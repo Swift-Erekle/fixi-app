@@ -127,6 +127,9 @@ function PlanPickerModal({ visible, onDismiss, onPickPlan }) {
             <Text style={{ color: C.text2, fontSize: 13, textAlign: 'center' }}>{t('plan_desc')}</Text>
           </View>
           <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 8 }}>
+            <View style={{ backgroundColor: C.surface2, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 12, marginBottom: 12 }}>
+              <Text style={{ color: C.text2, fontSize: 12, lineHeight: 18 }}>{t('plan_picker_paid_notice')}</Text>
+            </View>
             {plans.map(p => (
               <TouchableOpacity key={p.key} onPress={() => p.key === 'start' ? onDismiss() : onPickPlan()}
                 activeOpacity={0.85}
