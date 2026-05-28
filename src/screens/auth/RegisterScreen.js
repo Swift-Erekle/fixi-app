@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, Switch, Linking } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
@@ -260,11 +260,11 @@ export default function RegisterScreen({ navigation }) {
           <Ionicons name={termsAccepted ? 'checkbox' : 'square-outline'} size={22} color={termsAccepted ? C.accent : C.text2} />
           <Text style={{ color: C.text2, fontSize: 12, lineHeight: 18, flex: 1 }}>
             {t('reg_terms_prefix')}{' '}
-            <Text style={{ color: C.accent, fontWeight: '800' }} onPress={() => Linking.openURL('https://myfix.ge/terms.html').catch(() => {})}>
+            <Text style={{ color: C.accent, fontWeight: '800' }} onPress={() => navigation.navigate('Legal', { initialTab: 'terms' })}>
               {t('footer_terms')}
             </Text>
             {' '}{t('reg_terms_and')}{' '}
-            <Text style={{ color: C.accent, fontWeight: '800' }} onPress={() => Linking.openURL('https://myfix.ge/privacy.html').catch(() => {})}>
+            <Text style={{ color: C.accent, fontWeight: '800' }} onPress={() => navigation.navigate('Legal', { initialTab: 'privacy' })}>
               {t('footer_privacy')}
             </Text>
           </Text>

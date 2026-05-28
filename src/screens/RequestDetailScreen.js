@@ -101,8 +101,8 @@ export default function RequestDetailScreen({ route, navigation }) {const { t: t
   async function handleShare() {
     try {
       await Share.share({
-        message: `${req.title}\nhttps://myworker-production.up.railway.app/?req=${id}`,
-        url: `https://myworker-production.up.railway.app/?req=${id}`
+        message: `${req.title}\nhttps://www.myfix.ge/?req=${id}`,
+        url: `https://www.myfix.ge/?req=${id}`
       });
     } catch (_) {}
   }

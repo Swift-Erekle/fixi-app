@@ -191,6 +191,7 @@ export default function ProfileScreen({ navigation }) {
         <MenuItem icon="💳" label={t('profile_cards')} onPress={() => navigation.navigate('Cards')} />
         <MenuItem icon="🎧" label={t('profile_support')} onPress={() => navigation.navigate('Support')} />
         <MenuItem icon="🔑" label={t('profile_change_pass')} onPress={() => navigation.navigate('ChangePassword')} />
+        <MenuItem icon="📜" label={t('legal_profile_menu')} onPress={() => navigation.navigate('Legal', { initialTab: 'terms' })} />
       </Section>
 
       {/* Logout */}

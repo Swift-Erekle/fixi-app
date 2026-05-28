@@ -3,9 +3,10 @@ import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 import { translations } from './translations';
 
-const BASE = (
-  Constants.expoConfig?.extra?.apiBase || 'https://myworker-production.up.railway.app/'
-).replace(/\/$/, '') + '/api';
+const API_ROOT = (
+  Constants.expoConfig?.extra?.apiBase || 'https://www.myfix.ge/'
+).replace(/\/+$/, '').replace(/\/api$/, '');
+const BASE = API_ROOT + '/api';
 
 // Debug logging — set to false in production after fixing
 const DEBUG = __DEV__;

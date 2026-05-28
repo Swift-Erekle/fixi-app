@@ -19,10 +19,10 @@ npm install
 `app.json`-ში შეცვალე:
 ```json
 "extra": {
-  "apiBase": "https://myfix.ge/api"
+  "apiBase": "https://www.myfix.ge/"
 }
 ```
-(ლოკალური ტესტისთვის: `"http://YOUR_IP:3000/api"`)
+(ლოკალური ტესტისთვის: `"http://YOUR_IP:3000/"`)
 
 ### 4. გაშვება
 ```bash

@@ -2,7 +2,7 @@
   "expo": {
     "name": "MyFix",
     "slug": "fixi-app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "ge.fixi.app",
-      "buildNumber": "1.0.0"
+      "buildNumber": "1.0.1"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +26,7 @@
         "backgroundColor": "#0f0f13"
       },
       "package": "ge.fixi.app",
-      "versionCode": 1,
+      "versionCode": 2,
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "INTERNET",
@@ -64,7 +64,7 @@
       ]
     ],
     "extra": {
-      "apiBase": "https://myworker-production.up.railway.app/",
+      "apiBase": "https://www.myfix.ge/",
       "eas": {
         "projectId": "4bced91c-cdf4-4714-a6a3-d472a16e86ed"
       }

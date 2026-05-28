@@ -35,6 +35,7 @@ import ProposalsScreen from '../screens/ProposalsScreen';
 import AdminScreen from '../screens/AdminScreen';
 import AdminSupportChatScreen from '../screens/AdminSupportChatScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
+import LegalScreen from '../screens/LegalScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -221,6 +222,7 @@ function AuthStack() {
       <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: true, title: t('title_register') }} />
       <Stack.Screen name="Verify" component={VerifyScreen} options={{ headerShown: true, title: t('title_verify') }} />
       <Stack.Screen name="Forgot" component={ForgotScreen} options={{ headerShown: true, title: t('title_forgot') }} />
+      <Stack.Screen name="Legal" component={LegalScreen} options={{ headerShown: true, title: t('legal_title') }} />
     </Stack.Navigator>
   );
 }
@@ -249,6 +251,7 @@ function MainStack() {
       <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Register" component={RegisterScreen} options={{ title: t('title_register') }} />
       <Stack.Screen name="Verify" component={VerifyScreen} options={{ title: t('title_verify') }} />
+      <Stack.Screen name="Legal" component={LegalScreen} options={{ title: t('legal_title') }} />
     </Stack.Navigator>
   );
 }

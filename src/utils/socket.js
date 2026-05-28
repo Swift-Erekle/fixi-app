@@ -4,8 +4,10 @@ import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 
 // ✅ FIXED: URL derived from app.json extra.apiBase, not hardcoded
-const API_BASE = Constants.expoConfig?.extra?.apiBase || 'https://myworker-production.up.railway.app/api';
-const SOCKET_URL = API_BASE.replace('/api', '');
+const API_ROOT = (Constants.expoConfig?.extra?.apiBase || 'https://www.myfix.ge/')
+  .replace(/\/+$/, '')
+  .replace(/\/api$/, '');
+const SOCKET_URL = API_ROOT;
 
 let socket = null;
 

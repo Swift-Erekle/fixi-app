@@ -6,10 +6,12 @@ import { api } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { Btn } from '../../components/UI';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function LoginScreen({ navigation }) {
   const { login } = useAuth();
-  const { t } = useLanguage();
+  const { t, switchLang, currentLang } = useLanguage();
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -37,6 +39,26 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.bg }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <TouchableOpacity
+        onPress={switchLang}
+        activeOpacity={0.75}
+        style={{
+          position: 'absolute',
+          top: insets.top + 12,
+          right: 18,
+          zIndex: 10,
+          backgroundColor: C.surface,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: C.border,
+          width: 42,
+          height: 42,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Text style={{ fontSize: 20, lineHeight: 24 }}>{currentLang?.flag || '🇬🇪'}</Text>
+      </TouchableOpacity>
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
         <View style={{ alignItems: 'center', marginBottom: 44 }}>
           <Text style={{ fontSize: 40, fontWeight: '900', color: C.text }}>
