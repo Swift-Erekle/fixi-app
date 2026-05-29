@@ -166,7 +166,10 @@ export default function CardScreen() {const { t: tr } = useLanguage();
       <TouchableOpacity onPress={() => setCardConsent(v => !v)} activeOpacity={0.8}
         style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: C.surface2, borderRadius: 14, borderWidth: 1, borderColor: cardConsent ? C.accent + '80' : C.border, padding: 12, marginBottom: 10 }}>
         <Ionicons name={cardConsent ? 'checkbox' : 'square-outline'} size={22} color={cardConsent ? C.accent : C.text2} />
-        <Text style={{ color: C.text2, fontSize: 12, lineHeight: 18, flex: 1 }}>{tr("card_bind_consent")}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: C.text, fontSize: 13, fontWeight: '800', marginBottom: 3 }}>{tr("card_save_consent_title")}</Text>
+          <Text style={{ color: C.text2, fontSize: 12, lineHeight: 18 }}>{tr("card_bind_consent")}</Text>
+        </View>
       </TouchableOpacity>
       <Btn title={tr("screens_cardscreen_text_9i63pa")} onPress={bindNewCard} style={{ marginBottom: 14, opacity: cardConsent ? 1 : 0.55 }} />
 

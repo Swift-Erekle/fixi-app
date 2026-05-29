@@ -61,12 +61,15 @@ function PlanCard({ icon, label, price, features, accent, onPress, active, disab
 
 }
 
-function ConsentToggle({ checked, onPress, text }) {
+function ConsentToggle({ checked, onPress, title, text }) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}
       style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, borderRadius: 12, borderWidth: 1, borderColor: checked ? C.accent + '80' : C.border, backgroundColor: C.surface2, padding: 12, marginTop: 10 }}>
       <Ionicons name={checked ? 'checkbox' : 'square-outline'} size={22} color={checked ? C.accent : C.text2} />
-      <Text style={{ color: C.text2, fontSize: 12, lineHeight: 18, flex: 1 }}>{text}</Text>
+      <View style={{ flex: 1 }}>
+        {!!title && <Text style={{ color: C.text, fontSize: 13, fontWeight: '800', marginBottom: 3 }}>{title}</Text>}
+        <Text style={{ color: C.text2, fontSize: 12, lineHeight: 18 }}>{text}</Text>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -236,11 +239,13 @@ export default function VipScreen() {const { t: tr } = useLanguage();
         <ConsentToggle
           checked={subConsent}
           onPress={() => setSubConsent(v => !v)}
+          title={tr("subscription_consent_title")}
           text={tr("subscription_consent", { plan: 'Pro/TOP', price: `${planPr.pro}₾ / ${planPr.top}₾` })}
         />
         <ConsentToggle
           checked={cardSaveConsent}
           onPress={() => setCardSaveConsent(v => !v)}
+          title={tr("card_save_consent_title")}
           text={tr("subscription_card_consent")}
         />
       </Card>

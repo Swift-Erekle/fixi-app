@@ -1,6 +1,6 @@
 // src/screens/main/ChatListScreen.js
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, TextInput } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C } from '../../utils/theme';
@@ -15,6 +15,7 @@ export default function ChatListScreen({ navigation }) {const { t: tr } = useLan
   const { user } = useAuth();
   const { t } = useLanguage();
   const [chats, setChats] = useState([]);
+  const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const initialLoadDone = React.useRef(false);
 
@@ -147,14 +148,40 @@ export default function ChatListScreen({ navigation }) {const { t: tr } = useLan
     return dt.toLocaleDateString('ka-GE', { day: 'numeric', month: 'short' });
   }
 
+  const searchNeedle = search.trim().toLowerCase();
+  const filteredChats = searchNeedle
+    ? chats.filter((chat) => {
+      const other = getOther(chat) || {};
+      return `${other.name || ''} ${other.surname || ''}`.toLowerCase().includes(searchNeedle);
+    })
+    : chats;
+
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: C.border }}>
         <Text style={{ color: C.text, fontSize: 22, fontWeight: '900' }}>{t('chats_title')}</Text>
         <Text style={{ color: C.text2, fontSize: 13, marginTop: 2 }}>{t('chats_subtitle')}</Text>
+        <View style={{ marginTop: 12, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', minHeight: 46 }}>
+          <Text style={{ color: C.text2, fontSize: 15, marginRight: 8 }}>🔎</Text>
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder={t('chats_search_ph')}
+            placeholderTextColor={C.text2}
+            style={{ flex: 1, color: C.text, fontSize: 14, paddingVertical: 10 }}
+            autoCorrect={false}
+            autoCapitalize="none"
+            returnKeyType="search"
+          />
+          {!!search && (
+            <TouchableOpacity onPress={() => setSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={{ color: C.text2, fontSize: 18, fontWeight: '700' }}>×</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
       <FlatList
-        data={chats}
+        data={filteredChats}
         keyExtractor={(i) => i.id}
         contentContainerStyle={{ padding: 16 }}
         renderItem={({ item }) => {
@@ -193,7 +220,7 @@ export default function ChatListScreen({ navigation }) {const { t: tr } = useLan
 
         }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={C.accent} />}
-        ListEmptyComponent={<Empty icon="💬" title={t('chats_empty_title')} subtitle={t('chats_empty_sub')} />} />
+        ListEmptyComponent={<Empty icon={searchNeedle ? '🔎' : '💬'} title={searchNeedle ? t('chats_search_empty_title') : t('chats_empty_title')} subtitle={searchNeedle ? t('chats_search_empty_sub') : t('chats_empty_sub')} />} />
       
     </View>);
 

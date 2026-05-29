@@ -120,6 +120,23 @@ function notificationBody(n, tr, lang) {
       date: formatNotifDate(params.get('expiresAt'), lang),
     });
   }
+  if (n?.type === 'renewal_notice' && (params.get('chargeAt') || params.get('amountGel'))) {
+    return tr('notif_renewal_notice_body', {
+      plan: planLabel(params.get('plan')),
+      amount: params.get('amountGel') || '—',
+      date: formatNotifDate(params.get('chargeAt') || params.get('renewalFor'), lang),
+    });
+  }
+  if (n?.type === 'renewal_notice') {
+    const match = String(n?.body || '').match(/(TOP|Pro)\s*[—-]\s*([\d.]+)₾.*?(\d{1,2}[./]\d{1,2}[./]\d{4})/i);
+    if (match) {
+      return tr('notif_renewal_notice_body', {
+        plan: planLabel(match[1]),
+        amount: match[2],
+        date: match[3],
+      });
+    }
+  }
   let body = String(n?.body || '');
   if (!body) return '';
   [

@@ -60,6 +60,7 @@ export default function MyOffersScreen({ navigation }) {const { t: tr } = useLan
   const [offers, setOffers] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [editOffer, setEditOffer] = useState(null);
+  const [agreementLoading, setAgreementLoading] = useState(null);
   const statusMap = getStatusMap(tr);
 
   async function load(r = false) {
@@ -67,6 +68,24 @@ export default function MyOffersScreen({ navigation }) {const { t: tr } = useLan
     try {setOffers(await api('/offers/mine'));} catch (e) {console.warn(e);} finally {setRefreshing(false);}
   }
   useFocusEffect(useCallback(() => {load();}, []));
+
+  function agreeOffer(o) {
+    Alert.alert(tr("chat_agree_q"), tr("chat_agree_confirm"), [
+    { text: tr("cancel"), style: 'cancel' },
+    { text: tr("chat_agreed_btn"), onPress: async () => {
+        setAgreementLoading(o.id);
+        try {
+          const data = await api('/offers/' + o.id + '/agree', { method: 'POST' });
+          await load();
+          Alert.alert('✅', data?.bothAgreed ? tr("chat_agree_ok") : tr("chat_sys_worker_agreed"));
+        } catch (e) {
+          Alert.alert(tr("error"), e.error || tr("screens_adminscreen_text_6tavvo"));
+        } finally {
+          setAgreementLoading(null);
+        }
+      } }]
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -79,7 +98,7 @@ export default function MyOffersScreen({ navigation }) {const { t: tr } = useLan
           const st = statusMap[o.status] || statusMap.pending;
           return (
             <TouchableOpacity activeOpacity={0.85}
-            onPress={() => o.chat?.id ? navigation.navigate('Chat', { chatId: o.chat.id, title: o.request?.title || tr("dash_chats") }) : navigation.navigate('RequestDetail', { id: o.requestId })}
+            onPress={() => o.chat?.id && o.contactMethod !== 'whatsapp' ? navigation.navigate('Chat', { chatId: o.chat.id, title: o.request?.title || tr("dash_chats") }) : navigation.navigate('RequestDetail', { id: o.requestId })}
             style={{ backgroundColor: C.surface, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 16, marginBottom: 12 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                 <Text style={{ color: C.text, fontWeight: '800', fontSize: 14, flex: 1, marginRight: 8 }} numberOfLines={2}>{o.request?.title}</Text>
@@ -101,7 +120,23 @@ export default function MyOffersScreen({ navigation }) {const { t: tr } = useLan
                 {o.duration && <Tag label={'⏱ ' + o.duration} />}
               </View>
               {o.comment && <Text style={{ color: C.text2, fontSize: 13, lineHeight: 18 }} numberOfLines={2}>{o.comment}</Text>}
-              {o.status === 'accepted' && o.chat?.id &&
+              {o.status === 'accepted' && o.contactMethod === 'whatsapp' &&
+              <View style={{ marginTop: 10, gap: 8 }}>
+                  {o.recipientAgreed && !o.senderAgreed ?
+                <Btn
+                    title={'✅ ' + tr("chat_agreed_btn")}
+                    onPress={() => agreeOffer(o)}
+                    loading={agreementLoading === o.id}
+                    small
+                    style={{ backgroundColor: C.ok, borderColor: C.ok }}
+                    textStyle={{ color: '#fff' }} /> :
+                <View style={{ backgroundColor: C.warn + '16', borderRadius: 10, padding: 10, borderWidth: 1, borderColor: C.warn + '45', alignItems: 'center' }}>
+                    <Text style={{ color: C.warn, fontWeight: '700', fontSize: 12, textAlign: 'center' }}>{tr("chat_instr_handyman_offer")}</Text>
+                  </View>
+                }
+                </View>
+              }
+              {o.status === 'accepted' && o.contactMethod !== 'whatsapp' && o.chat?.id &&
               <View style={{ marginTop: 10, backgroundColor: '#10b98115', borderRadius: 10, padding: 10, borderWidth: 1, borderColor: '#10b98130', alignItems: 'center' }}>
                   <Text style={{ color: '#10b981', fontWeight: '700', fontSize: 13 }}>{tr("screens_myoffersscreen_text_rbgnol")}</Text>
                 </View>

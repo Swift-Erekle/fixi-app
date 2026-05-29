@@ -53,6 +53,14 @@ function getColor(s) {
   return getCategoryTheme(s).fg;
 }
 
+function buildWhatsAppUrl(phone) {
+  const clean = String(phone || '').replace(/[\s()-]/g, '');
+  if (!clean) return null;
+  const tel = clean.startsWith('+') ? clean : '+' + clean;
+  const digits = tel.replace(/^\+/, '');
+  return digits ? `https://wa.me/${digits}` : null;
+}
+
 export default function RequestDetailScreen({ route, navigation }) {const { t: tr, tCat, tCity } = useLanguage();
   const { id } = route.params;
   const { user } = useAuth();
@@ -67,6 +75,9 @@ export default function RequestDetailScreen({ route, navigation }) {const { t: t
   const [favLoading, setFavLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [statusChanging, setStatusChanging] = useState(false);
+  const [contactChoiceOffer, setContactChoiceOffer] = useState(null);
+  const [contactChoiceLoading, setContactChoiceLoading] = useState(null);
+  const [agreementLoading, setAgreementLoading] = useState(null);
 
   useEffect(() => {load();}, [id]);
 
@@ -160,17 +171,78 @@ export default function RequestDetailScreen({ route, navigation }) {const { t: t
     );
   }
 
-  async function acceptOffer(offerId) {
+  const canUseWhatsApp = (offer) => !!(offer?.handyman?.whatsappEnabled && buildWhatsAppUrl(offer?.handyman?.phone));
+
+  async function confirmAcceptOffer(offer, contactMethod = 'chat') {
+    if (!offer?.id) return;
+    setAccepting(offer.id);
+    setContactChoiceLoading(contactMethod);
+    try {
+      const data = await api('/offers/' + offer.id + '/accept', { method: 'POST', body: { contactMethod } });
+      const selected = data.contactMethod || contactMethod || 'chat';
+      if (selected === 'whatsapp' && data.whatsappUrl) {
+        setContactChoiceOffer(null);
+        await load();
+        Linking.openURL(data.whatsappUrl).catch(() => {});
+        return;
+      }
+      navigation.replace('Chat', { chatId: data.chatId, title: tr("dash_chats") });
+    } catch (e) {
+      Alert.alert(tr("error"), e.error || tr("screens_requestdetailscreen_text_18v1ff"));
+    } finally {
+      setAccepting(null);
+      setContactChoiceLoading(null);
+    }
+  }
+
+  async function markOfferAgreed(offer) {
+    if (!offer?.id) return;
+    Alert.alert(tr("chat_agree_q"), tr("chat_agree_confirm"), [
+    { text: tr("cancel"), style: 'cancel' },
+    { text: tr("chat_agreed_btn"), onPress: async () => {
+        setAgreementLoading(offer.id + ':agree');
+        try {
+          const data = await api('/offers/' + offer.id + '/agree', { method: 'POST' });
+          await load();
+          const waitMsg = user?.id === offer.handymanId ? tr("chat_sys_worker_agreed") : tr("chat_sys_user_agreed");
+          Alert.alert('✅', data?.bothAgreed ? tr("chat_agree_ok") : waitMsg);
+        } catch (e) {
+          Alert.alert(tr("error"), e.error || tr("screens_requestdetailscreen_text_18v1ff"));
+        } finally {
+          setAgreementLoading(null);
+        }
+      } }]
+    );
+  }
+
+  async function markOfferDisagreed(offer) {
+    if (!offer?.id) return;
+    Alert.alert(tr("chat_disagreed_btn"), tr("chat_disagree_confirm"), [
+    { text: tr("cancel"), style: 'cancel' },
+    { text: tr("chat_disagreed_btn"), style: 'destructive', onPress: async () => {
+        setAgreementLoading(offer.id + ':disagree');
+        try {
+          await api('/offers/' + offer.id + '/disagree', { method: 'POST' });
+          await load();
+          Alert.alert('✅', tr("chat_disagree_ok"));
+        } catch (e) {
+          Alert.alert(tr("error"), e.error || tr("screens_requestdetailscreen_text_18v1ff"));
+        } finally {
+          setAgreementLoading(null);
+        }
+      } }]
+    );
+  }
+
+  async function acceptOffer(offer) {
+    if (canUseWhatsApp(offer)) {
+      setContactChoiceOffer(offer);
+      return;
+    }
     Alert.alert(tr("screens_requestdetailscreen_text_12c5v2"), tr("screens_requestdetailscreen_text_rreax0"), [
     { text: tr("cancel"), style: 'cancel' },
     { text: tr("screens_proposalsscreen_text_14i4bu"), onPress: async () => {
-        setAccepting(offerId);
-        try {
-          const data = await api('/offers/' + offerId + '/accept', { method: 'POST' });
-          navigation.replace('Chat', { chatId: data.chatId, title: tr("dash_chats") });
-        } catch (e) {
-          Alert.alert(tr("error"), e.error || tr("screens_requestdetailscreen_text_18v1ff"));
-        } finally {setAccepting(null);}
+        await confirmAcceptOffer(offer, 'chat');
       } }]
     );
   }
@@ -189,7 +261,8 @@ export default function RequestDetailScreen({ route, navigation }) {const { t: t
   const color = getColor(req.category);
   const isOwner = user?.id === req.user?.id;
   const isWorker = user?.type === 'handyman' || user?.type === 'company';
-  const hasActive = req.offers?.some((o) => o.handymanId === user?.id && !['rejected', 'disagreed'].includes(o.status));
+  const activeOffer = req.offers?.find((o) => o.handymanId === user?.id && !['rejected', 'disagreed'].includes(o.status));
+  const hasActive = !!activeOffer;
   const hasRejected = req.offers?.some((o) => o.handymanId === user?.id && ['rejected', 'disagreed'].includes(o.status));
 
   const statusColor = req.status === 'open' ? C.ok : req.status === 'in_progress' || req.status === 'pending' ? C.warn : C.text2;
@@ -356,7 +429,7 @@ export default function RequestDetailScreen({ route, navigation }) {const { t: t
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                     <Btn
                     title={tr("screens_proposalsscreen_text_14i4bu")}
-                    onPress={() => acceptOffer(offer.id)}
+                    onPress={() => acceptOffer(offer)}
                     loading={accepting === offer.id}
                     small
                     style={{ flex: 1 }} />
@@ -377,12 +450,45 @@ export default function RequestDetailScreen({ route, navigation }) {const { t: t
                     <View style={{ backgroundColor: C.ok + '20', borderRadius: 10, padding: 10, alignItems: 'center', marginBottom: offer.chat?.id ? 8 : 0 }}>
                       <Text style={{ color: C.ok, fontWeight: '700' }}>{tr("screens_requestdetailscreen_text_tc06rv")}</Text>
                     </View>
-                    {offer.chat?.id &&
+                    {offer.contactMethod === 'whatsapp' && canUseWhatsApp(offer) ?
+                  <View style={{ gap: 8 }}>
+                      <Btn
+                      title={'💬 WhatsApp'}
+                      onPress={() => Linking.openURL(buildWhatsAppUrl(offer.handyman.phone)).catch(() => {})}
+                      small
+                      style={{ backgroundColor: '#25D366', borderColor: '#25D366' }}
+                      textStyle={{ color: '#fff' }} />
+                      {!offer.recipientAgreed ?
+                    <Btn
+                      title={'✅ ' + tr("chat_agreed_btn")}
+                      onPress={() => markOfferAgreed(offer)}
+                      loading={agreementLoading === offer.id + ':agree'}
+                      small
+                      style={{ backgroundColor: C.ok, borderColor: C.ok }}
+                      textStyle={{ color: '#fff' }} /> :
+                    <View style={{ backgroundColor: C.warn + '16', borderRadius: 10, borderWidth: 1, borderColor: C.warn + '50', padding: 10 }}>
+                          <Text style={{ color: C.warn, fontSize: 12, fontWeight: '700', textAlign: 'center' }}>{tr("chat_sys_user_agreed")}</Text>
+                        </View>
+                    }
+                      <Btn
+                      title={'❌ ' + tr("chat_disagreed_btn")}
+                      onPress={() => markOfferDisagreed(offer)}
+                      loading={agreementLoading === offer.id + ':disagree'}
+                      small
+                      danger />
+                      <Btn
+                      title={tr("prof_view")}
+                      onPress={() => navigation.navigate('HandymanDetail', { id: hm?.id })}
+                      small
+                      outline />
+                    </View> :
+                  offer.chat?.id &&
                   <Btn
                     title={tr("dash_chat_btn")}
                     onPress={() => navigation.navigate('Chat', { chatId: offer.chat.id, title: tr("dash_chats") })}
                     small
-                    outline />
+                    style={{ backgroundColor: '#2563eb', borderColor: '#3b82f6' }}
+                    textStyle={{ color: '#fff' }} />
 
                   }
                   </View>
@@ -468,7 +574,23 @@ export default function RequestDetailScreen({ route, navigation }) {const { t: t
         }
       {isWorker && hasActive &&
         <Card style={{ alignItems: 'center' }}>
+          {activeOffer?.status === 'accepted' && activeOffer?.contactMethod === 'whatsapp' ?
+          <View style={{ width: '100%', gap: 10 }}>
+              <Text style={{ color: C.ok, fontWeight: '700', textAlign: 'center' }}>{tr("screens_requestdetailscreen_text_nmkhgc")}</Text>
+              {activeOffer.recipientAgreed && !activeOffer.senderAgreed ?
+            <Btn
+                title={'✅ ' + tr("chat_agreed_btn")}
+                onPress={() => markOfferAgreed(activeOffer)}
+                loading={agreementLoading === activeOffer.id + ':agree'}
+                style={{ backgroundColor: C.ok, borderColor: C.ok }}
+                textStyle={{ color: '#fff' }} /> :
+            <View style={{ backgroundColor: C.warn + '16', borderRadius: 10, borderWidth: 1, borderColor: C.warn + '50', padding: 10 }}>
+                <Text style={{ color: C.warn, fontSize: 12, fontWeight: '700', textAlign: 'center' }}>{tr("chat_instr_handyman_offer")}</Text>
+              </View>
+            }
+            </View> :
           <Text style={{ color: C.ok, fontWeight: '700' }}>{tr("screens_requestdetailscreen_text_nmkhgc")}</Text>
+          }
         </Card>
         }
       {isWorker && hasRejected && !hasActive &&
@@ -480,6 +602,38 @@ export default function RequestDetailScreen({ route, navigation }) {const { t: t
         </View>
         }
     </ScrollView>
+    <Modal
+      visible={!!contactChoiceOffer}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setContactChoiceOffer(null)}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,.62)', justifyContent: 'center', padding: 20 }}>
+        <View style={{ backgroundColor: C.surface, borderRadius: 18, borderWidth: 1, borderColor: C.border, padding: 18 }}>
+          <Text style={{ color: C.text, fontSize: 18, fontWeight: '900', textAlign: 'center', marginBottom: 6 }}>
+            {tr("screens_requestdetailscreen_text_12c5v2")}
+          </Text>
+          <Text style={{ color: C.text2, fontSize: 13, textAlign: 'center', lineHeight: 19, marginBottom: 16 }}>
+            {contactChoiceOffer?.handyman?.name ? `${contactChoiceOffer.handyman.name} ${contactChoiceOffer.handyman.surname || ''}`.trim() + ' — ' : ''}{tr("offer_contact_choice_sub")}
+          </Text>
+          <Btn
+            title={'💬 ' + tr("offer_contact_chat")}
+            onPress={() => confirmAcceptOffer(contactChoiceOffer, 'chat')}
+            loading={contactChoiceLoading === 'chat'}
+            style={{ backgroundColor: '#2563eb', borderColor: '#3b82f6', marginBottom: 10 }}
+            textStyle={{ color: '#fff' }} />
+          <Btn
+            title={'💬 ' + tr("offer_contact_whatsapp")}
+            onPress={() => confirmAcceptOffer(contactChoiceOffer, 'whatsapp')}
+            loading={contactChoiceLoading === 'whatsapp'}
+            style={{ backgroundColor: '#25D366', borderColor: '#25D366', marginBottom: 10 }}
+            textStyle={{ color: '#fff' }} />
+          <Btn
+            title={tr("cancel")}
+            onPress={() => setContactChoiceOffer(null)}
+            outline />
+        </View>
+      </View>
+    </Modal>
     {showPhotos && req.media &&
       <PhotoViewer
         photos={req.media.filter((m) => m.type !== 'video' && !m.url?.match(/\.(mp4|mov|avi|mkv)(\?|$)/i))}
