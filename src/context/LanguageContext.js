@@ -16,7 +16,10 @@ export function LanguageProvider({ children }) {
 
   useEffect(() => {
     SecureStore.getItemAsync('app_lang').then(saved => {
-      if (saved && translations[saved]) setLang(saved);
+      if (saved && translations[saved]) {
+        setLang(saved);
+        setApiLanguage(saved);
+      }
     }).catch(() => {});
   }, []);
 
@@ -28,6 +31,7 @@ export function LanguageProvider({ children }) {
     const idx = LANGUAGES.findIndex(l => l.code === lang);
     const next = LANGUAGES[(idx + 1) % LANGUAGES.length];
     setLang(next.code);
+    setApiLanguage(next.code);
     SecureStore.setItemAsync('app_lang', next.code).catch(() => {});
   }
 

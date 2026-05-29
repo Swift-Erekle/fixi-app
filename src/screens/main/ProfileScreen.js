@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { Avatar, PlanBadge, Btn, Divider } from '../../components/UI';
 
-function MenuItem({ icon, label, onPress, danger, badge }) {
+function MenuItem({ icon, label, onPress, danger, badge, highlight }) {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -17,6 +17,7 @@ function MenuItem({ icon, label, onPress, danger, badge }) {
       style={{
         flexDirection: 'row', alignItems: 'center', gap: 14,
         paddingVertical: 15, paddingHorizontal: 16,
+        backgroundColor: highlight ? C.surface2 : 'transparent',
         borderBottomWidth: 1, borderBottomColor: C.border,
       }}
     >
@@ -27,7 +28,7 @@ function MenuItem({ icon, label, onPress, danger, badge }) {
           <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>{badge}</Text>
         </View>
       ) : (
-        <Text style={{ color: C.text2, fontSize: 16 }}>›</Text>
+        <Text style={{ color: highlight ? C.accent : C.text2, fontSize: 16 }}>›</Text>
       )}
     </TouchableOpacity>
   );
@@ -166,7 +167,7 @@ export default function ProfileScreen({ navigation }) {
         <Section title={t('profile_section_worker')}>
           <MenuItem icon="✏️" label={t('profile_edit')} onPress={() => navigation.navigate('EditProfile')} />
           <MenuItem icon="📤" label={t('profile_my_offers')} onPress={() => navigation.navigate('MyOffers')} />
-          <MenuItem icon="⭐" label={t('profile_vip_buy')} onPress={() => navigation.navigate('Vip')} />
+          <MenuItem icon="⭐" label={t('profile_vip_buy')} onPress={() => navigation.navigate('Vip')} highlight />
           <MenuItem icon="🔖" label={t('profile_saved_req')} onPress={() => navigation.navigate('Favorites')} />
         </Section>
       )}

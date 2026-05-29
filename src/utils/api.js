@@ -36,6 +36,8 @@ export async function api(path, opts = {}) {
 
   const headers = {};
   if (!isFormData) headers['Content-Type'] = 'application/json';
+  headers['Accept-Language'] = apiLang;
+  headers['X-App-Lang'] = apiLang;
   if (token) headers['Authorization'] = 'Bearer ' + token;
   if (opts.headers) Object.assign(headers, opts.headers);
 

@@ -12,7 +12,7 @@ const LEGAL_URLS = {
 };
 
 export default function LegalScreen({ route }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const insets = useSafeAreaInsets();
   const initialTab = route?.params?.initialTab === 'privacy' ? 'privacy' : 'terms';
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -70,8 +70,8 @@ export default function LegalScreen({ route }) {
           </View>
         ) : (
           <WebView
-            key={`${activeTab}-${reloadKey}`}
-            source={{ uri: LEGAL_URLS[activeTab] }}
+            key={`${activeTab}-${lang}-${reloadKey}`}
+            source={{ uri: `${LEGAL_URLS[activeTab]}?lang=${encodeURIComponent(lang)}` }}
             onLoadStart={() => setLoadError(false)}
             onError={() => setLoadError(true)}
             onHttpError={(e) => {

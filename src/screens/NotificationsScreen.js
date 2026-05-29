@@ -40,9 +40,50 @@ const NOTIF_TITLE_KEYS = {
   renewal_notice: 'notif_renewal_notice',
   renewal_failed: 'notif_renewal_failed',
   charge_failed: 'notif_charge_failed',
+  vip_activated: 'notif_vip_activated',
+  subscription_activated: 'notif_subscription_activated',
 };
 
+function linkParams(link) {
+  const raw = String(link || '');
+  const query = raw.includes('?') ? raw.slice(raw.indexOf('?') + 1) : raw;
+  return new URLSearchParams(query);
+}
+
+function isReceiptLink(link) {
+  return /payment-success(?:\.html)?/i.test(String(link || ''));
+}
+
+function planLabel(plan) {
+  return String(plan || '').toLowerCase() === 'top' ? 'TOP' : 'Pro';
+}
+
+function vipLabel(vipType, fallbackTitle = '') {
+  if (String(vipType || '').toLowerCase() === 'vipp') return 'VIP+';
+  if (String(fallbackTitle || '').includes('VIP+')) return 'VIP+';
+  return 'VIP';
+}
+
+function formatNotifDate(value, lang) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  const locale = lang === 'ka' ? 'ka-GE' : lang === 'ru' ? 'ru-RU' : 'en-US';
+  return d.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 function notificationTitle(n, tr) {
+  const params = linkParams(n?.link);
+  if (n?.type === 'vip_activated') {
+    return tr('notif_vip_activated_title', {
+      vip: vipLabel(params.get('vipType'), n?.title),
+    });
+  }
+  if (n?.type === 'subscription_activated') {
+    return tr('notif_subscription_activated_title', {
+      plan: planLabel(params.get('plan')),
+    });
+  }
   const raw = String(n?.title || '');
   if (raw.includes('შევთანხმდით?')) return tr('notif_agree_await');
   if (raw.includes('ვერ შევთანხმდით')) return tr('notif_disagreed');
@@ -64,7 +105,21 @@ function replaceAllText(value, search, replacement) {
   return value.split(search).join(replacement);
 }
 
-function notificationBody(n, tr) {
+function notificationBody(n, tr, lang) {
+  const params = linkParams(n?.link);
+  if (n?.type === 'vip_activated' && (params.get('days') || params.get('expiresAt'))) {
+    return tr('notif_vip_activated_body', {
+      vip: vipLabel(params.get('vipType'), n?.title),
+      days: params.get('days') || '—',
+      date: formatNotifDate(params.get('expiresAt'), lang),
+    });
+  }
+  if (n?.type === 'subscription_activated' && (params.get('plan') || params.get('expiresAt'))) {
+    return tr('notif_subscription_activated_body', {
+      plan: planLabel(params.get('plan')),
+      date: formatNotifDate(params.get('expiresAt'), lang),
+    });
+  }
   let body = String(n?.body || '');
   if (!body) return '';
   [
@@ -137,20 +192,27 @@ export default function NotificationsScreen({ navigation }) {const { t: tr, lang
       if (data.handymanId) return navigation.navigate('HandymanDetail', { id: data.handymanId });
       if (data.screen === 'Chats') return navigation.navigate('Tabs', { screen: 'Chats' });
       if (data.screen === 'Cards' || data.type === 'renewal_failed' || data.type === 'charge_failed') return navigation.navigate('Cards');
+      if (data.screen === 'PaymentReceipt' || isReceiptLink(data.url || data.link)) {
+        return navigation.navigate('PaymentReceipt', { url: data.url || data.link });
+      }
+      if (data.screen === 'Vip' || data.type === 'vip_activated') return navigation.navigate('Vip');
       if (data.type === 'support') return navigation.navigate('Support');
     }
 
     // Fall back to link string
     if (n.link) {
+      if (isReceiptLink(n.link)) return navigation.navigate('PaymentReceipt', { url: n.link });
       // matches: ?chat=x, &chatId=x, ?req=x, ?requestId=x, ?user=x, ?handymanId=x
       const chatM = n.link.match(/[?&](?:chat(?:Id)?)=([^&]+)/);
       const reqM = n.link.match(/[?&](?:req(?:uest(?:Id)?)?)=([^&]+)/);
       const userM = n.link.match(/[?&](?:user(?:Id)?|handyman(?:Id)?)=([^&]+)/);
       const cardM = n.link.match(/[?&]card=/);
+      const vipM = /[?&](?:vip=1|nav=vip-info)(?:&|$)/.test(n.link);
       if (chatM) return navigation.navigate('Chat', { chatId: chatM[1], title: tr("dash_chats") });
       if (reqM) return navigation.navigate('RequestDetail', { id: reqM[1] });
       if (userM) return navigation.navigate('HandymanDetail', { id: userM[1] });
       if (cardM) return navigation.navigate('Cards');
+      if (vipM) return navigation.navigate('Vip');
       // path-style: /chat/xxx  /request/xxx
       const pathM = n.link.match(/\/(chat|request|handyman|req)\/([a-z0-9-]+)/i);
       if (pathM) {
@@ -178,7 +240,7 @@ export default function NotificationsScreen({ navigation }) {const { t: tr, lang
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => {setRefreshing(true);load();}} tintColor={C.accent} />}
         renderItem={({ item: n }) => {
           const title = notificationTitle(n, tr);
-          const body = notificationBody(n, tr);
+          const body = notificationBody(n, tr, lang);
           return (
         <TouchableOpacity onPress={() => handleTap(n)} activeOpacity={0.85}
         style={{

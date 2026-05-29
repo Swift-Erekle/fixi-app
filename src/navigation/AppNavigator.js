@@ -36,6 +36,7 @@ import AdminScreen from '../screens/AdminScreen';
 import AdminSupportChatScreen from '../screens/AdminSupportChatScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import LegalScreen from '../screens/LegalScreen';
+import PaymentReceiptScreen from '../screens/PaymentReceiptScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -97,6 +98,33 @@ function tabScreenOptions({ route }, t) {
 }
 
 const PLAN_PRICES = { handyman: { pro: '9.99', top: '24.99' }, company: { pro: '29.99', top: '59.99' } };
+
+function HeaderLangButton() {
+  const { switchLang, currentLang } = useLanguage();
+  return (
+    <TouchableOpacity
+      onPress={switchLang}
+      activeOpacity={0.75}
+      style={{
+        marginRight: 12,
+        width: 38,
+        height: 36,
+        borderRadius: 11,
+        borderWidth: 1,
+        borderColor: C.border,
+        backgroundColor: C.surface2,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Text style={{ fontSize: 18, lineHeight: 22 }}>{currentLang?.flag || '🇬🇪'}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function langHeaderOptions(title) {
+  return { headerShown: true, title, headerRight: () => <HeaderLangButton /> };
+}
 
 function PlanPickerModal({ visible, onDismiss, onPickPlan }) {
   const { user } = useAuth();
@@ -219,10 +247,10 @@ function AuthStack() {
   return (
     <Stack.Navigator screenOptions={{ ...SCREEN_OPT, headerShown: false }}>
       <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: true, title: t('title_register') }} />
-      <Stack.Screen name="Verify" component={VerifyScreen} options={{ headerShown: true, title: t('title_verify') }} />
-      <Stack.Screen name="Forgot" component={ForgotScreen} options={{ headerShown: true, title: t('title_forgot') }} />
-      <Stack.Screen name="Legal" component={LegalScreen} options={{ headerShown: true, title: t('legal_title') }} />
+      <Stack.Screen name="Register" component={RegisterScreen} options={langHeaderOptions(t('title_register'))} />
+      <Stack.Screen name="Verify" component={VerifyScreen} options={langHeaderOptions(t('title_verify'))} />
+      <Stack.Screen name="Forgot" component={ForgotScreen} options={langHeaderOptions(t('title_forgot'))} />
+      <Stack.Screen name="Legal" component={LegalScreen} options={langHeaderOptions(t('legal_title'))} />
     </Stack.Navigator>
   );
 }
@@ -248,10 +276,11 @@ function MainStack() {
       <Stack.Screen name="Support" component={SupportScreen} options={{ title: t('title_support') }} />
       <Stack.Screen name="AdminSupportChat" component={AdminSupportChatScreen} options={{ title: t('title_support') }} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: t('title_notifications') }} />
+      <Stack.Screen name="PaymentReceipt" component={PaymentReceiptScreen} options={{ title: t('payment_receipt_title') }} />
       <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Register" component={RegisterScreen} options={{ title: t('title_register') }} />
-      <Stack.Screen name="Verify" component={VerifyScreen} options={{ title: t('title_verify') }} />
-      <Stack.Screen name="Legal" component={LegalScreen} options={{ title: t('legal_title') }} />
+      <Stack.Screen name="Register" component={RegisterScreen} options={langHeaderOptions(t('title_register'))} />
+      <Stack.Screen name="Verify" component={VerifyScreen} options={langHeaderOptions(t('title_verify'))} />
+      <Stack.Screen name="Legal" component={LegalScreen} options={langHeaderOptions(t('legal_title'))} />
     </Stack.Navigator>
   );
 }

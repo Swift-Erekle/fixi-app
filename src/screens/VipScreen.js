@@ -71,6 +71,13 @@ function ConsentToggle({ checked, onPress, text }) {
   );
 }
 
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+function queryParam(url, name) {
+  const m = String(url || '').match(new RegExp(`[?&]${name}=([^&]+)`));
+  return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : null;
+}
+
 export default function VipScreen() {const { t: tr } = useLanguage();
   const nav = useNavigation();
   const { user, refreshUser } = useAuth();
@@ -79,6 +86,7 @@ export default function VipScreen() {const { t: tr } = useLanguage();
   const [subConsent, setSubConsent] = useState(false);
   const [cardSaveConsent, setCardSaveConsent] = useState(false);
   const paidHandled = useRef(false); // guards onNavChange from firing success twice
+  const pendingPayment = useRef(null);
 
   if (!user) return (
     <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}>
@@ -98,7 +106,11 @@ export default function VipScreen() {const { t: tr } = useLanguage();
     setBusy(true);
     try {
       const res = await api('/payment/create-order', { method: 'POST', body: { vipType, days } });
-      if (res.redirectUrl) { paidHandled.current = false; setCheckoutUrl(res.redirectUrl); }
+      if (res.redirectUrl) {
+        paidHandled.current = false;
+        pendingPayment.current = { orderId: res.orderId, type: 'vip' };
+        setCheckoutUrl(res.redirectUrl);
+      }
       else Alert.alert('⚠️', tr("screens_vipscreen_text_1t7xd2"));
     } catch (e) {Alert.alert(tr("screens_cardscreen_text_1pf8t0"), e?.error || tr("screens_adminscreen_text_1vf9mb"));} finally
     {setBusy(false);}
@@ -121,24 +133,54 @@ export default function VipScreen() {const { t: tr } = useLanguage();
           cardSaveConsentAccepted: true
         }
       });
-      if (res.redirectUrl) { paidHandled.current = false; setCheckoutUrl(res.redirectUrl); }
+      if (res.redirectUrl) {
+        paidHandled.current = false;
+        pendingPayment.current = { orderId: res.orderId, type: 'sub' };
+        setCheckoutUrl(res.redirectUrl);
+      }
       else if (res.charged || res.success || res.ok) { Alert.alert('✅', res.message || tr("screens_vipscreen_text_14hldm")); await refreshUser(); }
       else Alert.alert('⚠️', tr("screens_vipscreen_text_1t7xd2"));
     } catch (e) {Alert.alert(tr("screens_cardscreen_text_1pf8t0"), e?.error || tr("screens_adminscreen_text_1vf9mb"));} finally
     {setBusy(false);}
   }
 
-  function onNavChange(navState) {
+  async function verifyPendingPayment(payment) {
+    if (!payment?.orderId) {
+      await refreshUser();
+      return false;
+    }
+    const type = payment.type || 'vip';
+    for (let i = 0; i < 6; i++) {
+      try {
+        const data = await api(`/payment/verify?orderId=${encodeURIComponent(payment.orderId)}&type=${encodeURIComponent(type)}`, { timeout: 15000 });
+        await refreshUser();
+        if (data?.completed || data?.failed) return !!data.completed;
+      } catch (_) {}
+      await wait(i < 2 ? 900 : 1500);
+    }
+    await refreshUser();
+    return false;
+  }
+
+  async function onNavChange(navState) {
     const u = String(navState.url || '');
     if (u.includes('/payment-success')) {
       if (paidHandled.current) return; // fire success only once
       paidHandled.current = true;
+      const payment = pendingPayment.current || {
+        orderId: queryParam(u, 'orderId'),
+        type: queryParam(u, 'type') || 'vip',
+      };
+      const completed = await verifyPendingPayment(payment);
+      pendingPayment.current = null;
       setCheckoutUrl(null);
-      Alert.alert('🎉', tr("screens_vipscreen_text_2xsznl"));
-      // Poll a few times so the activated plan/VIP shows up as soon as Flitt's callback lands
-      let n = 0;
-      const iv = setInterval(() => { refreshUser(); if (++n >= 4) clearInterval(iv); }, 1500);
+      if (completed) {
+        Alert.alert('🎉', tr("screens_vipscreen_text_2xsznl"));
+      } else {
+        Alert.alert('⏳', 'გადახდა მიღებულია. აქტივაცია მუშავდება და მალე გამოჩნდება ანგარიშზე.');
+      }
     } else if (u.includes('/payment-fail') || u.includes('/cancel')) {
+      pendingPayment.current = null;
       setCheckoutUrl(null);
     }
   }

@@ -1,5 +1,5 @@
 import { useLanguage } from "../context/LanguageContext"; // src/screens/ARIAScreen.js
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, TextInput, FlatList, TouchableOpacity,
   KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView } from
@@ -63,12 +63,13 @@ function Message({ msg }) {
 
 }
 
-export default function ARIAScreen({ navigation }) {const { t: tr } = useLanguage();
+export default function ARIAScreen({ navigation }) {const { t: tr, lang } = useLanguage();
   const quickReplies = getQuickReplies(tr);
+  const initialAriaText = tr("screens_ariascreen_aria_myfix_ge_ai_17k390");
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [messages, setMessages] = useState([
-  { id: '0', role: 'model', time: Date.now(), static: true, text: tr("screens_ariascreen_aria_myfix_ge_ai_17k390") }]
+  { id: '0', role: 'model', time: Date.now(), static: true, text: initialAriaText }]
   );
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -76,6 +77,15 @@ export default function ARIAScreen({ navigation }) {const { t: tr } = useLanguag
   const [showQuick, setShowQuick] = useState(true);
   const listRef = useRef(null);
   const scrollDown = useCallback(() => {setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);}, []);
+
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0]?.id === '0' && prev[0]?.static) {
+        return [{ ...prev[0], text: initialAriaText }];
+      }
+      return prev;
+    });
+  }, [initialAriaText, lang]);
 
   function addMsg(role, text, isStatic = false) {
     const msg = { id: Date.now().toString() + Math.random(), role, time: Date.now(), text, static: isStatic };

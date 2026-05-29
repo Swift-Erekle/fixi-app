@@ -9,6 +9,13 @@ import { useAuth } from '../context/AuthContext';
 import { C } from '../utils/theme';
 import { Btn } from '../components/UI';
 
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+function queryParam(url, name) {
+  const m = String(url || '').match(new RegExp(`[?&]${name}=([^&]+)`));
+  return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : null;
+}
+
 export default function CardScreen() {const { t: tr } = useLanguage();
   const { user, updateUser } = useAuth();
   const [cards, setCards] = useState([]);
@@ -19,6 +26,7 @@ export default function CardScreen() {const { t: tr } = useLanguage();
   const [arLoading, setArLoading] = useState(false);
   const [cardConsent, setCardConsent] = useState(false);
   const bindHandled = useRef(false); // guards onNavChange from firing success twice
+  const pendingBindOrderId = useRef(null);
 
   const load = useCallback(async () => {
     try {const res = await api('/payment/cards');setCards(Array.isArray(res) ? res : res.cards || []);}
@@ -35,22 +43,47 @@ export default function CardScreen() {const { t: tr } = useLanguage();
     }
     try {
       const res = await api('/payment/cards/bind', { method: 'POST', body: { cardSaveConsentAccepted: true } });
-      if (res.redirectUrl) { bindHandled.current = false; setBindUrl(res.redirectUrl); }
+      if (res.redirectUrl) {
+        bindHandled.current = false;
+        pendingBindOrderId.current = res.orderId;
+        setBindUrl(res.redirectUrl);
+      }
     } catch (e) {Alert.alert(tr("screens_cardscreen_text_1pf8t0"), e?.error || tr("screens_cardscreen_text_jql6y8"));}
   }
 
-  function onNavChange(navState) {
+  async function verifyBind(orderId) {
+    if (!orderId) {
+      await load();
+      return false;
+    }
+    for (let i = 0; i < 6; i++) {
+      try {
+        const data = await api(`/payment/verify?orderId=${encodeURIComponent(orderId)}&type=bind`, { timeout: 15000 });
+        await load();
+        if (data?.completed || (Array.isArray(data?.cards) && data.cards.length > 0)) return true;
+      } catch (_) {}
+      await wait(i < 2 ? 900 : 1500);
+    }
+    await load();
+    return false;
+  }
+
+  async function onNavChange(navState) {
     const u = String(navState.url || '');
     if (u.includes('/payment-success')) {
       if (bindHandled.current) return; // fire success only once
       bindHandled.current = true;
+      const orderId = pendingBindOrderId.current || queryParam(u, 'orderId');
+      const completed = await verifyBind(orderId);
+      pendingBindOrderId.current = null;
       setBindUrl(null);
       setCardConsent(false);
-      Alert.alert(tr("screens_cardscreen_text_1vfd3s"), tr("screens_cardscreen_0_10_w3lomn"));
-      // Poll a few times so the saved card shows up as soon as Flitt's callback lands
-      let n = 0;
-      const iv = setInterval(() => { load(); if (++n >= 4) clearInterval(iv); }, 1500);
-    } else if (u.includes('/payment-fail') || u.includes('/cancel')) {setBindUrl(null);}
+      if (completed) {
+        Alert.alert(tr("screens_cardscreen_text_1vfd3s"), tr("screens_cardscreen_0_10_w3lomn"));
+      } else {
+        Alert.alert('⏳', 'გადახდა მიღებულია. ბარათის მიბმა მუშავდება და მალე გამოჩნდება.');
+      }
+    } else if (u.includes('/payment-fail') || u.includes('/cancel')) {pendingBindOrderId.current = null; setBindUrl(null);}
   }
 
   async function setDefault(id) {

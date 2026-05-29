@@ -20,11 +20,18 @@ function navigate(name, params) {
   navigationRef.current?.navigate(name, params);
 }
 
+function isReceiptLink(link) {
+  return /payment-success(?:\.html)?/i.test(String(link || ''));
+}
+
 function handleNotificationResponse(response) {
   const data = response?.notification?.request?.content?.data;
   if (!data) return;
+  const receiptUrl = data.url || data.link;
   // Route based on notification type
-  if (data.type === 'review_reminder' && data.handymanId) {
+  if (data.screen === 'PaymentReceipt' || isReceiptLink(receiptUrl)) {
+    navigate('PaymentReceipt', { url: receiptUrl });
+  } else if (data.type === 'review_reminder' && data.handymanId) {
     navigate('HandymanDetail', { id: data.handymanId, focusReview: true });
   } else if (data.chatId) {
     navigate('Chat', { chatId: data.chatId, title: data.title });
