@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/context/AuthContext';
 import { LanguageProvider } from './src/context/LanguageContext';
 import AppNavigator from './src/navigation/AppNavigator';
+import AppUpdateGate from './src/components/AppUpdateGate';
 import { addNotificationListeners, getInitialNotification } from './src/utils/notifications';
 import Constants from 'expo-constants';
 console.log('[CONFIG] apiBase:', Constants.expoConfig?.extra?.apiBase);
@@ -72,6 +73,7 @@ export default function App() {
         <LanguageProvider>
           <AuthProvider>
             <StatusBar style="light" backgroundColor="#0f0f13" />
+            <AppUpdateGate />
             <AppNavigator navigationRef={navigationRef} />
           </AuthProvider>
         </LanguageProvider>

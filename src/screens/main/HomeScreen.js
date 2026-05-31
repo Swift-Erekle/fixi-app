@@ -122,13 +122,18 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
 
 function CompanyCard({ user, onPress }) {
   const { t } = useLanguage();
-  const avg = user.reviewsReceived?.length
-    ? (user.reviewsReceived.reduce((s, r) => s + r.stars, 0) / user.reviewsReceived.length).toFixed(1)
-    : null;
+  const hasSpecialty = !!user.specialties?.length;
+  const hasCity = !!user.city;
+  const avgValue = user.reviewsReceived?.length
+    ? user.reviewsReceived.reduce((s, r) => s + r.stars, 0) / user.reviewsReceived.length
+    : 0;
+  const showRating = avgValue > 4;
+  const jobsCount = Number(user.jobs || 0);
+  const showProjects = jobsCount > 10;
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={{
       width: 280, backgroundColor: C.surface, borderRadius: 18,
-      borderWidth: 1, borderColor: '#9b59b655', padding: 16, marginRight: 12,
+      borderWidth: 1, borderColor: '#9b59b655', padding: 16, marginRight: 12, minHeight: 154,
     }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 }}>
         <Avatar user={user} size={52} />
@@ -139,14 +144,24 @@ function CompanyCard({ user, onPress }) {
               <Text style={{ color: '#9b59b6', fontSize: 10, fontWeight: '800' }}>💜 VIP+</Text>
             </View>
           </View>
-          {user.specialties?.length ? <Text style={{ color: '#9b59b6', fontSize: 12, marginTop: 2 }} numberOfLines={1}>🔧 {user.specialties.slice(0, 2).join(' · ')}</Text> : null}
-          {user.city ? <Text style={{ color: C.text2, fontSize: 12, marginTop: 2 }}>📍 {user.city}</Text> : null}
+          <Text style={{ color: '#9b59b6', fontSize: 12, marginTop: 2, opacity: hasSpecialty ? 1 : 0 }} numberOfLines={1}>
+            🔧 {hasSpecialty ? user.specialties.slice(0, 2).join(' · ') : 'placeholder'}
+          </Text>
+          <Text style={{ color: C.text2, fontSize: 12, marginTop: 2, opacity: hasCity ? 1 : 0 }} numberOfLines={1}>
+            📍 {hasCity ? user.city : 'placeholder'}
+          </Text>
         </View>
       </View>
-      {user.verified && <Text style={{ color: '#10b981', fontSize: 12, fontWeight: '600', marginBottom: 6 }}>{t('home_verified')}</Text>}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-        {avg ? <Text style={{ color: '#f1c40f', fontWeight: '700', fontSize: 13 }}>★ {avg} ({user.reviewsReceived.length})</Text> : null}
-        <Text style={{ color: C.text2, fontSize: 12 }}>💼 {user.jobs || 0} {t('home_projects')}</Text>
+      <Text style={{ color: '#10b981', fontSize: 12, fontWeight: '600', marginBottom: 6, opacity: user.verified ? 1 : 0 }} numberOfLines={1}>
+        {t('home_verified')}
+      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 18 }}>
+        <Text style={{ color: '#f1c40f', fontWeight: '700', fontSize: 13, opacity: showRating ? 1 : 0 }}>
+          ★ {showRating ? avgValue.toFixed(1) : '0.0'} ({showRating ? user.reviewsReceived.length : 0})
+        </Text>
+        <Text style={{ color: C.text2, fontSize: 12, opacity: showProjects ? 1 : 0 }}>
+          💼 {showProjects ? jobsCount : '00'} {t('home_projects')}
+        </Text>
       </View>
     </TouchableOpacity>
   );
