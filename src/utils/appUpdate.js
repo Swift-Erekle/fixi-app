@@ -8,7 +8,7 @@ function appConfig() {
 }
 
 export function currentAppVersion() {
-  return appConfig().version || '0.0.0';
+  return Constants.nativeAppVersion || appConfig().version || '0.0.0';
 }
 
 function repoName() {
