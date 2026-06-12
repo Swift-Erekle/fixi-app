@@ -37,6 +37,7 @@ export default function RegisterScreen({ navigation }) {
   const [surname, setSurname] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [verificationChannel, setVerificationChannel] = useState('phone');
   const [password, setPass] = useState('');
   const [pass2, setPass2] = useState('');
   const [specs, setSpecs] = useState([]);
@@ -55,29 +56,35 @@ export default function RegisterScreen({ navigation }) {
   ];
 
   async function handleRegister() {
-    if (!name.trim() || !email.trim() || !password) return Alert.alert(t('error'), t('reg_err_required'));
+    if (!name.trim() || !phone.trim() || !password) return Alert.alert(t('error'), t('reg_err_required'));
+    if (type === 'user' && !email.trim()) return Alert.alert(t('error'), t('reg_user_email_required_msg'));
     if (password.length < 8) return Alert.alert(t('error'), t('reg_err_short_pass'));
     if (password !== pass2) return Alert.alert(t('error'), t('reg_err_pass_match'));
     if (isWorker && specs.length === 0) return Alert.alert(t('error'), t('reg_err_specialty'));
-    if (isWorker && whatsappEnabled && !phone.trim()) {
-      return Alert.alert(t('error'), t('reg_err_whatsapp'));
-    }
     if (!termsAccepted) return Alert.alert(t('error'), t('reg_terms_required'));
     setLoading(true);
     try {
-      await api('/auth/register', { method: 'POST', body: {
+      const data = await api('/auth/register', { method: 'POST', body: {
         name: name.trim(), surname: surname.trim(),
-        email: email.trim().toLowerCase(), phone: phone.trim(),
+        email: email.trim() ? email.trim().toLowerCase() : undefined,
+        phone: phone.trim(),
         password, type,
         specialty: isWorker ? specs[0] : undefined,
         specialties: isWorker ? specs : undefined,
         services: isWorker ? services : undefined,
         desc: isWorker ? desc : undefined,
         whatsappEnabled: isWorker ? whatsappEnabled : undefined,
+        verificationChannel: email.trim() ? verificationChannel : 'phone',
         termsAccepted: true,
         privacyAccepted: true,
       }});
-      navigation.navigate('Verify', { email: email.trim().toLowerCase() });
+      navigation.navigate('Verify', {
+        userId: data.userId,
+        email: data.email,
+        phone: data.phone,
+        verificationChannel: data.verificationChannel,
+        mode: 'register',
+      });
     } catch (e) { Alert.alert(t('error'), e.error || t('reg_err_failed')); }
     finally { setLoading(false); }
   }
@@ -146,15 +153,41 @@ export default function RegisterScreen({ navigation }) {
         </Card>
 
         <Card>
-          <Label text={type === 'company' ? t('reg_company_name') : t('reg_name')} />
+          <Label text={type === 'company' ? t('reg_company_name_required') : t('reg_name_required')} />
           <SInput value={name} onChange={setName} placeholder={type === 'company' ? t('reg_company_ph') : t('reg_name_ph')} />
           {type !== 'company' && (
-            <><Label text={t('reg_surname')} /><SInput value={surname} onChange={setSurname} placeholder={t('reg_surname_ph')} /></>
+            <><Label text={t('reg_surname_required')} /><SInput value={surname} onChange={setSurname} placeholder={t('reg_surname_ph')} /></>
           )}
-          <Label text={t('reg_email')} /><SInput value={email} onChange={setEmail} placeholder="you@email.com" keyboardType="email-address" />
-          <Label text={t('reg_phone')} /><SInput value={phone} onChange={setPhone} placeholder="+995 5XX XXX XXX" keyboardType="phone-pad" />
-          <Label text={t('reg_password')} /><SInput value={password} onChange={setPass} placeholder={t('reg_pass_ph')} secure />
-          <Label text={t('reg_repeat')} /><SInput value={pass2} onChange={setPass2} placeholder="••••••••" secure />
+          <Label text={type === 'user' ? t('reg_email_required') : t('reg_email_optional')} /><SInput value={email} onChange={(v) => { setEmail(v); if (!v.trim()) setVerificationChannel('phone'); }} placeholder="you@email.com" keyboardType="email-address" />
+          <Label text={t('reg_phone_required')} /><SInput value={phone} onChange={setPhone} placeholder="+995 5XX XXX XXX" keyboardType="phone-pad" />
+          {!!email.trim() && (
+            <View style={{ marginBottom: 14 }}>
+              <Label text={t('reg_verification_channel')} />
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                {[
+                  { key: 'phone', label: 'SMS' },
+                  { key: 'email', label: 'Email' },
+                ].map((item) => (
+                  <TouchableOpacity
+                    key={item.key}
+                    onPress={() => setVerificationChannel(item.key)}
+                    style={{
+                      flex: 1,
+                      padding: 12,
+                      borderRadius: 12,
+                      borderWidth: 1.5,
+                      borderColor: verificationChannel === item.key ? C.accent : C.border,
+                      backgroundColor: verificationChannel === item.key ? C.accent + '18' : C.surface2,
+                      alignItems: 'center',
+                    }}>
+                    <Text style={{ color: verificationChannel === item.key ? C.accent : C.text, fontWeight: '800' }}>{item.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+          <Label text={t('reg_password_required')} /><SInput value={password} onChange={setPass} placeholder={t('reg_pass_ph')} secure />
+          <Label text={t('reg_password_repeat_required')} /><SInput value={pass2} onChange={setPass2} placeholder="••••••••" secure />
 
           {isWorker && (
             <View style={{
@@ -182,7 +215,7 @@ export default function RegisterScreen({ navigation }) {
 
         {isWorker && (
           <Card>
-            <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('reg_specialty')}</Text>
+            <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('reg_spec_label_required')}</Text>
             {specs.length > 0 && (
               <Text style={{ color: C.accent, fontSize: 12, marginBottom: 10 }}>{t('reg_selected')} {specs.map(s => tCat(s)).join(', ')}</Text>
             )}

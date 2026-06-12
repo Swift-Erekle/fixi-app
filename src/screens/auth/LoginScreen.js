@@ -12,21 +12,27 @@ export default function LoginScreen({ navigation }) {
   const { login } = useAuth();
   const { t, switchLang, currentLang } = useLanguage();
   const insets = useSafeAreaInsets();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
-    if (!email.trim() || !password) return Alert.alert(t('error'), t('login_err_fill'));
+    if (!identifier.trim() || !password) return Alert.alert(t('error'), t('login_err_fill'));
     setLoading(true);
     try {
-      const data = await api('/auth/login', { method: 'POST', body: { email: email.trim().toLowerCase(), password } });
+      const data = await api('/auth/login', { method: 'POST', body: { identifier: identifier.trim(), password } });
       await login(data.token, data.user);
       navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
     } catch (e) {
-      if (e.emailNotVerified) {
-        navigation.navigate('Verify', { email: e.email || email.trim().toLowerCase() });
+      if (e.verificationRequired || e.emailNotVerified || e.phoneNotVerified) {
+        navigation.navigate('Verify', {
+          userId: e.userId,
+          email: e.email,
+          phone: e.phone,
+          verificationChannel: e.verificationChannel || (e.phoneNotVerified ? 'phone' : 'email'),
+          mode: 'login',
+        });
         Alert.alert(t('login_verify_title'), t('login_verify_msg'));
       } else {
         const msg = (typeof e === 'object' && e !== null)
@@ -67,9 +73,9 @@ export default function LoginScreen({ navigation }) {
           <Text style={{ color: C.text2, marginTop: 8, fontSize: 14 }}>{t('login_subtitle')}</Text>
         </View>
         <View style={{ backgroundColor: C.surface, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: C.border }}>
-          <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('login_email')}</Text>
+          <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('login_identifier')}</Text>
           <TextInput style={{ backgroundColor: C.surface2, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 14, color: C.text, fontSize: 15, marginBottom: 16 }}
-            placeholder="you@email.com" placeholderTextColor={C.text2} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+            placeholder={t('login_identifier_ph')} placeholderTextColor={C.text2} value={identifier} onChangeText={setIdentifier} keyboardType="default" autoCapitalize="none" />
           <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('login_password')}</Text>
           <View style={{ position: 'relative', marginBottom: 8 }}>
             <TextInput style={{ backgroundColor: C.surface2, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 14, paddingRight: 50, color: C.text, fontSize: 15 }}

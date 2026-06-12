@@ -40,6 +40,7 @@
       ]
     },
     "plugins": [
+      "./plugins/withReactNativeFirebase",
       "expo-secure-store",
       [
         "expo-av",

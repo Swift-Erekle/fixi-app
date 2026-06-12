@@ -104,7 +104,7 @@ function QuickRegModal({ visible, onClose, onSuccess }) {const { t: tr, tCat, tC
   async function handleSubmit() {
     if (!name.trim()) return Alert.alert(tr("error"), tr("screens_adminscreen_text_vlrihw"));
     if (!isCompany && !surname.trim()) return Alert.alert(tr("error"), tr("screens_adminscreen_text_vxolow"));
-    if (!email.trim()) return Alert.alert(tr("error"), tr("screens_adminscreen_text_1cnt50"));
+    if (!phone.trim()) return Alert.alert(tr("error"), tr("screens_adminscreen_whatsapp_m0vav8"));
     if (!pass || pass.length < 8) return Alert.alert(tr("error"), tr("reg_err_short_pass"));
     if (specs.length === 0) return Alert.alert(tr("error"), tr("screens_adminscreen_text_50kd3h"));
     if (whatsapp && !phone.trim()) return Alert.alert(tr("error"), tr("screens_adminscreen_whatsapp_m0vav8"));
@@ -115,14 +115,15 @@ function QuickRegModal({ visible, onClose, onSuccess }) {const { t: tr, tCat, tC
         method: 'POST',
         body: {
           name: name.trim(), surname: isCompany ? '' : surname.trim(),
-          email: email.trim().toLowerCase(), phone: phone.trim() || undefined,
+          email: email.trim() ? email.trim().toLowerCase() : undefined,
+          phone: phone.trim(),
           password: pass, type,
           specialty: specs[0], specialties: specs,
           city: city || undefined, desc: desc.trim() || undefined,
           whatsappEnabled: whatsapp
         }
       });
-      Alert.alert(tr("screens_adminscreen_text_1rnnqv"), user.email);
+      Alert.alert(tr("screens_adminscreen_text_1rnnqv"), user.email || user.phone);
       onSuccess?.();
       onClose();
     } catch (e) {
@@ -155,7 +156,7 @@ function QuickRegModal({ visible, onClose, onSuccess }) {const { t: tr, tCat, tC
             </View>
 
             {/* Name */}
-            <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>{isCompany ? tr("reg_company_name") : tr("reg_name")}</Text>
+            <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>{isCompany ? tr("reg_company_name_required") : tr("reg_name_required")}</Text>
             <TextInput style={{ backgroundColor: C.surface2, borderRadius: 10, borderWidth: 1, borderColor: C.border, padding: 12, color: C.text, fontSize: 14, marginBottom: 12 }}
             placeholder={isCompany ? tr("reg_company_ph") : tr("reg_name_ph")} placeholderTextColor={C.text2}
             value={name} onChangeText={setName} />
@@ -168,13 +169,13 @@ function QuickRegModal({ visible, onClose, onSuccess }) {const { t: tr, tCat, tC
             </>}
 
             {/* Email */}
-            <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>{tr("reg_email")}</Text>
+            <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>{tr("reg_email_optional")}</Text>
             <TextInput style={{ backgroundColor: C.surface2, borderRadius: 10, borderWidth: 1, borderColor: C.border, padding: 12, color: C.text, fontSize: 14, marginBottom: 12 }}
             placeholder="worker@email.com" placeholderTextColor={C.text2} keyboardType="email-address" autoCapitalize="none"
             value={email} onChangeText={setEmail} />
 
             {/* Phone */}
-            <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>{tr("reg_phone")}</Text>
+            <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>{tr("reg_phone_required")}</Text>
             <TextInput style={{ backgroundColor: C.surface2, borderRadius: 10, borderWidth: 1, borderColor: C.border, padding: 12, color: C.text, fontSize: 14, marginBottom: 12 }}
             placeholder="+995 5XX XXX XXX" placeholderTextColor={C.text2} keyboardType="phone-pad"
             value={phone} onChangeText={setPhone} />
@@ -443,11 +444,11 @@ function UserDetailModal({ userId, visible, onClose, onBlockToggle, navigation, 
                   <Text style={{ color: C.accent, fontSize: 13, fontWeight: '600', marginTop: 2 }}>
                     {user.type}{user.specialty ? ' · ' + user.specialty : ''}
                   </Text>
-                  <Text style={{ color: C.text2, fontSize: 12, marginTop: 3 }}>📧 {user.email}</Text>
+                  {user.email ? <Text style={{ color: C.text2, fontSize: 12, marginTop: 3 }}>📧 {user.email}</Text> : null}
                   {user.phone ? <Text style={{ color: C.text2, fontSize: 12 }}>📞 {user.phone}</Text> : null}
                   {user.city ? <Text style={{ color: C.text2, fontSize: 12 }}>📍 {user.city}</Text> : null}
                   <Text style={{ color: C.text2, fontSize: 11, marginTop: 4 }}>
-                    🗓️ {fdate(user.createdAt)} · {user.emailVerified ? tr("profile_verif") : tr("screens_adminscreen_text_1izjt4")}
+                    🗓️ {fdate(user.createdAt)} · {user.verified ? tr("profile_verif") : tr("screens_adminscreen_text_1izjt4")}
                   </Text>
                   {user.blocked ? <Text style={{ color: C.err, fontSize: 12, marginTop: 4 }}>{tr("screens_adminscreen_text_pghmcq")}</Text> : null}
                 </View>
@@ -683,7 +684,8 @@ function AccountsTab({ navigation, isAdmin }) {const { t: tr } = useLanguage();
               <Avatar user={u} size={44} />
               <View style={{ flex: 1 }}>
                 <Text style={{ color: C.text, fontWeight: '700', fontSize: 14 }}>{u.name} {u.surname || ''}</Text>
-                <Text style={{ color: C.text2, fontSize: 11 }}>{u.email}</Text>
+                {u.email ? <Text style={{ color: C.text2, fontSize: 11 }}>{u.email}</Text> : null}
+                {u.phone ? <Text style={{ color: C.text2, fontSize: 11 }}>{u.phone}</Text> : null}
                 <View style={{ flexDirection: 'row', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
                   <Tag label={u.type} />
                   {u.blocked && <Tag label={tr("screens_adminscreen_text_1jr6hb")} color={C.err} />}
@@ -836,10 +838,17 @@ function StaffTab({ isAdmin }) {const { t: tr } = useLanguage();
   useFocusEffect(useCallback(() => {load();}, [load]));
 
   async function createStaff() {
-    if (!form.name || !form.email || !form.password) return Alert.alert('', tr("login_err_fill"));
+    if (!form.name || !form.phone || !form.password) return Alert.alert('', tr("login_err_fill"));
     if (form.password.length < 8) return Alert.alert('', tr("reg_err_short_pass"));
     try {
-      await api('/admin/staff', { method: 'POST', body: form });
+      await api('/admin/staff', {
+        method: 'POST',
+        body: {
+          ...form,
+          email: form.email ? form.email.trim().toLowerCase() : undefined,
+          phone: form.phone.trim(),
+        },
+      });
       Alert.alert('✅', tr("screens_adminscreen_text_1hzufa"));
       setShowCreate(false);setForm({ name: '', email: '', phone: '', password: '' });
       load();
@@ -872,7 +881,7 @@ function StaffTab({ isAdmin }) {const { t: tr } = useLanguage();
               <Avatar user={s} size={40} />
               <View style={{ flex: 1 }}>
                 <Text style={{ color: C.text, fontWeight: '700', fontSize: 13 }}>{s.name} {s.surname || ''}</Text>
-                <Text style={{ color: C.text2, fontSize: 11 }}>{s.email}</Text>
+                {s.email ? <Text style={{ color: C.text2, fontSize: 11 }}>{s.email}</Text> : null}
                 {s.phone && <Text style={{ color: C.text2, fontSize: 11 }}>📞 {s.phone}</Text>}
               </View>
               {isAdmin &&
@@ -892,9 +901,9 @@ function StaffTab({ isAdmin }) {const { t: tr } = useLanguage();
           <View style={{ backgroundColor: C.surface, borderRadius: 24, padding: 22, margin: 14 }}>
             <Text style={{ color: C.text, fontSize: 17, fontWeight: '900', marginBottom: 16 }}>{tr("screens_adminscreen_text_1745tp")}</Text>
             {[
-            { k: 'name', p: tr("reg_name") },
-            { k: 'email', p: tr("reg_email") },
-            { k: 'phone', p: tr("reg_phone") },
+            { k: 'name', p: tr("reg_name_required") },
+            { k: 'email', p: tr("reg_email_optional") },
+            { k: 'phone', p: tr("reg_phone_required") },
             { k: 'password', p: tr("screens_adminscreen_8_16srwq"), secure: true }].
             map((f) =>
             <TextInput key={f.k}

@@ -128,7 +128,7 @@ export default function ProfileScreen({ navigation }) {
         <Text style={{ color: C.text, fontSize: 20, fontWeight: '900', marginBottom: 4 }}>
           {user.name} {user.surname || ''}
         </Text>
-        <Text style={{ color: C.text2, fontSize: 13, marginBottom: 10 }}>{user.email}</Text>
+        {user.email ? <Text style={{ color: C.text2, fontSize: 13, marginBottom: 10 }}>{user.email}</Text> : null}
 
         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
           <View style={{
