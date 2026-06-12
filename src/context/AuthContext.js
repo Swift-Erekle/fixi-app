@@ -25,6 +25,7 @@ export function AuthProvider({ children }) {
           connectSocket();
           registerForPushNotifications().catch(() => {});
           fetchUnreadCount();
+          maybeShowPlanPickerForLimits(me).catch(() => {});
         }
       } catch (_) {
         await SecureStore.deleteItemAsync('token').catch(() => {});
@@ -88,8 +89,36 @@ export function AuthProvider({ children }) {
       if (pending === 'true' && (userData.type === 'handyman' || userData.type === 'company')) {
         await SecureStore.deleteItemAsync('pendingPlanPicker').catch(() => {});
         setShowPlanPicker(true);
+      } else {
+        await maybeShowPlanPickerForLimits(userData).catch(() => {});
       }
     }).catch(() => {});
+  }
+
+  async function maybeShowPlanPickerForLimits(userData) {
+    if (!userData || (userData.type !== 'handyman' && userData.type !== 'company')) return;
+    const plan = userData.plan || 'start';
+    if (plan !== 'start') {
+      if ((plan === 'pro' || plan === 'top') &&
+        (userData.subscriptionStatus === 'expired' || !userData.planExpiresAt || new Date(userData.planExpiresAt) < new Date())) {
+        setShowPlanPicker(true);
+      }
+      return;
+    }
+
+    if (!userData.trialExpiresAt || new Date(userData.trialExpiresAt) < new Date()) {
+      setShowPlanPicker(true);
+      return;
+    }
+
+    if (userData.startUnlimited) return;
+
+    const myOffers = await api('/offers/mine', { noAutoLogout: true });
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const recentCount = (myOffers || []).filter((o) =>
+      new Date(o.createdAt) >= thirtyDaysAgo
+    ).length;
+    if (recentCount >= 5) setShowPlanPicker(true);
   }
 
   function dismissPlanPicker() {
