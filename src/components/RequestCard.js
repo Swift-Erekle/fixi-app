@@ -5,9 +5,12 @@ import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import GradientActionButton from './GradientActionButton';
 import { getCategoryTheme } from '../utils/categoryTheme';
+import { getCategoryByValue } from '../utils/categories';
 
-const CAT_ICONS = { 'ელექტრიკოსი': '⚡', 'სანტექნიკი': '🔧', 'კონდიციონერი': '❄️', 'მხატვარი': '🎨', 'მალიარი': '🎨', 'დურგალი': '🪚', 'ინტერნეტი': '🌐', 'IT': '💻', 'ვებ': '💻', 'აპლიკაცი': '💻', 'ქსელი': '💻', 'SEO': '💻', 'კომპიუტერი': '💻', 'სხვა': '🛠️', 'მშენებელი': '🏗️', 'რემონტი': '🏗️', 'ბეტონი': '🏗️', 'იზოლაცია': '🏗️', 'მებაღე': '🌿', 'ბაღი': '🌿', 'ტექნიკოსი': '💻', 'სახლი': '🏠', 'დალაგება': '🏠', 'მზარეული': '🏠', 'ღონისძიებები': '🏠', 'საოფისე': '🏠', 'ფილების': '🪟', 'კაფელ': '🪟', 'შემდუღებელი': '🔩', 'მეკარე': '🔑', 'ევაკუატორი': '🚚', 'გზაზე დახმარება': '🚚', 'ავტო': '🚗', 'ძრავის': '🚗', 'მღებავი': '🚗', 'თუნუქ': '🚗', 'პოლირება': '🚗', 'პალიროვკა': '🚗', 'საბურავ': '🚗', 'ტუნინგ': '🚗', 'დიაგნოსტიკა': '🚗', 'ზეთის': '🚗', 'სავალი': '🚗', 'გამონაბოლქვი': '🚗', 'ტრანსმისიის': '🚗' };
-function getCatIcon(c) {for (const [k, v] of Object.entries(CAT_ICONS)) if (c?.toLowerCase().includes(k.toLowerCase())) return v;return '📋';}
+function getCatIcon(value) {
+  const category = getCategoryByValue(value);
+  return category?.icon || '📋';
+}
 
 // Returns an image-displayable URL for any media item.
 // For Cloudinary videos: swap to the auto-generated JPEG thumbnail (first frame).
@@ -68,7 +71,7 @@ export default function RequestCard({ request, onPress }) {const { t: tr, tCat, 
   }
 
   return (
-    <View style={{ backgroundColor: C.surface, borderRadius: 18, borderWidth: 1, borderColor: C.border, marginBottom: 14, overflow: 'hidden' }}>
+    <View style={{ backgroundColor: C.surface, borderRadius: 18, borderWidth: 1, borderColor: C.border, marginBottom: 14, overflow: 'hidden', width: '100%' }}>
 
       {/* ── Body: image left + content right ── */}
       <TouchableOpacity onPress={onPress} activeOpacity={0.82} style={{ flexDirection: 'row', padding: 12, gap: 12 }}>
@@ -83,7 +86,7 @@ export default function RequestCard({ request, onPress }) {const { t: tr, tCat, 
             </View>
           }
           {/* Category label overlaid on image */}
-          <View style={{ position: 'absolute', top: 6, left: 6, backgroundColor: 'rgba(0,0,0,0.62)', paddingVertical: 3, paddingHorizontal: 7, borderRadius: 6 }}>
+          <View style={{ position: 'absolute', top: 6, left: 6, maxWidth: 93, backgroundColor: 'rgba(0,0,0,0.62)', paddingVertical: 3, paddingHorizontal: 7, borderRadius: 6, overflow: 'hidden' }}>
             <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }} numberOfLines={1}>{tCat(request.category) || ''}</Text>
           </View>
         </View>
@@ -105,18 +108,18 @@ export default function RequestCard({ request, onPress }) {const { t: tr, tCat, 
           </View>
 
           {/* Title */}
-          <Text style={{ color: C.text, fontSize: 14, fontWeight: '800', lineHeight: 20, marginBottom: 6 }} numberOfLines={2}>{request.title}</Text>
+          <Text style={{ color: C.text, fontSize: 14, fontWeight: '800', lineHeight: 20, minHeight: 40, marginBottom: 6 }} numberOfLines={2}>{request.title}</Text>
 
           {/* Meta: city + price + offers */}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-            {request.city ? <Text style={{ color: C.text2, fontSize: 12 }}>📍 {tCity(request.city)}</Text> : null}
+            {request.city ? <Text style={{ color: C.text2, fontSize: 12, maxWidth: 120 }} numberOfLines={1}>📍 {tCity(request.city)}</Text> : null}
             {request.budget === 0 ?
             <Text style={{ color: C.accent, fontSize: 12, fontWeight: '700' }}>{tr("req_offers_badge")}</Text> :
             request.budget > 0 ?
             <Text style={{ color: '#10b981', fontSize: 14, fontWeight: '900' }}>₾{request.budget}</Text> :
             null
             }
-            <Text style={{ color: C.text2, fontSize: 12 }}>💬 {offerCount}{tr("components_requestcard_text_1xkkuo")}</Text>
+            <Text style={{ color: C.text2, fontSize: 12 }} numberOfLines={1}>💬 {offerCount}{tr("components_requestcard_text_1xkkuo")}</Text>
           </View>
         </View>
       </TouchableOpacity>

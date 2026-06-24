@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
-import { CATEGORIES, getCategorySearchTerms } from '../../utils/categories';
+import { CATEGORIES, handymanMatchesCategory } from '../../utils/categories';
 import HandymanCard from '../../components/HandymanCard';
 import { Avatar } from '../../components/UI';
 import BellButton from '../../components/BellButton';
@@ -179,15 +179,6 @@ function getHandymanCategoryValues(handyman) {
   ].filter(Boolean);
 }
 
-function handymanMatchesTerm(handyman, term) {
-  const needle = normalizeFilterText(term);
-  if (!needle) return false;
-  return getHandymanCategoryValues(handyman).some((value) => {
-    const hay = normalizeFilterText(value);
-    return hay && (hay.includes(needle) || needle.includes(hay));
-  });
-}
-
 export default function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { t, tCat, tCity } = useLanguage();
@@ -232,11 +223,10 @@ export default function HomeScreen({ navigation }) {
       );
     }
     if (cat) {
-      const terms = getCategorySearchTerms(cat);
-      res = res.filter(h => terms.some((term) => handymanMatchesTerm(h, term)));
+      res = res.filter(h => handymanMatchesCategory(h, cat));
     }
     if (subcat) {
-      res = res.filter(h => handymanMatchesTerm(h, subcat));
+      res = res.filter(h => handymanMatchesCategory(h, subcat));
     }
     if (c) res = res.filter(h => h.city?.toLowerCase() === c.toLowerCase());
     if (minRat) {

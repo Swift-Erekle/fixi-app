@@ -47,10 +47,10 @@ export default function HandymanCard({ user, onPress }) {const { t: tr, tCat, tC
         <View style={{ flexDirection: 'row', gap: 14 }}>
           <Avatar user={user} size={56} />
           <View style={{ flex: 1 }}>
-            <Text style={{ color: C.text, fontSize: 16, fontWeight: '800', marginBottom: 2 }}>
+            <Text style={{ color: C.text, fontSize: 16, fontWeight: '800', marginBottom: 2 }} numberOfLines={1}>
               {user.name} {user.surname || ''}
             </Text>
-            <Text style={{ color: accentColor, fontSize: 13, fontWeight: '600', marginBottom: 4 }}>
+            <Text style={{ color: accentColor, fontSize: 13, fontWeight: '600', lineHeight: 18, minHeight: 36, marginBottom: 4 }} numberOfLines={2}>
               {tCat(user.specialty) || ''}
             </Text>
             {user.city ? <Text style={{ color: C.text2, fontSize: 12, marginBottom: 4 }}>📍 {tCity(user.city)}</Text> : null}
@@ -84,8 +84,8 @@ export default function HandymanCard({ user, onPress }) {const { t: tr, tCat, tC
         {user.services?.length ?
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
             {user.services.slice(0, 3).map((s, i) =>
-          <View key={i} style={{ backgroundColor: C.surface2, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: C.border }}>
-                <Text style={{ color: C.text2, fontSize: 11 }}>{tCat(s)}</Text>
+          <View key={i} style={{ backgroundColor: C.surface2, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: C.border, maxWidth: '100%' }}>
+                <Text style={{ color: C.text2, fontSize: 11 }} numberOfLines={1}>{tCat(s)}</Text>
               </View>
           )}
           </View> :

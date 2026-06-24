@@ -12,6 +12,7 @@ import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { Avatar, Tag, Btn, Card, Empty } from '../components/UI';
+import { CATEGORIES } from '../utils/categories';
 
 const getStatusMap = (tr) => ({
   pending: { label: tr('status_pending_badge'), color: '#f59e0b' },
@@ -22,7 +23,7 @@ const getStatusMap = (tr) => ({
 });
 
 // ── Send Proposal Modal ───────────────────────────────────────
-function SendProposalModal({ handyman, visible, onClose, onSent }) {const { t: tr } = useLanguage();
+function SendProposalModal({ handyman, visible, onClose, onSent }) {const { t: tr, tCat } = useLanguage();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
   const [desc, setDesc] = useState('');
@@ -31,7 +32,6 @@ function SendProposalModal({ handyman, visible, onClose, onSent }) {const { t: t
   const [hours, setHours] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const CATS = [tr("screens_proposalsscreen_text_njs8qk"), tr("screens_proposalsscreen_text_az9b7l"), tr("screens_proposalsscreen_text_vqczjz"), tr("screens_proposalsscreen_text_1oqsfl"), tr("screens_proposalsscreen_text_9mdwor"), tr("screens_proposalsscreen_text_1t4a4g"), tr("cat_other")];
   const dMins = parseInt(days || 0) * 24 * 60 + parseInt(hours || 0) * 60;
   const dLabel = [parseInt(days || 0) > 0 ? tr('duration_days_count', { count: days }) : '', parseInt(hours || 0) > 0 ? tr('duration_hours_count', { count: hours }) : ''].filter(Boolean).join(' ');
 
@@ -90,10 +90,10 @@ function SendProposalModal({ handyman, visible, onClose, onSent }) {const { t: t
             <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 10, textTransform: 'uppercase' }}>{tr("proposal_cat_label_text")}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={{ flexDirection: 'row', gap: 8 }}>
-                {CATS.map((c) =>
-                <TouchableOpacity key={c} onPress={() => setCategory(c)}
-                style={{ paddingHorizontal: 13, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: category === c ? C.accent : C.border, backgroundColor: category === c ? C.accent + '22' : C.surface2 }}>
-                    <Text style={{ color: category === c ? C.accent : C.text2, fontWeight: '600', fontSize: 12 }}>{c}</Text>
+                {CATEGORIES.map((c) =>
+                <TouchableOpacity key={c.name} onPress={() => setCategory(c.name)}
+                style={{ paddingHorizontal: 13, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: category === c.name ? C.accent : C.border, backgroundColor: category === c.name ? C.accent + '22' : C.surface2 }}>
+                    <Text style={{ color: category === c.name ? C.accent : C.text2, fontWeight: '600', fontSize: 12 }}>{c.icon} {tCat(c.name)}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -134,7 +134,7 @@ function SendProposalModal({ handyman, visible, onClose, onSent }) {const { t: t
 }
 
 // ── Proposal Card ─────────────────────────────────────────────
-function ProposalCard({ proposal, currentUserId, onPress, onRespond }) {const { t: tr } = useLanguage();
+function ProposalCard({ proposal, currentUserId, onPress, onRespond }) {const { t: tr, tCat } = useLanguage();
   const statusMap = getStatusMap(tr);
   const st = statusMap[proposal.status] || statusMap.pending;
   const isOwner = proposal.userId === currentUserId; // user who sent
@@ -159,7 +159,7 @@ function ProposalCard({ proposal, currentUserId, onPress, onRespond }) {const { 
       </View>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: proposal.desc ? 10 : 0 }}>
-        {proposal.category && <Tag label={proposal.category} />}
+        {proposal.category && <Tag label={tCat(proposal.category)} />}
         {proposal.duration && <Tag label={'⏱ ' + proposal.duration} />}
       </View>
       {proposal.desc ? <Text style={{ color: C.text2, fontSize: 13, lineHeight: 18, marginBottom: 10 }} numberOfLines={2}>{proposal.desc}</Text> : null}

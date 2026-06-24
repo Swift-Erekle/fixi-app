@@ -6,7 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { CATEGORIES, GEORGIA_CITIES } from '../utils/categories';
+import { CATEGORIES, GEORGIA_CITIES, normalizeCategoryList, normalizeMainCategoryList } from '../utils/categories';
 import { Btn, Card } from '../components/UI';
 
 const CITIES = GEORGIA_CITIES;
@@ -33,11 +33,13 @@ export default function EditProfileScreen({ navigation }) {const { t: tr, tCat }
   const [city, setCity] = useState(user?.city || '');
   const [desc, setDesc] = useState(user?.desc || '');
   const [specs, setSpecs] = useState(
-    Array.isArray(user?.specialties) && user.specialties.length > 0 ?
-    user.specialties :
-    user?.specialty ? [user.specialty] : []
+    normalizeMainCategoryList(
+      Array.isArray(user?.specialties) && user.specialties.length > 0 ?
+      user.specialties :
+      user?.specialty ? [user.specialty] : []
+    )
   );
-  const [services, setServices] = useState(Array.isArray(user?.services) ? user.services : []);
+  const [services, setServices] = useState(normalizeCategoryList(Array.isArray(user?.services) ? user.services : []));
   const [whatsappEnabled, setWhatsappEnabled] = useState(!!user?.whatsappEnabled);
   const [loading, setLoading] = useState(false);
 

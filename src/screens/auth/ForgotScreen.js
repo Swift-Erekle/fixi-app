@@ -11,10 +11,10 @@ function Label({ text }) {
   return <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>{text}</Text>;
 }
 
-export default function ForgotScreen({ navigation }) {
+export default function ForgotScreen({ route, navigation }) {
   const { t: tr } = useLanguage();
   const [step, setStep] = useState(1);
-  const [identifier, setIdentifier] = useState('');
+  const [identifier, setIdentifier] = useState(route?.params?.identifier || '');
   const [resetInfo, setResetInfo] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
   const [code, setCode] = useState('');

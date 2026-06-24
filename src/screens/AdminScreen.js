@@ -74,6 +74,20 @@ const GEO_CITIES = [
 
 
 // ────────── Admin Quick Registration modal ──────────
+function formatAdminActivity(u) {
+  const value = u?.lastSeenAt || u?.createdAt;
+  if (!value) return '—';
+  const label = u.lastSeenAt ? 'ბოლო იყო' : 'რეგისტრაცია';
+  const text = new Date(value).toLocaleString('ka-GE', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return `${label}: ${text}`;
+}
+
 function QuickRegModal({ visible, onClose, onSuccess }) {const { t: tr, tCat, tCity } = useLanguage();
   const [type, setType] = useState('handyman');
   const [name, setName] = useState('');
@@ -447,6 +461,7 @@ function UserDetailModal({ userId, visible, onClose, onBlockToggle, navigation, 
                   {user.email ? <Text style={{ color: C.text2, fontSize: 12, marginTop: 3 }}>📧 {user.email}</Text> : null}
                   {user.phone ? <Text style={{ color: C.text2, fontSize: 12 }}>📞 {user.phone}</Text> : null}
                   {user.city ? <Text style={{ color: C.text2, fontSize: 12 }}>📍 {user.city}</Text> : null}
+                  <Text style={{ color: C.text2, fontSize: 11, marginTop: 2 }}>⏱ {formatAdminActivity(user)}</Text>
                   <Text style={{ color: C.text2, fontSize: 11, marginTop: 4 }}>
                     🗓️ {fdate(user.createdAt)} · {user.verified ? tr("profile_verif") : tr("screens_adminscreen_text_1izjt4")}
                   </Text>
@@ -618,6 +633,7 @@ function AccountsTab({ navigation, isAdmin }) {const { t: tr } = useLanguage();
     try {
       const q = new URLSearchParams();
       if (filter === 'blocked') q.set('blocked', 'true');else
+      if (filter === 'active24') q.set('activeWithinHours', '24');else
       if (filter !== 'all') q.set('type', filter);
       if (search.trim()) q.set('search', search.trim());
       setUsers(await api('/admin/users?' + q.toString()));
@@ -639,7 +655,7 @@ function AccountsTab({ navigation, isAdmin }) {const { t: tr } = useLanguage();
 
   const FILTERS = [
   { k: 'all', l: tr("filter_all") }, { k: 'user', l: tr("screens_adminscreen_text_1sm6ov") }, { k: 'handyman', l: tr("hero_h1_2") },
-  { k: 'company', l: tr("screens_adminscreen_text_5aicgq") }, { k: 'blocked', l: tr("screens_adminscreen_text_1jr6hb") }];
+  { k: 'company', l: tr("screens_adminscreen_text_5aicgq") }, { k: 'blocked', l: tr("screens_adminscreen_text_1jr6hb") }, { k: 'active24', l: '24სთ' }];
 
 
   return (
@@ -686,6 +702,7 @@ function AccountsTab({ navigation, isAdmin }) {const { t: tr } = useLanguage();
                 <Text style={{ color: C.text, fontWeight: '700', fontSize: 14 }}>{u.name} {u.surname || ''}</Text>
                 {u.email ? <Text style={{ color: C.text2, fontSize: 11 }}>{u.email}</Text> : null}
                 {u.phone ? <Text style={{ color: C.text2, fontSize: 11 }}>{u.phone}</Text> : null}
+                <Text style={{ color: C.text2, fontSize: 11 }}>⏱ {formatAdminActivity(u)}</Text>
                 <View style={{ flexDirection: 'row', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
                   <Tag label={u.type} />
                   {u.blocked && <Tag label={tr("screens_adminscreen_text_1jr6hb")} color={C.err} />}

@@ -85,7 +85,20 @@ export default function RegisterScreen({ navigation }) {
         verificationChannel: data.verificationChannel,
         mode: 'register',
       });
-    } catch (e) { Alert.alert(t('error'), e.error || t('reg_err_failed')); }
+    } catch (e) {
+      if (e?.phoneAlreadyUsed) {
+        Alert.alert(
+          t('reg_phone_used_title'),
+          t('reg_phone_used_hint'),
+          [
+            { text: t('cancel'), style: 'cancel' },
+            { text: t('forgot_title'), onPress: () => navigation.navigate('Forgot', { identifier: e.resetIdentifier || phone.trim() }) },
+          ]
+        );
+      } else {
+        Alert.alert(t('error'), e.error || t('reg_err_failed'));
+      }
+    }
     finally { setLoading(false); }
   }
 
