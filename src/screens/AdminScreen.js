@@ -46,6 +46,62 @@ function AnalyticsTab() {const { t: tr } = useLanguage();
       <Text style={{ color: color || C.text, fontSize: 22, fontWeight: '900' }}>{val}</Text>
     </View>;
 
+  const funnel = data.funnel?.month;
+  const funnelSteps = funnel?.steps || [];
+  const funnelRoles = funnel?.roles || [];
+  const funnelClients = funnel?.clients || [];
+  const funnelSources = funnel?.sources || [];
+  const funnelCtas = funnel?.ctaTargets || [];
+  const funnelFields = funnel?.fields || [];
+  const funnelScrolls = funnel?.scrollDepths || [];
+  const eventLabel = (event) => ({
+    page_view: 'გვერდი ნახა',
+    engaged_visit: 'რეალურად დარჩა',
+    scroll_depth: 'ჩამოსქროლა',
+    cta_click: 'ღილაკს დააჭირა',
+    form_field_focus: 'ფორმის ველი მონიშნა',
+    first_choice_shown: 'არჩევანი გამოჩნდა',
+    first_choice_selected: 'არჩევანი დააჭირა',
+    first_choice_dismissed: 'არჩევანი დახურა',
+    register_open: 'რეგისტრაცია გახსნა',
+    register_type_selected: 'ტიპი აირჩია',
+    registration_started: 'შევსება დაიწყო',
+    registration_submit: 'რეგისტრაციას დააჭირა',
+    registration_success: 'დარეგისტრირდა',
+    registration_error: 'რეგისტრაციის შეცდომა',
+    request_open: 'მოთხოვნა გახსნა',
+    request_started: 'მოთხოვნის შევსება დაიწყო',
+    request_submit: 'მოთხოვნის დადებას დააჭირა',
+    request_success: 'მოთხოვნა დაიდო',
+    request_error: 'მოთხოვნის შეცდომა',
+  }[event] || event);
+  const roleLabel = (role) => ({ user: 'მომხმარებელი', handyman: 'ხელოსანი', company: 'კომპანია' }[role] || role);
+  const clientLabel = (client) => ({
+    facebook_in_app: 'Facebook ბრაუზერი',
+    instagram_in_app: 'Instagram ბრაუზერი',
+    tiktok_in_app: 'TikTok ბრაუზერი',
+    android_webview: 'Android WebView',
+    mobile_browser: 'მობილური',
+    desktop_browser: 'Desktop',
+  }[client] || client || 'უცნობი');
+  const sourceLabel = (source) => ({
+    tiktok_ads: 'TikTok Ads',
+    facebook_ads: 'Facebook Ads',
+    google_ads: 'Google Ads',
+    instagram: 'Instagram',
+    unknown: 'უცნობი',
+  }[source] || source || 'უცნობი');
+  const metricRows = (title, rows, labelFn = (x) => x) => {
+    if (!rows.length) return null;
+    return <View style={{ marginTop: 12 }}>
+      <Text style={{ color: C.text, fontWeight: '900', fontSize: 13, marginBottom: 8 }}>{title}</Text>
+      {rows.map((row) => <View key={`${title}-${row.key}`} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8, marginBottom: 5 }}>
+        <Text style={{ color: C.text2, fontSize: 12, flex: 1 }} numberOfLines={1}>{labelFn(row.key)}</Text>
+        <Text style={{ color: C.text, fontWeight: '800', fontSize: 12 }}>{row.count} · {row.percent}%</Text>
+      </View>)}
+    </View>;
+  };
+
 
   return (
     <ScrollView contentContainerStyle={{ padding: 14 }}>
@@ -63,6 +119,35 @@ function AnalyticsTab() {const { t: tr } = useLanguage();
         {stat('🎧', tr("screens_adminscreen_text_bq2x4n"), data.supportPending, C.warn)}
         {stat('💰', tr("screens_adminscreen_text_71xaao"), ((data.vipRevenueTetri || 0) / 100).toFixed(0), C.ok)}
       </View>
+      {funnel && <View style={{ marginTop: 16, backgroundColor: C.surface, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 14 }}>
+        <Text style={{ color: C.text, fontWeight: '900', fontSize: 16, marginBottom: 4 }}>ვიზიტორის Funnel · 30 დღე</Text>
+        <Text style={{ color: C.text2, fontSize: 12, marginBottom: 12 }}>funnel ვიზიტორი: {funnel.visitors || 0} · ყველა ვიზიტორი: {funnel.siteVisitors || 0} · event: {funnel.totalEvents || 0}</Text>
+        {funnelSteps.map((s, idx) => {
+          const width = Math.max(1, Math.min(100, Number(s.fromVisitorsPct || 0)));
+          return <View key={s.event} style={{ marginBottom: 10 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+              <Text style={{ color: C.text, fontWeight: '800', fontSize: 12, flex: 1 }}>{idx + 1}. {eventLabel(s.event)}</Text>
+              <Text style={{ color: C.text2, fontSize: 11 }}>{s.unique || 0} · {s.fromVisitorsPct || 0}%</Text>
+            </View>
+            <View style={{ height: 7, backgroundColor: C.surface2, borderRadius: 99, overflow: 'hidden', marginTop: 5 }}>
+              <View style={{ width: `${width}%`, height: '100%', backgroundColor: String(s.event || '').endsWith('_error') ? C.err : C.accent }} />
+            </View>
+          </View>;
+        })}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
+          {funnelRoles.map((r) => <View key={r.role} style={{ flex: 1, minWidth: 120, backgroundColor: C.surface2, borderRadius: 12, padding: 10 }}>
+            <Text style={{ color: C.text, fontWeight: '900', fontSize: 12 }}>{roleLabel(r.role)}</Text>
+            <Text style={{ color: C.text2, fontSize: 11, marginTop: 4 }}>started: {r.started}</Text>
+            <Text style={{ color: C.text2, fontSize: 11 }}>submit: {r.submits}</Text>
+            <Text style={{ color: C.text2, fontSize: 11 }}>success: <Text style={{ color: C.ok }}>{r.success}</Text> · error: <Text style={{ color: C.err }}>{r.errors}</Text></Text>
+          </View>)}
+        </View>
+        {metricRows('CTA ღილაკები', funnelCtas)}
+        {metricRows('რომელ ველამდე მიდიან', funnelFields)}
+        {metricRows('სქროლის სიღრმე', funnelScrolls)}
+        {metricRows('ბრაუზერები', funnelClients, clientLabel)}
+        {metricRows('წყარო / referrer', funnelSources, sourceLabel)}
+      </View>}
     </ScrollView>);
 
 }
@@ -391,12 +476,13 @@ function UserOffersModal({ userId, userName, visible, onClose, navigation }) {co
 }
 
 // ────────── User detail modal ──────────
-function UserDetailModal({ userId, visible, onClose, onBlockToggle, navigation, isAdmin }) {const { t: tr } = useLanguage();
+function UserDetailModal({ userId, visible, onClose, onBlockToggle, onVerified, navigation, isAdmin }) {const { t: tr } = useLanguage();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showRequests, setShowRequests] = useState(false);
   const [showOffers, setShowOffers] = useState(false);
   const [unlimitedToggling, setUnlimitedToggling] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   const load = useCallback(async () => {
     if (!userId) return;
@@ -422,6 +508,25 @@ function UserDetailModal({ userId, visible, onClose, onBlockToggle, navigation, 
     } finally {
       setUnlimitedToggling(false);
     }
+  }
+
+  async function verifyUser() {
+    if (verifying || !user) return;
+    Alert.alert(tr("admin_verify_button"), tr("admin_verify_confirm"), [
+      { text: tr("cancel"), style: 'cancel' },
+      { text: tr("admin_verify_button"), onPress: async () => {
+        setVerifying(true);
+        try {
+          await api(`/admin/users/${user.id}/verify`, { method: 'PATCH' });
+          setUser((prev) => ({ ...prev, verified: true, phoneVerified: true }));
+          onVerified?.();
+        } catch (e) {
+          Alert.alert(tr("error"), e.error || tr("screens_adminscreen_text_1vf9mb"));
+        } finally {
+          setVerifying(false);
+        }
+      } }
+    ]);
   }
 
   if (!visible) return null;
@@ -584,6 +689,12 @@ function UserDetailModal({ userId, visible, onClose, onBlockToggle, navigation, 
 
               {/* Actions */}
               <View style={{ gap: 10 }}>
+                {isAdmin && !user.verified ?
+                <TouchableOpacity onPress={verifyUser} disabled={verifying}
+                style={{ backgroundColor: C.accent + '18', borderRadius: 12, borderWidth: 1, borderColor: C.accent + '66', padding: 14, alignItems: 'center', opacity: verifying ? 0.65 : 1 }}>
+                  <Text style={{ color: C.accent, fontWeight: '700', fontSize: 14 }}>{verifying ? tr("vip_payment_processing") : tr("admin_verify_button")}</Text>
+                </TouchableOpacity> :
+                null}
                 <TouchableOpacity onPress={() => {onClose();onBlockToggle(user);}}
                 style={{ backgroundColor: (user.blocked ? C.ok : C.err) + '18', borderRadius: 12, borderWidth: 1, borderColor: (user.blocked ? C.ok : C.err) + '66', padding: 14, alignItems: 'center' }}>
                   <Text style={{ color: user.blocked ? C.ok : C.err, fontWeight: '700', fontSize: 14 }}>{user.blocked ? tr("screens_adminscreen_text_6gcbv0") : tr("screens_adminscreen_text_19rh40")}</Text>
@@ -724,6 +835,7 @@ function AccountsTab({ navigation, isAdmin }) {const { t: tr } = useLanguage();
         visible={detailVisible}
         onClose={() => {setDetailVisible(false);setSelectedUserId(null);}}
         onBlockToggle={toggleBlock}
+        onVerified={load}
         navigation={navigation}
         isAdmin={isAdmin} />
       

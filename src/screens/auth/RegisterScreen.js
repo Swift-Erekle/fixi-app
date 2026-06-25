@@ -42,7 +42,6 @@ export default function RegisterScreen({ navigation }) {
   const [pass2, setPass2] = useState('');
   const [specs, setSpecs] = useState([]);
   const [services, setServices] = useState([]);
-  const [desc, setDesc] = useState('');
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -57,7 +56,6 @@ export default function RegisterScreen({ navigation }) {
 
   async function handleRegister() {
     if (!name.trim() || !phone.trim() || !password) return Alert.alert(t('error'), t('reg_err_required'));
-    if (type === 'user' && !email.trim()) return Alert.alert(t('error'), t('reg_user_email_required_msg'));
     if (password.length < 8) return Alert.alert(t('error'), t('reg_err_short_pass'));
     if (password !== pass2) return Alert.alert(t('error'), t('reg_err_pass_match'));
     if (isWorker && specs.length === 0) return Alert.alert(t('error'), t('reg_err_specialty'));
@@ -66,15 +64,14 @@ export default function RegisterScreen({ navigation }) {
     try {
       const data = await api('/auth/register', { method: 'POST', body: {
         name: name.trim(), surname: surname.trim(),
-        email: email.trim() ? email.trim().toLowerCase() : undefined,
+        email: type !== 'user' && email.trim() ? email.trim().toLowerCase() : undefined,
         phone: phone.trim(),
         password, type,
         specialty: isWorker ? specs[0] : undefined,
         specialties: isWorker ? specs : undefined,
         services: isWorker ? services : undefined,
-        desc: isWorker ? desc : undefined,
         whatsappEnabled: isWorker ? whatsappEnabled : undefined,
-        verificationChannel: email.trim() ? verificationChannel : 'phone',
+        verificationChannel: type !== 'user' && email.trim() ? verificationChannel : 'phone',
         termsAccepted: true,
         privacyAccepted: true,
       }});
@@ -107,8 +104,9 @@ export default function RegisterScreen({ navigation }) {
     if (nextType === 'user') {
       setSpecs([]);
       setServices([]);
-      setDesc('');
       setWhatsappEnabled(false);
+      setEmail('');
+      setVerificationChannel('phone');
     }
   }
 
@@ -171,9 +169,14 @@ export default function RegisterScreen({ navigation }) {
           {type !== 'company' && (
             <><Label text={t('reg_surname_required')} /><SInput value={surname} onChange={setSurname} placeholder={t('reg_surname_ph')} /></>
           )}
-          <Label text={type === 'user' ? t('reg_email_required') : t('reg_email_optional')} /><SInput value={email} onChange={(v) => { setEmail(v); if (!v.trim()) setVerificationChannel('phone'); }} placeholder="you@email.com" keyboardType="email-address" />
+          {type !== 'user' && (
+            <>
+              <Label text={t('reg_email_optional')} />
+              <SInput value={email} onChange={(v) => { setEmail(v); if (!v.trim()) setVerificationChannel('phone'); }} placeholder="you@email.com" keyboardType="email-address" />
+            </>
+          )}
           <Label text={t('reg_phone_required')} /><SInput value={phone} onChange={setPhone} placeholder="+995 5XX XXX XXX" keyboardType="phone-pad" />
-          {!!email.trim() && (
+          {type !== 'user' && !!email.trim() && (
             <View style={{ marginBottom: 14 }}>
               <Label text={t('reg_verification_channel')} />
               <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -284,12 +287,6 @@ export default function RegisterScreen({ navigation }) {
                 ))}
               </View>
             )}
-            <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('reg_desc_label')}</Text>
-            <TextInput
-              style={{ backgroundColor: C.surface2, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 13, color: C.text, fontSize: 14, height: 80, textAlignVertical: 'top' }}
-              placeholder={t('reg_desc_placeholder')} placeholderTextColor={C.text2}
-              value={desc} onChangeText={setDesc} multiline
-            />
           </Card>
         )}
 
