@@ -6,7 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { CATEGORIES, GEORGIA_CITIES, normalizeCategoryList, normalizeMainCategoryList } from '../utils/categories';
+import { CATEGORIES, GEORGIA_CITIES, filterCategoriesBySearch, filterSubcategoriesBySearch, normalizeCategoryList, normalizeMainCategoryList } from '../utils/categories';
 import { Btn, Card } from '../components/UI';
 
 const CITIES = GEORGIA_CITIES;
@@ -40,11 +40,14 @@ export default function EditProfileScreen({ navigation }) {const { t: tr, tCat }
     )
   );
   const [services, setServices] = useState(normalizeCategoryList(Array.isArray(user?.services) ? user.services : []));
+  const [categorySearch, setCategorySearch] = useState('');
+  const [serviceSearch, setServiceSearch] = useState('');
   const [whatsappEnabled, setWhatsappEnabled] = useState(!!user?.whatsappEnabled);
   const [loading, setLoading] = useState(false);
 
   const isWorker = user?.type === 'handyman' || user?.type === 'company';
   const selectedServiceCategories = CATEGORIES.filter((c) => specs.includes(c.name));
+  const visibleCategories = filterCategoriesBySearch(categorySearch, tCat);
 
   function toggleSpec(category) {
     const selected = specs.includes(category.name);
@@ -129,8 +132,17 @@ export default function EditProfileScreen({ navigation }) {const { t: tr, tCat }
               {specs.length > 0 &&
             <Text style={{ color: C.accent, fontSize: 12, marginBottom: 10 }}>{tr("reg_selected")}{specs.map(tCat).join(', ')}</Text>
             }
+              <TextInput
+                value={categorySearch}
+                onChangeText={setCategorySearch}
+                placeholder={tr("cat_search_ph")}
+                placeholderTextColor={C.text2}
+                style={{ backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: C.text, marginBottom: 12 }}
+              />
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-                {CATEGORIES.map((c) => {
+                {visibleCategories.length === 0 ? (
+                  <Text style={{ color: C.text2, paddingVertical: 8 }}>{tr("cat_search_empty")}</Text>
+                ) : visibleCategories.map((c) => {
                 const sel = specs.includes(c.name);
                 return (
                   <TouchableOpacity key={c.name}
@@ -155,11 +167,18 @@ export default function EditProfileScreen({ navigation }) {const { t: tr, tCat }
                   {services.length > 0 &&
                 <Text style={{ color: C.accent, fontSize: 12, marginBottom: 10 }}>{tr("reg_selected")}{services.map(tCat).join(', ')}</Text>
                 }
+                  <TextInput
+                    value={serviceSearch}
+                    onChangeText={setServiceSearch}
+                    placeholder={tr("cat_search_ph")}
+                    placeholderTextColor={C.text2}
+                    style={{ backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: C.text, marginBottom: 12 }}
+                  />
                   {selectedServiceCategories.map((category) =>
                 <View key={category.name} style={{ marginBottom: 12 }}>
                       <Text style={{ color: C.text, fontSize: 13, fontWeight: '800', marginBottom: 8 }}>{category.icon} {tCat(category.name)}</Text>
                       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                        {category.subs.map((service) => {
+                        {filterSubcategoriesBySearch(category.subs, serviceSearch, tCat).map((service) => {
                       const selected = services.includes(service);
                       return (
                         <TouchableOpacity key={service} onPress={() => toggleService(service)}

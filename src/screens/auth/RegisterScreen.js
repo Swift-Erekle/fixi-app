@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingVi
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
-import { CATEGORIES } from '../../utils/categories';
+import { CATEGORIES, filterCategoriesBySearch, filterSubcategoriesBySearch } from '../../utils/categories';
 import { useLanguage } from '../../context/LanguageContext';
 import { Btn, Card } from '../../components/UI';
 
@@ -11,17 +11,17 @@ function Label({ text }) {
   return <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>{text}</Text>;
 }
 
-function SInput({ value, onChange, placeholder, secure, keyboardType, multiline }) {
+function SInput({ value, onChange, placeholder, secure, showSecureToggle = secure, keyboardType, multiline }) {
   const [show, setShow] = useState(false);
   return (
     <View style={{ position: 'relative', marginBottom: 14 }}>
       <TextInput
-        style={{ backgroundColor: C.surface2, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 13, paddingRight: secure ? 48 : 13, color: C.text, fontSize: 14, ...(multiline ? { height: 80, textAlignVertical: 'top' } : {}) }}
+        style={{ backgroundColor: C.surface2, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 13, paddingRight: showSecureToggle ? 48 : 13, color: C.text, fontSize: 14, ...(multiline ? { height: 80, textAlignVertical: 'top' } : {}) }}
         value={value} onChangeText={onChange} placeholder={placeholder}
-        placeholderTextColor={C.text2} secureTextEntry={secure && !show}
-        keyboardType={keyboardType} autoCapitalize="none"
+        placeholderTextColor={C.text2} secureTextEntry={secure && !(showSecureToggle && show)}
+        keyboardType={keyboardType} autoCapitalize="none" autoCorrect={false}
       />
-      {secure && (
+      {showSecureToggle && (
         <TouchableOpacity onPress={() => setShow(!show)} style={{ position: 'absolute', right: 14, top: 14 }}>
           <Ionicons name={show ? 'eye-off-outline' : 'eye-outline'} size={20} color={C.text2} />
         </TouchableOpacity>
@@ -34,19 +34,22 @@ export default function RegisterScreen({ navigation }) {
   const { t, tCat } = useLanguage();
   const [type, setType] = useState('user');
   const [name, setName] = useState('');
-  const [surname, setSurname] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [verificationChannel, setVerificationChannel] = useState('phone');
   const [password, setPass] = useState('');
   const [pass2, setPass2] = useState('');
+  const [hideUserPassword, setHideUserPassword] = useState(false);
   const [specs, setSpecs] = useState([]);
   const [services, setServices] = useState([]);
+  const [categorySearch, setCategorySearch] = useState('');
+  const [serviceSearch, setServiceSearch] = useState('');
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const isWorker = type === 'handyman' || type === 'company';
   const selectedServiceCategories = CATEGORIES.filter((c) => specs.includes(c.name));
+  const visibleCategories = filterCategoriesBySearch(categorySearch, tCat);
 
   const TYPES = [
     { key: 'user',     emoji: '👤', label: t('reg_type_user'),     desc: t('reg_type_user_desc') },
@@ -57,13 +60,13 @@ export default function RegisterScreen({ navigation }) {
   async function handleRegister() {
     if (!name.trim() || !phone.trim() || !password) return Alert.alert(t('error'), t('reg_err_required'));
     if (password.length < 8) return Alert.alert(t('error'), t('reg_err_short_pass'));
-    if (password !== pass2) return Alert.alert(t('error'), t('reg_err_pass_match'));
+    if (isWorker && password !== pass2) return Alert.alert(t('error'), t('reg_err_pass_match'));
     if (isWorker && specs.length === 0) return Alert.alert(t('error'), t('reg_err_specialty'));
     if (!termsAccepted) return Alert.alert(t('error'), t('reg_terms_required'));
     setLoading(true);
     try {
       const data = await api('/auth/register', { method: 'POST', body: {
-        name: name.trim(), surname: surname.trim(),
+        name: name.trim(), surname: '',
         email: type !== 'user' && email.trim() ? email.trim().toLowerCase() : undefined,
         phone: phone.trim(),
         password, type,
@@ -101,6 +104,7 @@ export default function RegisterScreen({ navigation }) {
 
   function selectType(nextType) {
     setType(nextType);
+    setHideUserPassword(false);
     if (nextType === 'user') {
       setSpecs([]);
       setServices([]);
@@ -164,11 +168,8 @@ export default function RegisterScreen({ navigation }) {
         </Card>
 
         <Card>
-          <Label text={type === 'company' ? t('reg_company_name_required') : t('reg_name_required')} />
-          <SInput value={name} onChange={setName} placeholder={type === 'company' ? t('reg_company_ph') : t('reg_name_ph')} />
-          {type !== 'company' && (
-            <><Label text={t('reg_surname_required')} /><SInput value={surname} onChange={setSurname} placeholder={t('reg_surname_ph')} /></>
-          )}
+          <Label text={type === 'company' ? t('reg_company_name_required') : t('reg_full_name_required')} />
+          <SInput value={name} onChange={setName} placeholder={type === 'company' ? t('reg_company_ph') : t('reg_full_name_ph')} />
           {type !== 'user' && (
             <>
               <Label text={t('reg_email_optional')} />
@@ -202,8 +203,22 @@ export default function RegisterScreen({ navigation }) {
               </View>
             </View>
           )}
-          <Label text={t('reg_password_required')} /><SInput value={password} onChange={setPass} placeholder={t('reg_pass_ph')} secure />
-          <Label text={t('reg_password_repeat_required')} /><SInput value={pass2} onChange={setPass2} placeholder="••••••••" secure />
+          <Label text={t('reg_password_required')} /><SInput value={password} onChange={setPass} placeholder={t('reg_pass_ph')} secure={isWorker || hideUserPassword} showSecureToggle={isWorker} />
+          {!isWorker && (
+            <TouchableOpacity
+              onPress={() => setHideUserPassword((value) => !value)}
+              activeOpacity={0.8}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: -4, marginBottom: 14 }}>
+              <Ionicons name={hideUserPassword ? 'checkbox' : 'square-outline'} size={22} color={hideUserPassword ? C.accent : C.text2} />
+              <Text style={{ color: C.text2, fontSize: 13 }}>{t('reg_hide_password')}</Text>
+            </TouchableOpacity>
+          )}
+          {isWorker && (
+            <>
+              <Label text={t('reg_password_repeat_required')} />
+              <SInput value={pass2} onChange={setPass2} placeholder="••••••••" secure />
+            </>
+          )}
 
           {isWorker && (
             <View style={{
@@ -235,8 +250,17 @@ export default function RegisterScreen({ navigation }) {
             {specs.length > 0 && (
               <Text style={{ color: C.accent, fontSize: 12, marginBottom: 10 }}>{t('reg_selected')} {specs.map(s => tCat(s)).join(', ')}</Text>
             )}
+            <TextInput
+              value={categorySearch}
+              onChangeText={setCategorySearch}
+              placeholder={t('cat_search_ph')}
+              placeholderTextColor={C.text2}
+              style={{ backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: C.text, marginBottom: 12 }}
+            />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
-              {CATEGORIES.map(c => {
+              {visibleCategories.length === 0 ? (
+                <Text style={{ color: C.text2, paddingVertical: 8 }}>{t('cat_search_empty')}</Text>
+              ) : visibleCategories.map(c => {
                 const sel = specs.includes(c.name);
                 return (
                   <TouchableOpacity key={c.name}
@@ -261,11 +285,18 @@ export default function RegisterScreen({ navigation }) {
                 {services.length > 0 && (
                   <Text style={{ color: C.accent, fontSize: 12, marginBottom: 10 }}>{t('reg_selected')} {services.map(s => tCat(s)).join(', ')}</Text>
                 )}
+                <TextInput
+                  value={serviceSearch}
+                  onChangeText={setServiceSearch}
+                  placeholder={t('cat_search_ph')}
+                  placeholderTextColor={C.text2}
+                  style={{ backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: C.text, marginBottom: 12 }}
+                />
                 {selectedServiceCategories.map((category) => (
                   <View key={category.name} style={{ marginBottom: 12 }}>
                     <Text style={{ color: C.text, fontSize: 13, fontWeight: '800', marginBottom: 8 }}>{category.icon} {tCat(category.name)}</Text>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                      {category.subs.map((service) => {
+                      {filterSubcategoriesBySearch(category.subs, serviceSearch, tCat).map((service) => {
                         const selected = services.includes(service);
                         return (
                           <TouchableOpacity
@@ -287,6 +318,9 @@ export default function RegisterScreen({ navigation }) {
                 ))}
               </View>
             )}
+            <Text style={{ color: C.text2, fontSize: 12, lineHeight: 18, marginTop: 2 }}>
+              {t('reg_missing_specialty_help')}
+            </Text>
           </Card>
         )}
 

@@ -11,7 +11,7 @@ import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { Avatar, Card, Btn, Tag, Empty } from '../components/UI';
-import { CATEGORIES } from '../utils/categories';
+import { CATEGORIES, filterCategoriesBySearch } from '../utils/categories';
 
 const TABS = [
 { key: 'analytics', label: '📊', adminOnly: true },
@@ -182,16 +182,18 @@ function QuickRegModal({ visible, onClose, onSuccess }) {const { t: tr, tCat, tC
   const [pass, setPass] = useState('');
   const [city, setCity] = useState('');
   const [specs, setSpecs] = useState([]);
+  const [specSearch, setSpecSearch] = useState('');
   const [desc, setDesc] = useState('');
   const [whatsapp, setWhatsapp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showCities, setShowCities] = useState(false);
 
   const isCompany = type === 'company';
+  const visibleCategories = filterCategoriesBySearch(specSearch, tCat);
 
   function reset() {
     setType('handyman');setName('');setSurname('');setEmail('');setPhone('');
-    setPass('');setCity('');setSpecs([]);setDesc('');setWhatsapp(false);setLoading(false);setShowCities(false);
+    setPass('');setCity('');setSpecs([]);setSpecSearch('');setDesc('');setWhatsapp(false);setLoading(false);setShowCities(false);
   }
 
   useEffect(() => {if (visible) reset();}, [visible]);
@@ -310,8 +312,17 @@ function QuickRegModal({ visible, onClose, onSuccess }) {const { t: tr, tCat, tC
             {specs.length > 0 &&
             <Text style={{ color: C.accent, fontSize: 12, marginBottom: 8 }}>✓ {specs.map(tCat).join(', ')}</Text>
             }
+            <TextInput
+              value={specSearch}
+              onChangeText={setSpecSearch}
+              placeholder={tr("cat_search_ph")}
+              placeholderTextColor={C.text2}
+              style={{ backgroundColor: C.surface2, borderRadius: 10, borderWidth: 1, borderColor: C.border, padding: 12, color: C.text, fontSize: 14, marginBottom: 12 }}
+            />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-              {CATEGORIES.map((c) => {
+              {visibleCategories.length === 0 ? (
+                <Text style={{ color: C.text2, paddingVertical: 8 }}>{tr("cat_search_empty")}</Text>
+              ) : visibleCategories.map((c) => {
                 const sel = specs.includes(c.name);
                 return (
                   <TouchableOpacity key={c.name} onPress={() => toggleSpec(c.name)}

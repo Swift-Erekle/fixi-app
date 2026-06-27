@@ -8,7 +8,7 @@ import { api } from '../utils/api';
 import { Btn, Card } from '../components/UI';
 import { getCategoryTheme } from '../utils/categoryTheme';
 
-import { CATEGORIES, GEORGIA_CITIES } from '../utils/categories';
+import { CATEGORIES, GEORGIA_CITIES, filterCategoriesBySearch, filterSubcategoriesBySearch } from '../utils/categories';
 const CITIES = GEORGIA_CITIES;
 function Label({ t }) {return <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t}</Text>;}
 
@@ -20,8 +20,11 @@ export default function CreateRequestScreen({ navigation }) {const { t: tr, tCat
   const [negotiable, setNegotiable] = useState(false);
   const [media, setMedia] = useState([]);const [loading, setLoading] = useState(false);
   const [showCities, setShowCities] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
+  const [subcatSearch, setSubcatSearch] = useState('');
 
   const selCat = CATEGORIES.find((c) => c.name === category);
+  const visibleCategories = filterCategoriesBySearch(categorySearch, tCat);
 
   async function pickImage() {
     if (media.length >= 5) return Alert.alert('', tr("screens_createrequestscreen_5_104g6g"));
@@ -69,8 +72,17 @@ export default function CreateRequestScreen({ navigation }) {const { t: tr, tCat
         </Card>
         <Card>
           <Label t={tr("proposal_cat_label_text")} />
+          <TextInput
+            value={categorySearch}
+            onChangeText={setCategorySearch}
+            placeholder={tr("cat_search_ph")}
+            placeholderTextColor={C.text2}
+            style={{ backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: C.text, marginBottom: 12 }}
+          />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: selCat && selCat.subs.length > 0 ? 16 : 0 }}>
-            {CATEGORIES.map((c) => {const act = category === c.name;return (
+            {visibleCategories.length === 0 ? (
+              <Text style={{ color: C.text2, paddingVertical: 8 }}>{tr("cat_search_empty")}</Text>
+            ) : visibleCategories.map((c) => {const act = category === c.name;return (
                 <TouchableOpacity key={c.name} onPress={() => {setCategory(c.name);setSubcat('');}}
                 style={{
                   flexDirection: 'row', alignItems: 'center', gap: 8,
@@ -87,8 +99,15 @@ export default function CreateRequestScreen({ navigation }) {const { t: tr, tCat
           {selCat && selCat.subs.length > 0 &&
           <>
               <Label t={tr("filter_subcategory")} />
+              <TextInput
+                value={subcatSearch}
+                onChangeText={setSubcatSearch}
+                placeholder={tr("cat_search_ph")}
+                placeholderTextColor={C.text2}
+                style={{ backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: C.text, marginBottom: 12 }}
+              />
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {selCat.subs.map((s) =>
+                {filterSubcategoriesBySearch(selCat.subs, subcatSearch, tCat).map((s) =>
               <TouchableOpacity key={s} onPress={() => setSubcat(subcat === s ? '' : s)}
               style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1.5, borderColor: subcat === s ? C.accent : C.border, backgroundColor: subcat === s ? C.accent + '22' : C.surface2 }}>
                     <Text style={{ color: subcat === s ? C.accent : C.text2, fontWeight: '600', fontSize: 13 }}>{tCat(s)}</Text>

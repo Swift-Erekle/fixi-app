@@ -9,7 +9,7 @@ import { api } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import RequestCard from '../../components/RequestCard';
-import { CATEGORIES } from '../../utils/categories';
+import { CATEGORIES, filterCategoriesBySearch, filterSubcategoriesBySearch } from '../../utils/categories';
 import BellButton from '../../components/BellButton';
 import CityDropdown from '../../components/CityDropdown';
 
@@ -28,16 +28,20 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
   const [maxBudget, setMaxBudget] = useState(initialMaxBudget || '');
   const [status, setStatus] = useState(initialStatus || '');
   const [urgent, setUrgent] = useState(initialUrgent || false);
+  const [categorySearch, setCategorySearch] = useState('');
+  const [subcatSearch, setSubcatSearch] = useState('');
 
   useEffect(() => {
     if (visible) {
       setCat(initialCat || ''); setSubcat(initialSubcat || ''); setCity(initialCity || '');
       setMinBudget(initialMinBudget || ''); setMaxBudget(initialMaxBudget || '');
       setStatus(initialStatus || ''); setUrgent(initialUrgent || false);
+      setCategorySearch(''); setSubcatSearch('');
     }
   }, [visible]);
 
   const selCat = CATEGORIES.find(c => c.name === cat);
+  const visibleCategories = filterCategoriesBySearch(categorySearch, tCat);
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -55,8 +59,17 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
 
           <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 10 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_category')}</Text>
+            <TextInput
+              value={categorySearch}
+              onChangeText={setCategorySearch}
+              placeholder={t('cat_search_ph')}
+              placeholderTextColor={C.text2}
+              style={{ backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: C.text, marginBottom: 12 }}
+            />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
-              {CATEGORIES.map(c => (
+              {visibleCategories.length === 0 ? (
+                <Text style={{ color: C.text2, paddingVertical: 8 }}>{t('cat_search_empty')}</Text>
+              ) : visibleCategories.map(c => (
                 <TouchableOpacity
                   key={c.name}
                   onPress={() => { setCat(cat === c.name ? '' : c.name); setSubcat(''); }}
@@ -78,8 +91,15 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
             {selCat && selCat.subs.length > 0 && (
               <>
                 <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_subcategory')}</Text>
+                <TextInput
+                  value={subcatSearch}
+                  onChangeText={setSubcatSearch}
+                  placeholder={t('cat_search_ph')}
+                  placeholderTextColor={C.text2}
+                  style={{ backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: C.text, marginBottom: 12 }}
+                />
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
-                  {selCat.subs.map(s => (
+                  {filterSubcategoriesBySearch(selCat.subs, subcatSearch, tCat).map(s => (
                     <TouchableOpacity key={s}
                       onPress={() => setSubcat(subcat === s ? '' : s)}
                       style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1.5, borderColor: subcat === s ? C.accent : C.border, backgroundColor: subcat === s ? C.accent + '22' : C.surface2 }}>

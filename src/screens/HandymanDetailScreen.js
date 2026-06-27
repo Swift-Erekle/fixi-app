@@ -47,7 +47,7 @@ import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { Avatar, PlanBadge, Tag, Btn, Divider, Card, StarPicker } from '../components/UI';
-import { CATEGORIES } from '../utils/categories';
+import { CATEGORIES, filterCategoriesBySearch, filterSubcategoriesBySearch } from '../utils/categories';
 import { getCategoryTheme } from '../utils/categoryTheme';
 
 // ✅ NEW: normalize phone → tel URI + wa.me digits
@@ -106,9 +106,15 @@ function ProposalModal({ handyman, visible, onClose }) {const { t: tr, tCat } = 
   const [budget, setBudget] = useState('');
   const [negotiable, setNegotiable] = useState(false);
   const [days, setDays] = useState('1');const [hours, setHours] = useState('');const [loading, setLoading] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
+  const [subcatSearch, setSubcatSearch] = useState('');
   const selCat = CATEGORIES.find((c) => c.name === category);
+  const visibleCategories = filterCategoriesBySearch(categorySearch, tCat);
   const dMins = parseInt(days || 0) * 24 * 60 + parseInt(hours || 0) * 60;
   const dLabel = [parseInt(days || 0) > 0 ? tr('duration_days_count', { count: days }) : '', parseInt(hours || 0) > 0 ? tr('duration_hours_count', { count: hours }) : ''].filter(Boolean).join(' ');
+  useEffect(() => {
+    if (visible) { setCategorySearch(''); setSubcatSearch(''); }
+  }, [visible]);
   async function send() {
     if (!title.trim()) return Alert.alert(tr("error"), tr("screens_createrequestscreen_text_j3arl4"));
     if (!category) return Alert.alert(tr("error"), tr("screens_createrequestscreen_text_qy5s7"));
@@ -148,8 +154,17 @@ function ProposalModal({ handyman, visible, onClose }) {const { t: tr, tCat } = 
 
           <Card>
             <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 12, textTransform: 'uppercase' }}>{tr("proposal_cat_label_text")}</Text>
+            <TextInput
+              value={categorySearch}
+              onChangeText={setCategorySearch}
+              placeholder={tr("cat_search_ph")}
+              placeholderTextColor={C.text2}
+              style={{ backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: C.text, marginBottom: 12 }}
+            />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: selCat && selCat.subs.length > 0 ? 16 : 0 }}>
-              {CATEGORIES.map((c) => {const act = category === c.name;return (
+              {visibleCategories.length === 0 ? (
+                <Text style={{ color: C.text2, paddingVertical: 8 }}>{tr("cat_search_empty")}</Text>
+              ) : visibleCategories.map((c) => {const act = category === c.name;return (
                   <TouchableOpacity key={c.name} onPress={() => {setCategory(c.name);setSubcat('');}}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 11, borderRadius: 14, borderWidth: 1.5, borderColor: act ? C.accent : C.border, backgroundColor: act ? C.accent + '18' : C.surface2, minWidth: '45%', flex: 1 }}>
                   <Text style={{ fontSize: 18 }}>{c.icon}</Text>
@@ -161,8 +176,15 @@ function ProposalModal({ handyman, visible, onClose }) {const { t: tr, tCat } = 
             {selCat && selCat.subs.length > 0 &&
             <>
                 <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 10, textTransform: 'uppercase' }}>{tr("filter_subcategory")}</Text>
+                <TextInput
+                  value={subcatSearch}
+                  onChangeText={setSubcatSearch}
+                  placeholder={tr("cat_search_ph")}
+                  placeholderTextColor={C.text2}
+                  style={{ backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: C.text, marginBottom: 12 }}
+                />
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                  {selCat.subs.map((s) =>
+                  {filterSubcategoriesBySearch(selCat.subs, subcatSearch, tCat).map((s) =>
                 <TouchableOpacity key={s} onPress={() => setSubcat(subcat === s ? '' : s)}
                 style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1.5, borderColor: subcat === s ? C.accent : C.border, backgroundColor: subcat === s ? C.accent + '22' : C.surface2 }}>
                       <Text style={{ color: subcat === s ? C.accent : C.text2, fontWeight: '600', fontSize: 13 }}>{tCat(s)}</Text>

@@ -29,14 +29,15 @@ export default function HandymanCard({ user, onPress }) {const { t: tr, tCat, tC
   const now = new Date();
   const categoryTheme = getCategoryTheme(user.specialty);
   const accentColor = categoryTheme.fg;
+  const cardServices = Array.isArray(user.services) ? user.services.slice(0, 2) : [];
   const vipOk = user.vipType && user.vipType !== 'none' && user.vipExpiresAt && new Date(user.vipExpiresAt) > now;
   const planTop = user.plan === 'top' && user.planExpiresAt && new Date(user.planExpiresAt) > now;
   const isPlus = planTop || user.vipType === 'vipp';
   const borderColor = isPlus ? '#9b59b6' : vipOk ? '#f1c40f66' : C.border;
 
   return (
-    <View style={{ backgroundColor: C.surface, borderRadius: 18, borderWidth: 1, borderColor, marginBottom: 14, overflow: 'hidden' }}>
-      <View style={{ padding: 16 }}>
+    <View style={{ backgroundColor: C.surface, borderRadius: 18, borderWidth: 1, borderColor, marginBottom: 14, overflow: 'hidden', minHeight: 288 }}>
+      <View style={{ padding: 16, flex: 1 }}>
         {/* Top row: VIP badge + Plan badge */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <VipBadge user={user} />
@@ -59,7 +60,7 @@ export default function HandymanCard({ user, onPress }) {const { t: tr, tCat, tC
         </View>
 
         {/* Stats */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 12, marginBottom: user.services?.length ? 10 : 0 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 12, marginBottom: 10 }}>
           {(user.jobs || 0) >= 2 ?
           <>
               {user.reviewsReceived?.length ? <Stars reviews={user.reviewsReceived} /> : null}
@@ -81,15 +82,13 @@ export default function HandymanCard({ user, onPress }) {const { t: tr, tCat, tC
         </View>
 
         {/* Services */}
-        {user.services?.length ?
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-            {user.services.slice(0, 3).map((s, i) =>
-          <View key={i} style={{ backgroundColor: C.surface2, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: C.border, maxWidth: '100%' }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'nowrap', gap: 6, marginBottom: 12, minHeight: 29, opacity: cardServices.length ? 1 : 0 }}>
+            {cardServices.map((s, i) =>
+          <View key={i} style={{ backgroundColor: C.surface2, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: C.border, maxWidth: '48%', flexShrink: 1 }}>
                 <Text style={{ color: C.text2, fontSize: 11 }} numberOfLines={1}>{tCat(s)}</Text>
               </View>
           )}
-          </View> :
-        null}
+          </View>
       </View>
 
       <GradientActionButton

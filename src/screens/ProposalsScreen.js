@@ -12,7 +12,7 @@ import { C } from '../utils/theme';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { Avatar, Tag, Btn, Card, Empty } from '../components/UI';
-import { CATEGORIES } from '../utils/categories';
+import { CATEGORIES, filterCategoriesBySearch } from '../utils/categories';
 
 const getStatusMap = (tr) => ({
   pending: { label: tr('status_pending_badge'), color: '#f59e0b' },
@@ -30,12 +30,14 @@ function SendProposalModal({ handyman, visible, onClose, onSent }) {const { t: t
   const [budget, setBudget] = useState('');
   const [days, setDays] = useState('');
   const [hours, setHours] = useState('');
+  const [categorySearch, setCategorySearch] = useState('');
   const [loading, setLoading] = useState(false);
+  const visibleCategories = filterCategoriesBySearch(categorySearch, tCat);
 
   const dMins = parseInt(days || 0) * 24 * 60 + parseInt(hours || 0) * 60;
   const dLabel = [parseInt(days || 0) > 0 ? tr('duration_days_count', { count: days }) : '', parseInt(hours || 0) > 0 ? tr('duration_hours_count', { count: hours }) : ''].filter(Boolean).join(' ');
 
-  function reset() {setTitle('');setCategory('');setDesc('');setBudget('');setDays('');setHours('');}
+  function reset() {setTitle('');setCategory('');setCategorySearch('');setDesc('');setBudget('');setDays('');setHours('');}
 
   async function send() {
     if (!title.trim()) return Alert.alert(tr("error"), tr("screens_createrequestscreen_text_j3arl4"));
@@ -88,9 +90,18 @@ function SendProposalModal({ handyman, visible, onClose, onSent }) {const { t: t
 
           <Card>
             <Text style={{ color: C.text2, fontSize: 12, fontWeight: '700', marginBottom: 10, textTransform: 'uppercase' }}>{tr("proposal_cat_label_text")}</Text>
+            <TextInput
+              value={categorySearch}
+              onChangeText={setCategorySearch}
+              placeholder={tr("cat_search_ph")}
+              placeholderTextColor={C.text2}
+              style={{ backgroundColor: C.surface2, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 12, color: C.text, fontSize: 14, marginBottom: 12 }}
+            />
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={{ flexDirection: 'row', gap: 8 }}>
-                {CATEGORIES.map((c) =>
+                {visibleCategories.length === 0 ? (
+                  <Text style={{ color: C.text2, paddingVertical: 8 }}>{tr("cat_search_empty")}</Text>
+                ) : visibleCategories.map((c) =>
                 <TouchableOpacity key={c.name} onPress={() => setCategory(c.name)}
                 style={{ paddingHorizontal: 13, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: category === c.name ? C.accent : C.border, backgroundColor: category === c.name ? C.accent + '22' : C.surface2 }}>
                     <Text style={{ color: category === c.name ? C.accent : C.text2, fontWeight: '600', fontSize: 12 }}>{c.icon} {tCat(c.name)}</Text>

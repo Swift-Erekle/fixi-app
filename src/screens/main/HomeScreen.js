@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../../utils/theme';
 import { api } from '../../utils/api';
-import { CATEGORIES, handymanMatchesCategory } from '../../utils/categories';
+import { CATEGORIES, filterCategoriesBySearch, filterSubcategoriesBySearch, handymanMatchesCategory } from '../../utils/categories';
 import HandymanCard from '../../components/HandymanCard';
 import { Avatar } from '../../components/UI';
 import BellButton from '../../components/BellButton';
@@ -21,6 +21,8 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
   const [subcat, setSubcat] = useState(initialSubcat || '');
   const [city, setCity] = useState(initialCity || '');
   const [minRating, setMinRating] = useState(initialMinRating || '');
+  const [categorySearch, setCategorySearch] = useState('');
+  const [subcatSearch, setSubcatSearch] = useState('');
 
   const RATING_OPTS = [
     { key: '', label: t('rating_all') },
@@ -30,10 +32,14 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
   ];
 
   useEffect(() => {
-    if (visible) { setCat(initialCat || ''); setSubcat(initialSubcat || ''); setCity(initialCity || ''); setMinRating(initialMinRating || ''); }
+    if (visible) {
+      setCat(initialCat || ''); setSubcat(initialSubcat || ''); setCity(initialCity || ''); setMinRating(initialMinRating || '');
+      setCategorySearch(''); setSubcatSearch('');
+    }
   }, [visible]);
 
   const selCat = CATEGORIES.find(c => c.name === cat);
+  const visibleCategories = filterCategoriesBySearch(categorySearch, tCat);
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -51,8 +57,17 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
 
           <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 10 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_category')}</Text>
+            <TextInput
+              value={categorySearch}
+              onChangeText={setCategorySearch}
+              placeholder={t('cat_search_ph')}
+              placeholderTextColor={C.text2}
+              style={{ backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: C.text, marginBottom: 12 }}
+            />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
-              {CATEGORIES.map(c => (
+              {visibleCategories.length === 0 ? (
+                <Text style={{ color: C.text2, paddingVertical: 8 }}>{t('cat_search_empty')}</Text>
+              ) : visibleCategories.map(c => (
                 <TouchableOpacity
                   key={c.name}
                   onPress={() => { setCat(cat === c.name ? '' : c.name); setSubcat(''); }}
@@ -65,7 +80,7 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
                   }}
                 >
                   <Text style={{ fontSize: 20 }}>{c.icon}</Text>
-                  <Text style={{ color: cat === c.name ? C.accent : C.text, fontWeight: '700', fontSize: 13, flex: 1 }}>{tCat(c.name)}</Text>
+                <Text style={{ color: cat === c.name ? C.accent : C.text, fontWeight: '700', fontSize: 13, flex: 1 }}>{tCat(c.name)}</Text>
                   {cat === c.name && <Ionicons name="checkmark-circle" size={16} color={C.accent} />}
                 </TouchableOpacity>
               ))}
@@ -74,8 +89,15 @@ function FilterModal({ visible, initialCat, initialSubcat, initialCity, initialM
             {selCat && (
               <>
                 <Text style={{ color: C.text, fontWeight: '800', fontSize: 15, marginBottom: 12 }}>{t('filter_subcategory')}</Text>
+                <TextInput
+                  value={subcatSearch}
+                  onChangeText={setSubcatSearch}
+                  placeholder={t('cat_search_ph')}
+                  placeholderTextColor={C.text2}
+                  style={{ backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: C.text, marginBottom: 12 }}
+                />
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
-                  {selCat.subs.map(s => (
+                  {filterSubcategoriesBySearch(selCat.subs, subcatSearch, tCat).map(s => (
                     <TouchableOpacity
                       key={s}
                       onPress={() => setSubcat(subcat === s ? '' : s)}
