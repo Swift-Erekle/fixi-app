@@ -38,6 +38,8 @@ function handleNotificationResponse(response) {
     navigate('Chat', { chatId: data.chatId, title: data.title });
   } else if (data.requestId) {
     navigate('RequestDetail', { id: data.requestId });
+  } else if (data.screen === 'CreateRequest') {
+    navigate('CreateRequest');
   } else if (data.screen === 'Chats') {
     navigate('Tabs', { screen: 'Chats' });
   } else if (data.screen === 'Cards' || data.type === 'renewal_failed' || data.type === 'charge_failed') {

@@ -208,6 +208,7 @@ export default function NotificationsScreen({ navigation }) {const { t: tr, lang
       if (data.chatId) return navigation.navigate('Chat', { chatId: data.chatId, title: data.title || tr("dash_chats") });
       if (data.requestId) return navigation.navigate('RequestDetail', { id: data.requestId });
       if (data.handymanId) return navigation.navigate('HandymanDetail', { id: data.handymanId });
+      if (data.screen === 'CreateRequest') return navigation.navigate('CreateRequest');
       if (data.screen === 'Chats') return navigation.navigate('Tabs', { screen: 'Chats' });
       if (data.screen === 'Cards' || data.type === 'renewal_failed' || data.type === 'charge_failed') return navigation.navigate('Cards');
       if (data.screen === 'PaymentReceipt' || isReceiptLink(data.url || data.link)) {
@@ -223,11 +224,15 @@ export default function NotificationsScreen({ navigation }) {const { t: tr, lang
       // matches: ?chat=x, &chatId=x, ?req=x, ?requestId=x, ?user=x, ?handymanId=x
       const chatM = n.link.match(/[?&](?:chat(?:Id)?)=([^&]+)/);
       const reqM = n.link.match(/[?&](?:req(?:uest(?:Id)?)?)=([^&]+)/);
+      const newReqM = /[?&]newReq=1(?:&|$)/.test(n.link);
+      const requestsNavM = /[?&]nav=requests(?:&|$)/.test(n.link);
       const userM = n.link.match(/[?&](?:user(?:Id)?|handyman(?:Id)?)=([^&]+)/);
       const cardM = n.link.match(/[?&]card=/);
       const vipM = /[?&](?:vip=1|nav=vip-info)(?:&|$)/.test(n.link);
       if (chatM) return navigation.navigate('Chat', { chatId: chatM[1], title: tr("dash_chats") });
       if (reqM) return navigation.navigate('RequestDetail', { id: reqM[1] });
+      if (newReqM) return navigation.navigate('CreateRequest');
+      if (requestsNavM) return navigation.navigate('Tabs', { screen: 'Requests' });
       if (userM) return navigation.navigate('HandymanDetail', { id: userM[1] });
       if (cardM) return navigation.navigate('Cards');
       if (vipM) return navigation.navigate('Vip');

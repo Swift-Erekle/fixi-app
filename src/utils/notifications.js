@@ -154,8 +154,12 @@ export async function onNotifClick(id, link, navigation, onStateChange) {
     const reqId      = params.get('req');
     const reviewId   = params.get('review');
     const proposalId = params.get('proposal');
+    const navTarget  = params.get('nav');
+    const newReq     = params.get('newReq') === '1';
     if (chatId)          navigation.navigate('Chat',     { chatId });
     else if (reqId)      navigation.navigate('RequestDetail', { id: reqId });
+    else if (newReq)     navigation.navigate('CreateRequest');
+    else if (navTarget === 'requests') navigation.navigate('Tabs', { screen: 'Requests' });
     else if (proposalId) navigation.navigate('Proposal', { proposalId });
     else if (reviewId)   navigation.navigate('Profile',  { userId: reviewId, autoFocusReview: true });
   }
@@ -175,6 +179,8 @@ export async function markAllNotifRead(onStateChange) {
 export function notifIcon(type) {
   switch (type) {
     case 'new_matching_request': return '\uD83D\uDCE3';
+    case 'user_weekly_engagement': return '\uD83C\uDFE0';
+    case 'user_seasonal_engagement': return '\uD83C\uDF26\uFE0F';
     case 'new_offer':      return '💬';
     case 'offer_accepted': return '🎉';
     case 'offer_rejected': return '❌';
