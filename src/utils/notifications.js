@@ -155,7 +155,7 @@ export async function onNotifClick(id, link, navigation, onStateChange) {
     const reviewId   = params.get('review');
     const proposalId = params.get('proposal');
     if (chatId)          navigation.navigate('Chat',     { chatId });
-    else if (reqId)      navigation.navigate('Request',  { reqId });
+    else if (reqId)      navigation.navigate('RequestDetail', { id: reqId });
     else if (proposalId) navigation.navigate('Proposal', { proposalId });
     else if (reviewId)   navigation.navigate('Profile',  { userId: reviewId, autoFocusReview: true });
   }
@@ -174,6 +174,7 @@ export async function markAllNotifRead(onStateChange) {
 // ============================================================
 export function notifIcon(type) {
   switch (type) {
+    case 'new_matching_request': return '\uD83D\uDCE3';
     case 'new_offer':      return '💬';
     case 'offer_accepted': return '🎉';
     case 'offer_rejected': return '❌';

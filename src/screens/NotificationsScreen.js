@@ -21,6 +21,7 @@ function timeAgo(d, tr, lang) {
 }
 
 const NOTIF_TITLE_KEYS = {
+  new_matching_request: 'notif_new_matching_request',
   new_message: 'notif_new_msg',
   new_offer: 'notif_new_offer',
   new_proposal: 'notif_new_offer',
